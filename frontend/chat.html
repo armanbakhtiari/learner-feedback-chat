@@ -133,7 +133,8 @@
             scrollToBottom();
 
             try {
-                const response = await fetch('http://localhost:8000/chat', {
+                // Use API_BASE_URL from app.js (auto-detects Replit vs local)
+                const response = await fetch(`${API_BASE_URL}/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -287,7 +288,8 @@
             }
 
             try {
-                await fetch(`http://localhost:8000/chat/reset/${sessionId}`, {
+                // Use API_BASE_URL from app.js (auto-detects Replit vs local)
+                await fetch(`${API_BASE_URL}/chat/reset/${sessionId}`, {
                     method: 'POST'
                 });
 

@@ -1,6 +1,15 @@
 // Shared JavaScript utilities for the application
 
-const API_BASE_URL = 'http://localhost:8000';
+// Auto-detect API base URL based on environment
+const API_BASE_URL = (() => {
+    // Check if running on Replit
+    if (window.location.hostname.includes('replit.app') || window.location.hostname.includes('repl.co')) {
+        // On Replit, backend is on same host, port 8000
+        return `${window.location.protocol}//${window.location.hostname}:8000`;
+    }
+    // Local development
+    return 'http://localhost:8000';
+})();
 
 // API Helper Functions
 async function apiCall(endpoint, options = {}) {

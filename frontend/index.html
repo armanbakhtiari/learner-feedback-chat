@@ -79,7 +79,12 @@
             const container = document.getElementById('trainings-container');
 
             try {
-                const response = await fetch('http://localhost:8000/trainings');
+                // Use relative URL or auto-detect API base
+                const API_BASE = window.location.hostname.includes('replit') || window.location.hostname.includes('repl.co')
+                    ? `${window.location.protocol}//${window.location.hostname}:8000`
+                    : 'http://localhost:8000';
+                
+                const response = await fetch(`${API_BASE}/trainings`);
                 const data = await response.json();
                 const trainings = data.trainings;
 
@@ -161,7 +166,12 @@
             status.className = 'status-message info';
 
             try {
-                const response = await fetch('http://localhost:8000/evaluate', {
+                // Use relative URL or auto-detect API base
+                const API_BASE = window.location.hostname.includes('replit') || window.location.hostname.includes('repl.co')
+                    ? `${window.location.protocol}//${window.location.hostname}:8000`
+                    : 'http://localhost:8000';
+                
+                const response = await fetch(`${API_BASE}/evaluate`, {
                     method: 'POST'
                 });
 
