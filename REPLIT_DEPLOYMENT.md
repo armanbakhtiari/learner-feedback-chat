@@ -2,44 +2,7 @@
 
 This guide will help you deploy your AI-powered Learner Feedback Chat System to Replit and make it publicly accessible.
 
-## 🚀 Quick Deploy with Replit CLI
-
-### Step 1: Install Replit CLI
-
-```bash
-# Install Replit CLI
-npm install -g replit-cli
-
-# Or on macOS with Homebrew
-brew install replit
-```
-
-### Step 2: Authenticate with Replit
-
-```bash
-# Login to your Replit account
-replit login
-```
-
-This will open a browser window to authenticate.
-
-### Step 3: Deploy from Your Project
-
-```bash
-# Navigate to your project
-cd /Users/armanbakhtiari/Documents/PhD/SENSAI/Feedback_chatBot/Implementation
-
-# Create and push to Replit
-replit deploy
-```
-
-The CLI will:
-- Create a new Repl
-- Upload all your code
-- Install dependencies
-- Start the application
-
-## 📋 Alternative: Manual Deployment
+## 🚀 Quick Deploy (Recommended Method)
 
 ### Method 1: Import from GitHub (Recommended)
 
