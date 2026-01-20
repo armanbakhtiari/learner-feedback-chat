@@ -57,9 +57,7 @@ class ChatResponse(BaseModel):
     citations: List[Dict[str, str]] = []
 
 
-@app.get("/")
-async def root():
-    return {"message": "Learner Feedback Chat System API"}
+# API Routes (must come before static file serving)
 
 
 @app.get("/trainings")
@@ -171,14 +169,23 @@ async def reset_chat(session_id: str):
     return {"status": "reset"}
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "ok", "message": "Learner Feedback Chat System API"}
+
+
 # Serve frontend static files (for deployment where only one port is exposed)
+# These routes come AFTER API routes to avoid conflicts
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    # Mount CSS, JS, and other static assets
+    @app.get("/styles.css")
+    async def serve_css():
+        return FileResponse(str(FRONTEND_DIR / "styles.css"), media_type="text/css")
     
-    @app.get("/")
-    async def serve_index():
-        """Serve the main index page"""
-        return FileResponse(str(FRONTEND_DIR / "index.html"))
+    @app.get("/app.js")
+    async def serve_app_js():
+        return FileResponse(str(FRONTEND_DIR / "app.js"), media_type="application/javascript")
     
     @app.get("/chat.html")
     async def serve_chat():
@@ -190,13 +197,10 @@ if FRONTEND_DIR.exists():
         """Serve the test page"""
         return FileResponse(str(FRONTEND_DIR / "test.html"))
     
-    @app.get("/{filename}")
-    async def serve_file(filename: str):
-        """Serve any other frontend file"""
-        file_path = FRONTEND_DIR / filename
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(str(file_path))
-        raise HTTPException(status_code=404, detail="File not found")
+    @app.get("/")
+    async def serve_index():
+        """Serve the main index page"""
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
 if __name__ == "__main__":
