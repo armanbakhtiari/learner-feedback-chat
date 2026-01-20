@@ -5,34 +5,40 @@ const API_BASE_URL = (() => {
     const hostname = window.location.hostname;
     const port = window.location.port;
     
+    // If we're on localhost with port 3000, backend is on 8000
+    if (hostname === 'localhost' && port === '3000') {
+        console.log('🏠 Local development mode (separate ports)');
+        return 'http://localhost:8000';
+    }
+    
     // Check if running on Replit (any Replit domain)
     if (hostname.includes('replit.app') || 
         hostname.includes('repl.co') || 
         hostname.includes('replit.dev')) {
         
         console.log('🔧 Detected Replit environment');
-        console.log('   Frontend:', window.location.href);
+        console.log('   Frontend URL:', window.location.href);
         
-        // Check if we're on port 3000 (preview mode) or deployed (no port/80/443)
+        // Check if we're on port 3000 (preview mode) or deployed
         if (port === '3000') {
-            // Preview mode: separate frontend/backend ports
+            // Preview mode: backend on port 8000
             const protocol = window.location.protocol;
             const backendUrl = `${protocol}//${hostname.replace(':3000', '')}:8000`;
-            console.log('   Mode: Preview (port 3000)');
-            console.log('   Backend:', backendUrl);
+            console.log('   Mode: Preview (two ports)');
+            console.log('   Backend URL:', backendUrl);
             return backendUrl;
         } else {
-            // Deployed mode: same port for frontend and backend
-            const backendUrl = window.location.origin; // Same as frontend
+            // Deployed mode: same origin (backend serves frontend)
+            const backendUrl = window.location.origin;
             console.log('   Mode: Deployed (single port)');
-            console.log('   Backend:', backendUrl);
+            console.log('   Backend URL:', backendUrl);
             return backendUrl;
         }
     }
     
-    // Local development
-    console.log('🏠 Local development mode');
-    return 'http://localhost:8000';
+    // Fallback: use same origin (works for most deployment scenarios)
+    console.log('🌐 Using same origin for API');
+    return window.location.origin;
 })();
 
 // API Helper Functions

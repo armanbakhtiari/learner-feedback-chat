@@ -79,13 +79,10 @@
             const container = document.getElementById('trainings-container');
 
             try {
-                // Use relative URL or auto-detect API base
-                const hostname = window.location.hostname;
-                const API_BASE = (hostname.includes('replit.app') || 
-                                  hostname.includes('repl.co') || 
-                                  hostname.includes('replit.dev'))
-                    ? `${window.location.protocol}//${hostname.replace(':3000', '')}:8000`
-                    : 'http://localhost:8000';
+                // In deployment, frontend is served by backend, so use relative URL
+                // In preview/local, use API_BASE_URL from app.js
+                const API_BASE = window.API_BASE_URL || window.location.origin;
+                console.log('🔍 Loading trainings from:', `${API_BASE}/trainings`);
                 
                 const response = await fetch(`${API_BASE}/trainings`);
                 const data = await response.json();
@@ -169,13 +166,9 @@
             status.className = 'status-message info';
 
             try {
-                // Use relative URL or auto-detect API base
-                const hostname = window.location.hostname;
-                const API_BASE = (hostname.includes('replit.app') || 
-                                  hostname.includes('repl.co') || 
-                                  hostname.includes('replit.dev'))
-                    ? `${window.location.protocol}//${hostname.replace(':3000', '')}:8000`
-                    : 'http://localhost:8000';
+                // In deployment, frontend is served by backend, so use relative URL
+                const API_BASE = window.API_BASE_URL || window.location.origin;
+                console.log('🔍 Starting evaluation at:', `${API_BASE}/evaluate`);
                 
                 const response = await fetch(`${API_BASE}/evaluate`, {
                     method: 'POST'
