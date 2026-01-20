@@ -93,6 +93,8 @@
 
         async function sendInitialMessage() {
             // Send a message to trigger initial feedback
+            console.log('API_BASE_URL:', API_BASE_URL);
+            console.log('Session ID:', sessionId);
             await sendChatMessage('Bonjour! Je voudrais voir ma rétroaction.');
             enableInput();
         }
