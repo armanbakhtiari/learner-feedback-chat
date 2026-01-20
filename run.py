@@ -118,26 +118,44 @@ def main():
     print("\n" + "="*70)
     print("✨ APPLICATION IS READY!")
     print("="*70)
-    print("\n📍 URLs:")
-    print("   • Main App:     http://localhost:3000")
-    print("   • Test Page:    http://localhost:3000/test.html")
-    print("   • Backend API:  http://localhost:8000")
-    print("\n💡 Tips:")
-    print("   • First visit: http://localhost:3000/test.html to verify setup")
-    print("   • Then visit:  http://localhost:3000 for the main app")
-    print("   • Press Ctrl+C to stop both servers")
+    
+    # Check if running on Replit
+    is_replit = os.getenv('REPL_ID') is not None
+    
+    if is_replit:
+        # Get Replit URL
+        repl_slug = os.getenv('REPL_SLUG', 'unknown')
+        repl_owner = os.getenv('REPL_OWNER', 'unknown')
+        print("\n📍 Your Replit App:")
+        print(f"   • URL: https://{repl_slug}.{repl_owner}.repl.co")
+        print(f"   • Backend API: https://{repl_slug}.{repl_owner}.repl.co:8000")
+        print("\n💡 Replit Tips:")
+        print("   • The webview will open automatically")
+        print("   • Share the URL above with others")
+        print("   • Configure Secrets for API keys (not .env)")
+    else:
+        print("\n📍 URLs:")
+        print("   • Main App:     http://localhost:3000")
+        print("   • Test Page:    http://localhost:3000/test.html")
+        print("   • Backend API:  http://localhost:8000")
+        print("\n💡 Tips:")
+        print("   • First visit: http://localhost:3000/test.html to verify setup")
+        print("   • Then visit:  http://localhost:3000 for the main app")
+        print("   • Press Ctrl+C to stop both servers")
+    
     print("\n🔍 LangSmith Tracing:")
     print("   • Project: Feedback_Chat_Agent")
     print("   • View at: https://smith.langchain.com/")
     print("\n" + "="*70 + "\n")
 
-    # Open browser
-    time.sleep(2)
-    print("🌐 Opening browser...")
-    try:
-        webbrowser.open("http://localhost:3000/test.html")
-    except:
-        pass
+    # Open browser (only if not on Replit)
+    if not is_replit:
+        time.sleep(2)
+        print("🌐 Opening browser...")
+        try:
+            webbrowser.open("http://localhost:3000/test.html")
+        except:
+            pass
 
     print("\n⌨️  Press Ctrl+C to stop the servers...\n")
 

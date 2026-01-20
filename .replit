@@ -1,0 +1,20 @@
+[run]
+command = "python3 run.py"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["python3", "run.py"]
+deploymentTarget = "cloudrun"
+
+[env]
+PYTHONUNBUFFERED = "1"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
