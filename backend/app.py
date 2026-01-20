@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
@@ -23,6 +25,10 @@ from backend.evaluator import run_evaluations
 from backend.chat_agent import ChatAgent
 
 app = FastAPI(title="Learner Feedback Chat System")
+
+# Get the project root directory
+ROOT_DIR = Path(__file__).parent.parent
+FRONTEND_DIR = ROOT_DIR / "frontend"
 
 app.add_middleware(
     CORSMiddleware,
@@ -163,6 +169,34 @@ async def reset_chat(session_id: str):
     if session_id in chat_agents:
         del chat_agents[session_id]
     return {"status": "reset"}
+
+
+# Serve frontend static files (for deployment where only one port is exposed)
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    
+    @app.get("/")
+    async def serve_index():
+        """Serve the main index page"""
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
+    
+    @app.get("/chat.html")
+    async def serve_chat():
+        """Serve the chat page"""
+        return FileResponse(str(FRONTEND_DIR / "chat.html"))
+    
+    @app.get("/test.html")
+    async def serve_test():
+        """Serve the test page"""
+        return FileResponse(str(FRONTEND_DIR / "test.html"))
+    
+    @app.get("/{filename}")
+    async def serve_file(filename: str):
+        """Serve any other frontend file"""
+        file_path = FRONTEND_DIR / filename
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        raise HTTPException(status_code=404, detail="File not found")
 
 
 if __name__ == "__main__":

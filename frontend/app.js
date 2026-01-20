@@ -3,22 +3,31 @@
 // Auto-detect API base URL based on environment
 const API_BASE_URL = (() => {
     const hostname = window.location.hostname;
+    const port = window.location.port;
     
     // Check if running on Replit (any Replit domain)
     if (hostname.includes('replit.app') || 
         hostname.includes('repl.co') || 
         hostname.includes('replit.dev')) {
         
-        // For Replit.dev format, backend is on same host with port 8000
-        const protocol = window.location.protocol; // https:
-        const baseUrl = hostname; // Keep full hostname
-        const backendUrl = `${protocol}//${baseUrl.replace(':3000', '')}:8000`;
-        
         console.log('🔧 Detected Replit environment');
         console.log('   Frontend:', window.location.href);
-        console.log('   Backend:', backendUrl);
         
-        return backendUrl;
+        // Check if we're on port 3000 (preview mode) or deployed (no port/80/443)
+        if (port === '3000') {
+            // Preview mode: separate frontend/backend ports
+            const protocol = window.location.protocol;
+            const backendUrl = `${protocol}//${hostname.replace(':3000', '')}:8000`;
+            console.log('   Mode: Preview (port 3000)');
+            console.log('   Backend:', backendUrl);
+            return backendUrl;
+        } else {
+            // Deployed mode: same port for frontend and backend
+            const backendUrl = window.location.origin; // Same as frontend
+            console.log('   Mode: Deployed (single port)');
+            console.log('   Backend:', backendUrl);
+            return backendUrl;
+        }
     }
     
     // Local development
