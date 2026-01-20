@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Rétroaction Interactive</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div>
+                <h1>💬 Assistant de Rétroaction</h1>
+                <p class="subtitle">Explorez vos performances de manière interactive</p>
+            </div>
+            <div class="header-actions">
+                <label class="web-search-toggle">
+                    <input type="checkbox" id="web-search-checkbox">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">🌐 Recherche Web</span>
+                </label>
+                <button id="back-btn" class="secondary-btn" onclick="goBack()">
+                    ← Retour aux modules
+                </button>
+                <button id="reset-btn" class="secondary-btn" onclick="resetChat()">
+                    🔄 Réinitialiser
+                </button>
+            </div>
+        </header>
+
+        <main class="chat-main">
+            <div id="chat-messages" class="chat-messages">
+                <div class="welcome-message">
+                    <h2>👋 Bienvenue!</h2>
+                    <p>
+                        Je suis votre assistant de rétroaction. Je vais vous aider à comprendre
+                        votre performance dans les modules de formation.
+                    </p>
+                    <p>
+                        <strong>Attendez quelques secondes pendant que je génère votre rétroaction initiale...</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <textarea
+                    id="chat-input"
+                    placeholder="Posez une question ou demandez des détails..."
+                    rows="3"
+                    disabled
+                ></textarea>
+                <button id="send-btn" class="send-btn" disabled>
+                    Envoyer
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let isFirstMessage = true;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            sessionId = localStorage.getItem('session_id');
+
+            if (!sessionId) {
+                alert('Aucune session trouvée. Veuillez d\'abord lancer une évaluation.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            setupEventListeners();
+            // Automatically send first message to get initial feedback
+            sendInitialMessage();
+        });
+
+        function setupEventListeners() {
+            const sendBtn = document.getElementById('send-btn');
+            const input = document.getElementById('chat-input');
+
+            sendBtn.onclick = sendMessage;
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        async function sendInitialMessage() {
+            // Send a message to trigger initial feedback
+            await sendChatMessage('Bonjour! Je voudrais voir ma rétroaction.');
+            enableInput();
+        }
+
+        function enableInput() {
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Clear input
+            input.value = '';
+
+            // Add user message to chat
+            addMessageToChat('user', message);
+
+            // Send to backend
+            await sendChatMessage(message);
+        }
+
+        async function sendChatMessage(message) {
+            const messagesContainer = document.getElementById('chat-messages');
+
+            // Get web search toggle state
+            const webSearchEnabled = document.getElementById('web-search-checkbox').checked;
+
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message assistant typing';
+            typingIndicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+            messagesContainer.appendChild(typingIndicator);
+            scrollToBottom();
+
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: message,
+                        web_search_enabled: webSearchEnabled
+                    })
+                });
+
+                // Check if response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                console.log('📥 Response received:', {
+                    has_code: data.has_code,
+                    code_output_type: typeof data.code_output,
+                    code_output_length: data.code_output ? data.code_output.length : 0,
+                    citations_count: data.citations ? data.citations.length : 0
+                });
+
+                // Remove typing indicator
+                typingIndicator.remove();
+
+                // Add assistant response
+                if (!isFirstMessage) {
+                    addMessageToChat('assistant', data.response, data.has_code, data.code_output, data.citations);
+                } else {
+                    // For first message, replace welcome message
+                    const welcomeMsg = document.querySelector('.welcome-message');
+                    if (welcomeMsg) {
+                        welcomeMsg.remove();
+                    }
+                    addMessageToChat('assistant', data.response, data.has_code, data.code_output, data.citations);
+                    isFirstMessage = false;
+                }
+
+            } catch (error) {
+                console.error('❌ FETCH ERROR:', error);
+                console.error('Error details:', error.message);
+                console.error('Error stack:', error.stack);
+                typingIndicator.remove();
+                addMessageToChat('assistant', `Désolé, une erreur s'est produite: ${error.message}`);
+            }
+        }
+
+        function addMessageToChat(role, content, hasCode = false, codeOutput = null, citations = []) {
+            const messagesContainer = document.getElementById('chat-messages');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = formatMessage(content);
+
+            // Add citations if available
+            if (citations && citations.length > 0) {
+                const citationsDiv = document.createElement('div');
+                citationsDiv.className = 'citations';
+                citationsDiv.innerHTML = '<hr><strong>Sources:</strong><br>';
+
+                citations.forEach((citation, index) => {
+                    citationsDiv.innerHTML += `<a href="${citation.url}" target="_blank" rel="noopener noreferrer">[${index + 1}] ${citation.title}</a><br>`;
+                });
+
+                messageContent.appendChild(citationsDiv);
+            }
+
+            messageDiv.appendChild(messageContent);
+
+            messagesContainer.appendChild(messageDiv);
+
+            // Add visualization AFTER the message (outside message-content)
+            if (hasCode && codeOutput) {
+                try {
+                    console.log('🎨 Processing visualization:', {
+                        codeOutput_type: typeof codeOutput,
+                        codeOutput_length: codeOutput ? codeOutput.length : 0,
+                        codeOutput_preview: codeOutput ? codeOutput.substring(0, 100) : 'null'
+                    });
+
+                    const output = typeof codeOutput === 'string' ? JSON.parse(codeOutput) : codeOutput;
+
+                    console.log('✅ Parsed visualization output:', {
+                        has_image: !!output.image_base64,
+                        image_length: output.image_base64 ? output.image_base64.length : 0,
+                        has_summary: !!output.summary_data
+                    });
+
+                    const visualizationDiv = document.createElement('div');
+                    visualizationDiv.className = 'message assistant visualization-message';
+
+                    let vizContent = '';
+
+                    if (output.image_base64) {
+                        vizContent += `
+                            <div class="code-output">
+                                <img src="data:image/png;base64,${output.image_base64}" alt="Visualization" />
+                            </div>
+                        `;
+                        console.log('✅ Image added to DOM');
+                    }
+                    if (output.summary_data) {
+                        vizContent += `
+                            <div class="summary-data">
+                                <pre>${JSON.stringify(output.summary_data, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+
+                    visualizationDiv.innerHTML = vizContent;
+                    messagesContainer.appendChild(visualizationDiv);
+                    console.log('✅ Visualization div appended to messages container');
+                } catch (e) {
+                    console.error('❌ Error parsing visualization output:', e);
+                    console.error('Error message:', e.message);
+                    console.error('Error stack:', e.stack);
+                    console.log('codeOutput type:', typeof codeOutput);
+                    console.log('codeOutput value:', codeOutput);
+                }
+            }
+
+            scrollToBottom();
+        }
+
+        function formatMessage(content) {
+            // Convert markdown-style formatting to HTML
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        async function resetChat() {
+            if (!confirm('Voulez-vous vraiment réinitialiser la conversation?')) {
+                return;
+            }
+
+            try {
+                await fetch(`http://localhost:8000/chat/reset/${sessionId}`, {
+                    method: 'POST'
+                });
+
+                // Clear chat
+                const messagesContainer = document.getElementById('chat-messages');
+                messagesContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <h2>👋 Bienvenue!</h2>
+                        <p>
+                            Je suis votre assistant de rétroaction. Je vais vous aider à comprendre
+                            votre performance dans les modules de formation.
+                        </p>
+                        <p>
+                            <strong>Attendez quelques secondes pendant que je génère votre rétroaction initiale...</strong>
+                        </p>
+                    </div>
+                `;
+
+                isFirstMessage = true;
+                sendInitialMessage();
+            } catch (error) {
+                console.error('Error resetting chat:', error);
+                alert('Erreur lors de la réinitialisation');
+            }
+        }
+    </script>
+</body>
+</html>

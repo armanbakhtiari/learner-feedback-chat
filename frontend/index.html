@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Rétroaction pour l'Apprentissage</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Système de Rétroaction pour l'Apprentissage</h1>
+            <p class="subtitle">Modules de formation sur la migraine</p>
+        </header>
+
+        <main>
+            <section class="intro-section">
+                <h2>Bienvenue</h2>
+                <p>
+                    Ce système vous permet d'explorer vos performances dans les modules de formation
+                    sur le diagnostic et le traitement de la migraine. Vous pouvez visualiser les modules
+                    de formation et obtenir des retours personnalisés sur vos réponses.
+                </p>
+            </section>
+
+            <section class="objectives-section">
+                <h2>📋 Objectifs d'apprentissage</h2>
+                <ul class="objectives-list">
+                    <li>Différencier les types de céphalées</li>
+                    <li>Poser un diagnostic pertinent en contexte clinique complexe par la discrimination des caractéristiques cliniques de la migraine, des céphalées de tension et des céphalées médicamenteuses</li>
+                    <li>Évaluer de façon critique les options thérapeutiques aiguës, préventives et hormonales dans la prise en charge des migraines</li>
+                </ul>
+            </section>
+
+            <section class="trainings-section">
+                <h2>📚 Modules de formation</h2>
+                <div id="trainings-container" class="trainings-grid">
+                    <!-- Training modules will be loaded here -->
+                    <div class="loading">Chargement des modules...</div>
+                </div>
+            </section>
+
+            <section class="action-section">
+                <h2>🚀 Commencer l'évaluation</h2>
+                <p>
+                    Cliquez sur le bouton ci-dessous pour lancer l'évaluation de vos réponses.
+                    Cela peut prendre quelques minutes.
+                </p>
+                <button id="start-evaluation-btn" class="primary-btn">
+                    Lancer l'évaluation
+                </button>
+                <div id="evaluation-status" class="status-message"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Système de Rétroaction pour l'Apprentissage</p>
+        </footer>
+    </div>
+
+    <!-- Modal for training content -->
+    <div id="training-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div id="modal-body" class="training-content"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Load trainings on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTrainings();
+            setupEventListeners();
+        });
+
+        async function loadTrainings() {
+            const container = document.getElementById('trainings-container');
+
+            try {
+                const response = await fetch('http://localhost:8000/trainings');
+                const data = await response.json();
+                const trainings = data.trainings;
+
+                container.innerHTML = '';
+
+                trainings.forEach((training, index) => {
+                    const card = createTrainingCard(training, index + 1);
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading trainings:', error);
+                container.innerHTML = '<div class="error">Erreur lors du chargement des modules</div>';
+            }
+        }
+
+        function createTrainingCard(training, number) {
+            const card = document.createElement('div');
+            card.className = 'training-card';
+
+            card.innerHTML = `
+                <div class="training-number">Module ${number}</div>
+                <h3>${training.name}</h3>
+                <button class="view-btn" onclick="showTrainingModal('${training.id}', '${training.name}', \`${escapeHtml(training.content)}\`)">
+                    Voir le contenu
+                </button>
+            `;
+
+            return card;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/`/g, "\\`");
+        }
+
+        function showTrainingModal(id, name, content) {
+            const modal = document.getElementById('training-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            title.textContent = name;
+            body.innerHTML = `<pre>${content}</pre>`;
+
+            modal.style.display = 'block';
+        }
+
+        function setupEventListeners() {
+            // Modal close button
+            const modal = document.getElementById('training-modal');
+            const closeBtn = document.querySelector('.close');
+
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+
+            window.onclick = (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+
+            // Evaluation button
+            const evalBtn = document.getElementById('start-evaluation-btn');
+            evalBtn.onclick = startEvaluation;
+        }
+
+        async function startEvaluation() {
+            const btn = document.getElementById('start-evaluation-btn');
+            const status = document.getElementById('evaluation-status');
+
+            btn.disabled = true;
+            btn.textContent = 'Évaluation en cours...';
+            status.textContent = '⏳ Évaluation des modules de formation...';
+            status.className = 'status-message info';
+
+            try {
+                const response = await fetch('http://localhost:8000/evaluate', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'completed') {
+                    status.textContent = '✅ Évaluation terminée! Redirection vers le chat...';
+                    status.className = 'status-message success';
+
+                    // Store session ID and redirect to chat
+                    localStorage.setItem('session_id', data.session_id);
+                    setTimeout(() => {
+                        window.location.href = 'chat.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Error during evaluation:', error);
+                status.textContent = '❌ Erreur lors de l\'évaluation';
+                status.className = 'status-message error';
+                btn.disabled = false;
+                btn.textContent = 'Lancer l\'évaluation';
+            }
+        }
+    </script>
+</body>
+</html>

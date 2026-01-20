@@ -1,0 +1,214 @@
+"""
+Tools for the Supervisor Agent
+
+These tools are decorated with @tool so they can be used by LangChain's create_react_agent.
+The supervisor agent will decide when and how to call these tools based on user queries.
+"""
+
+from typing import Dict, Any, List
+from langchain.tools import tool
+from langchain_core.messages import BaseMessage
+import json
+
+from backend.code_tool import CodeGenerationTool
+from backend.web_search_tool import WebSearchTool
+from trainings_2_experts import training_1, training_2, training_3
+
+
+# Global instances (will be initialized by supervisor)
+_code_tool_instance = None
+_web_search_tool_instance = None
+
+
+def initialize_tools(evaluations: Dict[str, Any]):
+    """Initialize tool instances with evaluation data"""
+    global _code_tool_instance, _web_search_tool_instance
+    _code_tool_instance = CodeGenerationTool(evaluations)
+    _web_search_tool_instance = WebSearchTool()
+
+
+@tool
+def generate_visualization(user_request: str, conversation_history: str) -> str:
+    """
+    Generate a visualization (chart, table, graph) based on the user's request.
+
+    Use this tool when the user asks for:
+    - Tables ("tableau", "table")
+    - Charts or graphs ("graphique", "chart", "graph")
+    - Visual comparisons ("comparer", "comparaison")
+    - Statistics display ("statistique", "diagramme", "courbe", "histogramme")
+
+    Args:
+        user_request: The user's message requesting a visualization
+        conversation_history: JSON string of recent conversation messages
+
+    Returns:
+        JSON string containing:
+        - "status": "success" or "error"
+        - "code": The generated Python code (if successful)
+        - "output": Base64 image and summary data (if successful)
+        - "error": Error message (if failed)
+
+    Example:
+        User: "Créez un tableau de ma performance"
+        -> Call this tool
+        -> Returns: {"status": "success", "output": "{\"image_base64\": \"...\", ...}"}
+    """
+    if _code_tool_instance is None:
+        return json.dumps({"status": "error", "error": "Code tool not initialized"})
+
+    try:
+        # Parse conversation history
+        history = json.loads(conversation_history) if conversation_history else []
+
+        # Convert to BaseMessage objects
+        from langchain_core.messages import HumanMessage, AIMessage
+        messages = []
+        for msg in history:
+            if msg.get("type") == "human":
+                messages.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("type") == "ai":
+                messages.append(AIMessage(content=msg.get("content", "")))
+
+        # Generate visualization
+        result = _code_tool_instance.generate_code(user_request, messages)
+
+        if result:
+            # result["output"] is already a dict, not a JSON string
+            output_data = result.get("output", {})
+            
+            # If output_data is a string (error case), parse it
+            if isinstance(output_data, str):
+                try:
+                    output_data = json.loads(output_data)
+                except Exception as e:
+                    print(f"❌ Failed to parse visualization output: {e}")
+                    output_data = {"error": str(output_data)}
+            
+            return json.dumps({
+                "status": "success",
+                "code": result.get("code", ""),
+                "output": output_data  # This is now guaranteed to be a dict
+            }, ensure_ascii=False)
+        else:
+            return json.dumps({"status": "error", "error": "Failed to generate visualization"})
+
+    except Exception as e:
+        return json.dumps({"status": "error", "error": str(e)})
+
+
+@tool
+def search_web(query: str) -> str:
+    """
+    Search the web for current medical information, guidelines, or recent research.
+
+    Use this tool when the user asks about:
+    - Latest information ("dernière", "récent", "actuel", "nouveau")
+    - Current guidelines or recommendations ("guideline", "recommandation")
+    - Recent studies or research ("étude", "recherche médicale", "littérature")
+    - Updated medical practices ("mise à jour")
+    - Anything requiring external/current knowledge beyond the training materials
+
+    Args:
+        query: The search query (can be in French or English)
+
+    Returns:
+        JSON string containing:
+        - "status": "success" or "error"
+        - "results": List of search results with title, url, content
+        - "citations": List of citations with title and url
+        - "formatted": Formatted text for LLM consumption
+
+    Example:
+        User: "Quelles sont les dernières recommandations pour la migraine?"
+        -> Call this tool with query="latest migraine treatment guidelines"
+        -> Returns search results with citations
+    """
+    if _web_search_tool_instance is None:
+        return json.dumps({"status": "error", "error": "Web search tool not initialized"})
+
+    try:
+        # Perform search
+        results = _web_search_tool_instance.search(query, max_results=5)
+
+        # Format results
+        formatted = _web_search_tool_instance.format_results_for_llm(results)
+        citations = _web_search_tool_instance.get_citations(results)
+
+        return json.dumps({
+            "status": "success",
+            "results": results,
+            "citations": citations,
+            "formatted": formatted
+        })
+
+    except Exception as e:
+        return json.dumps({"status": "error", "error": str(e)})
+
+
+@tool
+def get_training_content(module_number: int, section: str = "all") -> str:
+    """
+    Retrieve the full content of a training module when the user asks about specific training scenarios,
+    clinical cases, or expert panel responses that are not in the evaluation summary.
+
+    Use this tool when:
+    - User asks about specific scenarios/situations in a training module
+    - User wants to see what experts said in a particular case
+    - User asks about training content details beyond their evaluation scores
+    - User references specific module numbers (1, 2, or 3)
+
+    Args:
+        module_number: The training module number (1, 2, or 3)
+        section: Which section to retrieve ("all", "scenarios", "objectives")
+
+    Returns:
+        JSON string containing:
+        - "status": "success" or "error"
+        - "module_name": Name of the module
+        - "content": The full training content
+        - "section": Which section was retrieved
+
+    Example:
+        User: "Que disent les experts dans le scénario 2 du module 1?"
+        -> Call this tool with module_number=1, section="all"
+        -> Returns full module 1 content so the chat agent can answer
+    """
+    try:
+        # Map module numbers to training content
+        modules = {
+            1: {
+                "name": "Module 1: Diagnostic et suivi de la migraine",
+                "content": training_1
+            },
+            2: {
+                "name": "Module 2: Traitement aigu et gestion des habitudes de vie",
+                "content": training_2
+            },
+            3: {
+                "name": "Module 3: Traitement préventif de la migraine",
+                "content": training_3
+            }
+        }
+
+        if module_number not in modules:
+            return json.dumps({
+                "status": "error",
+                "error": f"Invalid module number: {module_number}. Must be 1, 2, or 3."
+            })
+
+        module = modules[module_number]
+
+        return json.dumps({
+            "status": "success",
+            "module_name": module["name"],
+            "content": module["content"],
+            "section": section
+        })
+
+    except Exception as e:
+        return json.dumps({"status": "error", "error": str(e)})
+
+
+# List of all tools (for easy access)
+ALL_TOOLS = [generate_visualization, search_web, get_training_content]

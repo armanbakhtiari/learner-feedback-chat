@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { border-left: 4px solid #4caf50; }
+        .error { border-left: 4px solid #f44336; }
+        .info { border-left: 4px solid #2196f3; }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #357abd; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Frontend Server Test</h1>
+
+    <div class="test-box success">
+        <h2>✓ Frontend Server is Working!</h2>
+        <p>If you can see this page, the frontend server is running correctly.</p>
+    </div>
+
+    <div class="test-box info">
+        <h3>Test Information</h3>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Time:</strong> <span id="current-time"></span></p>
+    </div>
+
+    <div class="test-box info">
+        <h3>Backend Connection Test</h3>
+        <button onclick="testBackend()">Test Backend Connection</button>
+        <div id="backend-result" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-box info">
+        <h3>File Access Test</h3>
+        <button onclick="testFiles()">Test File Access</button>
+        <div id="file-result" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-box info">
+        <h3>Next Steps</h3>
+        <ol>
+            <li>If this page loads, your frontend server is working</li>
+            <li>Click "Test Backend Connection" to verify backend is running</li>
+            <li>If backend test passes, try accessing: <a href="/index.html">index.html</a></li>
+            <li>Or go directly to: <a href="http://localhost:3000/index.html">http://localhost:3000/index.html</a></li>
+        </ol>
+    </div>
+
+    <script>
+        // Display current info
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('current-time').textContent = new Date().toLocaleString();
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.innerHTML = '<p>Testing backend at http://localhost:8000...</p>';
+
+            try {
+                const response = await fetch('http://localhost:8000/');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <div style="color: green;">
+                        <strong>✓ Backend is running!</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div style="color: red;">
+                        <strong>✗ Backend connection failed!</strong>
+                        <p>Error: ${error.message}</p>
+                        <p>Make sure to start the backend: <code>python backend/app.py</code></p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testFiles() {
+            const resultDiv = document.getElementById('file-result');
+            const files = ['index.html', 'chat.html', 'styles.css', 'app.js'];
+
+            resultDiv.innerHTML = '<p>Testing file access...</p>';
+            let results = '';
+
+            for (const file of files) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    if (response.ok) {
+                        results += `<div style="color: green;">✓ ${file} - accessible</div>`;
+                    } else {
+                        results += `<div style="color: red;">✗ ${file} - ${response.status} ${response.statusText}</div>`;
+                    }
+                } catch (error) {
+                    results += `<div style="color: red;">✗ ${file} - ${error.message}</div>`;
+                }
+            }
+
+            resultDiv.innerHTML = results;
+        }
+    </script>
+</body>
+</html>
