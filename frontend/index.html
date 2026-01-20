@@ -80,8 +80,11 @@
 
             try {
                 // Use relative URL or auto-detect API base
-                const API_BASE = window.location.hostname.includes('replit') || window.location.hostname.includes('repl.co')
-                    ? `${window.location.protocol}//${window.location.hostname}:8000`
+                const hostname = window.location.hostname;
+                const API_BASE = (hostname.includes('replit.app') || 
+                                  hostname.includes('repl.co') || 
+                                  hostname.includes('replit.dev'))
+                    ? `${window.location.protocol}//${hostname.replace(':3000', '')}:8000`
                     : 'http://localhost:8000';
                 
                 const response = await fetch(`${API_BASE}/trainings`);
@@ -167,8 +170,11 @@
 
             try {
                 // Use relative URL or auto-detect API base
-                const API_BASE = window.location.hostname.includes('replit') || window.location.hostname.includes('repl.co')
-                    ? `${window.location.protocol}//${window.location.hostname}:8000`
+                const hostname = window.location.hostname;
+                const API_BASE = (hostname.includes('replit.app') || 
+                                  hostname.includes('repl.co') || 
+                                  hostname.includes('replit.dev'))
+                    ? `${window.location.protocol}//${hostname.replace(':3000', '')}:8000`
                     : 'http://localhost:8000';
                 
                 const response = await fetch(`${API_BASE}/evaluate`, {
