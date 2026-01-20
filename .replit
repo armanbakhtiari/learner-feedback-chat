@@ -1,8 +1,9 @@
+modules = ["python-3.12", "web", "nodejs-20", "nix"]
 [run]
 command = "python3 run.py"
 
 [nix]
-channel = "stable-23_11"
+channel = "stable-25_05"
 
 [deployment]
 run = ["python3", "run.py"]
