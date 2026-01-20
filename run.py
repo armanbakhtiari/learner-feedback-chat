@@ -103,36 +103,49 @@ def main():
         print("Please run this script from the Implementation directory")
         sys.exit(1)
 
+    # Check if running on Replit deployment (REPL_DEPLOYMENT env var)
+    is_deployment = os.getenv('REPL_DEPLOYMENT') == 'true'
+    is_replit = os.getenv('REPL_ID') is not None
+    
     # Start backend
     backend = start_backend()
     if not backend:
         sys.exit(1)
 
-    # Start frontend
-    frontend = start_frontend()
-    if not frontend:
-        backend.terminate()
-        sys.exit(1)
+    # Start frontend (only if not in deployment mode)
+    # In deployment, FastAPI serves the frontend
+    frontend = None
+    if not is_deployment:
+        frontend = start_frontend()
+        if not frontend:
+            backend.terminate()
+            sys.exit(1)
 
     # Open browser
     print("\n" + "="*70)
     print("✨ APPLICATION IS READY!")
     print("="*70)
     
-    # Check if running on Replit
-    is_replit = os.getenv('REPL_ID') is not None
-    
     if is_replit:
         # Get Replit URL
-        repl_slug = os.getenv('REPL_SLUG', 'unknown')
-        repl_owner = os.getenv('REPL_OWNER', 'unknown')
-        print("\n📍 Your Replit App:")
-        print(f"   • URL: https://{repl_slug}.{repl_owner}.repl.co")
-        print(f"   • Backend API: https://{repl_slug}.{repl_owner}.repl.co:8000")
-        print("\n💡 Replit Tips:")
-        print("   • The webview will open automatically")
-        print("   • Share the URL above with others")
-        print("   • Configure Secrets for API keys (not .env)")
+        repl_slug = os.getenv('REPL_SLUG', 'your-repl')
+        repl_owner = os.getenv('REPL_OWNER', 'username')
+        
+        if is_deployment:
+            print("\n📍 Your Deployed Replit App:")
+            print(f"   • URL: https://{repl_slug}.{repl_owner}.repl.app")
+            print("   • Backend API is on the same URL (single port)")
+            print("\n💡 Deployment Mode:")
+            print("   • FastAPI serves both frontend and API")
+            print("   • Share the URL above with others")
+            print("   • App is always-on (if you deployed)")
+        else:
+            print("\n📍 Your Replit App (Preview):")
+            print(f"   • Frontend: https://{repl_slug}.{repl_owner}.repl.co:3000")
+            print(f"   • Backend API: https://{repl_slug}.{repl_owner}.repl.co:8000")
+            print("\n💡 Replit Preview Tips:")
+            print("   • The webview will open automatically")
+            print("   • Configure Secrets for API keys (not .env)")
     else:
         print("\n📍 URLs:")
         print("   • Main App:     http://localhost:3000")
@@ -167,13 +180,14 @@ def main():
             if backend.poll() is not None:
                 print("\n❌ Backend stopped unexpectedly")
                 break
-            if frontend.poll() is not None:
+            if frontend and frontend.poll() is not None:
                 print("\n❌ Frontend stopped unexpectedly")
                 break
     except KeyboardInterrupt:
         print("\n\n🛑 Stopping servers...")
         backend.terminate()
-        frontend.terminate()
+        if frontend:
+            frontend.terminate()
         print("✅ Servers stopped")
         print("👋 Goodbye!\n")
 
