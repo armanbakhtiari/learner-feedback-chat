@@ -2,7 +2,7 @@
 Pydantic models for structured outputs
 """
 
-from typing import Dict, Literal, Optional
+from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
