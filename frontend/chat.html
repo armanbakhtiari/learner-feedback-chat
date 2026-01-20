@@ -219,11 +219,12 @@
 
             // Add visualization AFTER the message (outside message-content)
             if (hasCode && codeOutput) {
+                console.log('🖼️ Has visualization to display!', { hasCode, codeOutput: !!codeOutput });
                 try {
                     console.log('🎨 Processing visualization:', {
                         codeOutput_type: typeof codeOutput,
                         codeOutput_length: codeOutput ? codeOutput.length : 0,
-                        codeOutput_preview: codeOutput ? codeOutput.substring(0, 100) : 'null'
+                        codeOutput_preview: codeOutput ? codeOutput.substring(0, 200) : 'null'
                     });
 
                     const output = typeof codeOutput === 'string' ? JSON.parse(codeOutput) : codeOutput;
@@ -240,12 +241,21 @@
                     let vizContent = '';
 
                     if (output.image_base64) {
+                        // Ensure base64 string is clean (no whitespace)
+                        const cleanBase64 = output.image_base64.trim();
+                        
                         vizContent += `
                             <div class="code-output">
-                                <img src="data:image/png;base64,${output.image_base64}" alt="Visualization" />
+                                <img src="data:image/png;base64,${cleanBase64}" 
+                                     alt="Visualization" 
+                                     style="max-width: 100%; height: auto;" 
+                                     onerror="console.error('❌ Image failed to load')" 
+                                     onload="console.log('✅ Image loaded successfully')" />
                             </div>
                         `;
-                        console.log('✅ Image added to DOM');
+                        console.log('✅ Image added to DOM, base64 length:', cleanBase64.length);
+                    } else {
+                        console.warn('⚠️ No image_base64 in output');
                     }
                     if (output.summary_data) {
                         vizContent += `
