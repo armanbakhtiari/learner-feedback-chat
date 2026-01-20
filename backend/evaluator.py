@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from trainings_2_experts import training_1, training_2, training_3
 from prompts import EVALUATOR_PROMPT
-from main import TrainingEvaluation
+from models import TrainingEvaluation
 
 load_dotenv()
 
