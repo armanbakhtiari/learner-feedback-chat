@@ -42,7 +42,7 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
   - ONLY if web_search_enabled is True
 
 - **get_training_content**: Call when user asks about specific training scenarios or what experts said
-  - Keywords: "scénario", "situation", "module", "cas clinique", "experts disent"
+  - Keywords: "scénario", "situation", "module", "experts disent"
 
 # Decision Guidelines:
 
