@@ -63,6 +63,41 @@
         let sessionId = null;
         let isFirstMessage = true;
 
+        // Get API URL - either from app.js or detect it inline
+        function getApiUrl() {
+            // Try to get from app.js first
+            if (window.API_BASE_URL) {
+                return window.API_BASE_URL;
+            }
+            
+            // Fallback: detect inline (same logic as app.js)
+            console.log('⚠️ API_BASE_URL not found, detecting inline...');
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            
+            // Local development
+            if (hostname === 'localhost' && port === '3000') {
+                return 'http://localhost:8000';
+            }
+            
+            // Replit - always use port 8000
+            const isReplit = hostname.includes('replit.app') || 
+                             hostname.includes('repl.co') || 
+                             hostname.includes('replit.dev') ||
+                             hostname.includes('riker.replit');
+            
+            if (isReplit && port && port !== '8000' && port !== '80' && port !== '443') {
+                return `${protocol}//${hostname}:8000`;
+            }
+            
+            return window.location.origin;
+        }
+
+        // Use getApiUrl() for all API calls
+        const API_URL = getApiUrl();
+        console.log('🔗 Chat using API URL:', API_URL);
+
         document.addEventListener('DOMContentLoaded', () => {
             sessionId = localStorage.getItem('session_id');
 
@@ -93,7 +128,7 @@
 
         async function sendInitialMessage() {
             // Send a message to trigger initial feedback
-            console.log('API_BASE_URL:', API_BASE_URL);
+            console.log('API_URL:', API_URL);
             console.log('Session ID:', sessionId);
             await sendChatMessage('Bonjour! Je voudrais voir ma rétroaction.');
             enableInput();
@@ -138,8 +173,8 @@
             scrollToBottom();
 
             try {
-                // Use API_BASE_URL from app.js (auto-detects Replit vs local)
-                const response = await fetch(`${API_BASE_URL}/chat`, {
+                // Use API_URL (auto-detects Replit vs local)
+                const response = await fetch(`${API_URL}/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -303,8 +338,8 @@
             }
 
             try {
-                // Use API_BASE_URL from app.js (auto-detects Replit vs local)
-                await fetch(`${API_BASE_URL}/chat/reset/${sessionId}`, {
+                // Use API_URL (auto-detects Replit vs local)
+                await fetch(`${API_URL}/chat/reset/${sessionId}`, {
                     method: 'POST'
                 });
 

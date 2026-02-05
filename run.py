@@ -103,7 +103,7 @@ def main():
         print("Please run this script from the Implementation directory")
         sys.exit(1)
 
-    # Check if running on Replit deployment (REPL_DEPLOYMENT env var)
+    # Check if running on Replit (any mode)
     is_deployment = os.getenv('REPL_DEPLOYMENT') == 'true'
     is_replit = os.getenv('REPL_ID') is not None
     
@@ -112,10 +112,10 @@ def main():
     if not backend:
         sys.exit(1)
 
-    # Start frontend (only if not in deployment mode)
-    # In deployment, FastAPI serves the frontend
+    # Start frontend (only if NOT on Replit)
+    # On Replit, FastAPI serves the frontend to avoid port complexity
     frontend = None
-    if not is_deployment:
+    if not is_replit:
         frontend = start_frontend()
         if not frontend:
             backend.terminate()
@@ -131,21 +131,13 @@ def main():
         repl_slug = os.getenv('REPL_SLUG', 'your-repl')
         repl_owner = os.getenv('REPL_OWNER', 'username')
         
-        if is_deployment:
-            print("\n📍 Your Deployed Replit App:")
-            print(f"   • URL: https://{repl_slug}.{repl_owner}.repl.app")
-            print("   • Backend API is on the same URL (single port)")
-            print("\n💡 Deployment Mode:")
-            print("   • FastAPI serves both frontend and API")
-            print("   • Share the URL above with others")
-            print("   • App is always-on (if you deployed)")
-        else:
-            print("\n📍 Your Replit App (Preview):")
-            print(f"   • Frontend: https://{repl_slug}.{repl_owner}.repl.co:3000")
-            print(f"   • Backend API: https://{repl_slug}.{repl_owner}.repl.co:8000")
-            print("\n💡 Replit Preview Tips:")
-            print("   • The webview will open automatically")
-            print("   • Configure Secrets for API keys (not .env)")
+        print("\n📍 Your Replit App:")
+        print("   • Open the Webview on port 8000")
+        print("   • FastAPI serves both frontend and API on the same port")
+        print("\n💡 Replit Tips:")
+        print("   • Configure the Webview to use port 8000")
+        print("   • Configure Secrets for API keys (not .env)")
+        print("   • If using two ports, switch the webview to port 8000")
     else:
         print("\n📍 URLs:")
         print("   • Main App:     http://localhost:3000")

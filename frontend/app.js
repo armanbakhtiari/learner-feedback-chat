@@ -1,50 +1,59 @@
 // Shared JavaScript utilities for the application
 
 // Auto-detect API base URL based on environment
-const API_BASE_URL = (() => {
+function detectApiBaseUrl() {
     const hostname = window.location.hostname;
     const port = window.location.port;
+    const protocol = window.location.protocol;
+    
+    console.log('🔍 API URL Detection:');
+    console.log('   Hostname:', hostname);
+    console.log('   Port:', port);
+    console.log('   Protocol:', protocol);
+    console.log('   Full URL:', window.location.href);
     
     // If we're on localhost with port 3000, backend is on 8000
     if (hostname === 'localhost' && port === '3000') {
+        const backendUrl = 'http://localhost:8000';
         console.log('🏠 Local development mode (separate ports)');
-        return 'http://localhost:8000';
+        console.log('   Backend URL:', backendUrl);
+        return backendUrl;
     }
     
     // Check if running on Replit (any Replit domain)
-    if (hostname.includes('replit.app') || 
-        hostname.includes('repl.co') || 
-        hostname.includes('replit.dev')) {
-        
+    const isReplit = hostname.includes('replit.app') || 
+                     hostname.includes('repl.co') || 
+                     hostname.includes('replit.dev') ||
+                     hostname.includes('riker.replit');
+    
+    if (isReplit) {
         console.log('🔧 Detected Replit environment');
-        console.log('   Frontend URL:', window.location.href);
-        console.log('   Hostname:', hostname);
-        console.log('   Port:', port);
         
-        // Check if we're on port 3000 (preview mode) or deployed
-        if (port === '3000') {
-            // Preview mode: backend on port 8000
-            const protocol = window.location.protocol;
-            // Replit URLs format: https://hostname:port
-            // We need to change :3000 to :8000
-            const baseHost = hostname; // hostname doesn't include port
-            const backendUrl = `${protocol}//${baseHost}:8000`;
-            console.log('   Mode: Preview (two ports)');
+        // Always use port 8000 for Replit - FastAPI serves everything
+        // This works for both preview and deployment
+        if (port && port !== '8000' && port !== '80' && port !== '443' && port !== '') {
+            // We're on a different port, redirect API calls to 8000
+            const backendUrl = `${protocol}//${hostname}:8000`;
+            console.log('   Mode: Preview - redirecting to backend port');
             console.log('   Backend URL:', backendUrl);
             return backendUrl;
         } else {
-            // Deployed mode: same origin (backend serves frontend)
+            // Same origin (deployed or already on correct port)
             const backendUrl = window.location.origin;
-            console.log('   Mode: Deployed (single port)');
+            console.log('   Mode: Same origin');
             console.log('   Backend URL:', backendUrl);
             return backendUrl;
         }
     }
     
     // Fallback: use same origin (works for most deployment scenarios)
+    const backendUrl = window.location.origin;
     console.log('🌐 Using same origin for API');
-    return window.location.origin;
-})();
+    console.log('   Backend URL:', backendUrl);
+    return backendUrl;
+}
+
+const API_BASE_URL = detectApiBaseUrl();
 
 // API Helper Functions
 async function apiCall(endpoint, options = {}) {

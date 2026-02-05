@@ -69,6 +69,38 @@
 
     <script src="app.js"></script>
     <script>
+        // Get API URL - either from app.js or detect it inline
+        function getApiUrl() {
+            // Try to get from app.js first
+            if (window.API_BASE_URL) {
+                console.log('✅ Using API_BASE_URL from app.js:', window.API_BASE_URL);
+                return window.API_BASE_URL;
+            }
+            
+            // Fallback: detect inline (same logic as app.js)
+            console.log('⚠️ API_BASE_URL not found, detecting inline...');
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            
+            // Local development
+            if (hostname === 'localhost' && port === '3000') {
+                return 'http://localhost:8000';
+            }
+            
+            // Replit - always use port 8000
+            const isReplit = hostname.includes('replit.app') || 
+                             hostname.includes('repl.co') || 
+                             hostname.includes('replit.dev') ||
+                             hostname.includes('riker.replit');
+            
+            if (isReplit && port && port !== '8000' && port !== '80' && port !== '443') {
+                return `${protocol}//${hostname}:8000`;
+            }
+            
+            return window.location.origin;
+        }
+
         // Load trainings on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadTrainings();
@@ -77,16 +109,22 @@
 
         async function loadTrainings() {
             const container = document.getElementById('trainings-container');
+            const apiUrl = getApiUrl();
 
             try {
-                // Use API_BASE_URL from app.js (loaded before this script)
-                const apiUrl = window.API_BASE_URL || API_BASE_URL;
-                console.log('🔍 window.API_BASE_URL:', window.API_BASE_URL);
-                console.log('🔍 API_BASE_URL:', typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'undefined');
-                console.log('🔍 Using API URL:', apiUrl);
-                console.log('🔍 Loading trainings from:', `${apiUrl}/trainings`);
+                console.log('📡 Loading trainings from:', `${apiUrl}/trainings`);
                 
                 const response = await fetch(`${apiUrl}/trainings`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Expected JSON but got ${contentType}. The API endpoint may not be reachable.`);
+                }
+                
                 const data = await response.json();
                 const trainings = data.trainings;
 
@@ -96,9 +134,21 @@
                     const card = createTrainingCard(training, index + 1);
                     container.appendChild(card);
                 });
+                
+                console.log('✅ Trainings loaded successfully');
             } catch (error) {
-                console.error('Error loading trainings:', error);
-                container.innerHTML = '<div class="error">Erreur lors du chargement des modules</div>';
+                console.error('❌ Error loading trainings:', error);
+                container.innerHTML = `
+                    <div class="error">
+                        <p>Erreur lors du chargement des modules</p>
+                        <p style="font-size: 0.9em; color: #666;">
+                            Vérifiez que le serveur backend est en cours d'exécution sur le port 8000.
+                        </p>
+                        <p style="font-size: 0.8em; color: #888;">
+                            API URL: ${apiUrl}<br>
+                            Erreur: ${error.message}
+                        </p>
+                    </div>`;
             }
         }
 
@@ -161,6 +211,7 @@
         async function startEvaluation() {
             const btn = document.getElementById('start-evaluation-btn');
             const status = document.getElementById('evaluation-status');
+            const apiUrl = getApiUrl();
 
             btn.disabled = true;
             btn.textContent = 'Évaluation en cours...';
@@ -168,13 +219,20 @@
             status.className = 'status-message info';
 
             try {
-                // Use API_BASE_URL from app.js (loaded before this script)
-                const apiUrl = window.API_BASE_URL || API_BASE_URL;
-                console.log('🔍 Starting evaluation at:', `${apiUrl}/evaluate`);
+                console.log('🚀 Starting evaluation at:', `${apiUrl}/evaluate`);
                 
                 const response = await fetch(`${apiUrl}/evaluate`, {
                     method: 'POST'
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Expected JSON but got ${contentType}. The API endpoint may not be reachable.`);
+                }
 
                 const data = await response.json();
 
@@ -189,8 +247,12 @@
                     }, 1500);
                 }
             } catch (error) {
-                console.error('Error during evaluation:', error);
-                status.textContent = '❌ Erreur lors de l\'évaluation';
+                console.error('❌ Error during evaluation:', error);
+                status.innerHTML = `
+                    ❌ Erreur lors de l'évaluation<br>
+                    <span style="font-size: 0.9em;">API URL: ${apiUrl}</span><br>
+                    <span style="font-size: 0.8em;">${error.message}</span>
+                `;
                 status.className = 'status-message error';
                 btn.disabled = false;
                 btn.textContent = 'Lancer l\'évaluation';
