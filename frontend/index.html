@@ -79,12 +79,10 @@
             const container = document.getElementById('trainings-container');
 
             try {
-                // In deployment, frontend is served by backend, so use relative URL
-                // In preview/local, use API_BASE_URL from app.js
-                const API_BASE = window.API_BASE_URL || window.location.origin;
-                console.log('🔍 Loading trainings from:', `${API_BASE}/trainings`);
+                // Use API_BASE_URL from app.js (loaded before this script)
+                console.log('🔍 Loading trainings from:', `${API_BASE_URL}/trainings`);
                 
-                const response = await fetch(`${API_BASE}/trainings`);
+                const response = await fetch(`${API_BASE_URL}/trainings`);
                 const data = await response.json();
                 const trainings = data.trainings;
 
@@ -166,11 +164,10 @@
             status.className = 'status-message info';
 
             try {
-                // In deployment, frontend is served by backend, so use relative URL
-                const API_BASE = window.API_BASE_URL || window.location.origin;
-                console.log('🔍 Starting evaluation at:', `${API_BASE}/evaluate`);
+                // Use API_BASE_URL from app.js (loaded before this script)
+                console.log('🔍 Starting evaluation at:', `${API_BASE_URL}/evaluate`);
                 
-                const response = await fetch(`${API_BASE}/evaluate`, {
+                const response = await fetch(`${API_BASE_URL}/evaluate`, {
                     method: 'POST'
                 });
 

@@ -18,12 +18,17 @@ const API_BASE_URL = (() => {
         
         console.log('🔧 Detected Replit environment');
         console.log('   Frontend URL:', window.location.href);
+        console.log('   Hostname:', hostname);
+        console.log('   Port:', port);
         
         // Check if we're on port 3000 (preview mode) or deployed
         if (port === '3000') {
             // Preview mode: backend on port 8000
             const protocol = window.location.protocol;
-            const backendUrl = `${protocol}//${hostname.replace(':3000', '')}:8000`;
+            // Replit URLs format: https://hostname:port
+            // We need to change :3000 to :8000
+            const baseHost = hostname; // hostname doesn't include port
+            const backendUrl = `${protocol}//${baseHost}:8000`;
             console.log('   Mode: Preview (two ports)');
             console.log('   Backend URL:', backendUrl);
             return backendUrl;
