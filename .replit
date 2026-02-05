@@ -4,6 +4,7 @@ command = "python3 run.py"
 
 [nix]
 channel = "stable-25_05"
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libxcrypt", "mupdf", "openjpeg", "pkg-config", "qhull", "swig", "tcl", "tk", "xcbuild"]
 
 [deployment]
 run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 backend/app.py"]
@@ -11,7 +12,6 @@ run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 backend/app.py"]
 [[ports]]
 localPort = 3000
 externalPort = 3000
-exposeLocalhost = true
 
 [[ports]]
 localPort = 8000
