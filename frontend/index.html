@@ -80,9 +80,13 @@
 
             try {
                 // Use API_BASE_URL from app.js (loaded before this script)
-                console.log('🔍 Loading trainings from:', `${API_BASE_URL}/trainings`);
+                const apiUrl = window.API_BASE_URL || API_BASE_URL;
+                console.log('🔍 window.API_BASE_URL:', window.API_BASE_URL);
+                console.log('🔍 API_BASE_URL:', typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'undefined');
+                console.log('🔍 Using API URL:', apiUrl);
+                console.log('🔍 Loading trainings from:', `${apiUrl}/trainings`);
                 
-                const response = await fetch(`${API_BASE_URL}/trainings`);
+                const response = await fetch(`${apiUrl}/trainings`);
                 const data = await response.json();
                 const trainings = data.trainings;
 
@@ -165,9 +169,10 @@
 
             try {
                 // Use API_BASE_URL from app.js (loaded before this script)
-                console.log('🔍 Starting evaluation at:', `${API_BASE_URL}/evaluate`);
+                const apiUrl = window.API_BASE_URL || API_BASE_URL;
+                console.log('🔍 Starting evaluation at:', `${apiUrl}/evaluate`);
                 
-                const response = await fetch(`${API_BASE_URL}/evaluate`, {
+                const response = await fetch(`${apiUrl}/evaluate`, {
                     method: 'POST'
                 });
 

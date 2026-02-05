@@ -1,0 +1,18 @@
+modules = ["python-3.12", "web", "nodejs-20", "nix"]
+[run]
+command = "python3 run.py"
+
+[nix]
+channel = "stable-25_05"
+
+[deployment]
+run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 backend/app.py"]
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
