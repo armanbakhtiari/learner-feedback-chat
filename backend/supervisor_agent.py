@@ -17,7 +17,8 @@ from backend.supervisor_tools import (
     initialize_tools,
     generate_visualization,
     search_web,
-    get_training_content
+    get_training_content,
+    search_knowledge_base
 )
 
 
@@ -38,27 +39,46 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
   - ONLY call when the user explicitly wants a visual/tabular OUTPUT, not just an analysis
 
 - **search_web**: Call when user asks about latest/recent/current information
-  - Keywords: "dernière", "récent", "actuel", "guideline", "recommandation", "étude"
+  - Keywords: "dernière", "récent", "actuel", "nouveau"
   - ONLY if web_search_enabled is True
 
 - **get_training_content**: Call when user asks about specific training scenarios or what experts said
-  - Keywords: "scénario", "situation", "module", "experts disent"
+  - Keywords: "scénario", "situation", "module", "experts disent", "formation"
+
+- **search_knowledge_base**: Call for SPECIALIZED domain questions that require reference material
+  - Use this for questions about: specific concepts, criteria, classifications, best practices, 
+    protocols, guidelines, procedures, methodologies, recommendations
+  - Keywords: "critères", "diagnostic", "traitement", "guideline", "recommandation", 
+    "classification", "protocole", "procédure", "méthodologie"
+  - Formulate a clear, domain-specific query when calling this tool
+  - DO NOT use for questions about the user's specific performance or training results
+  - This tool retrieves information from reference documents in the knowledge base
 
 # Decision Guidelines:
 
-- **BE CONSERVATIVE**: Most questions can be answered by the chat agent without tools
+- **BE CONSERVATIVE**: Most questions about the user's own performance can be answered without tools
 - You can call MULTIPLE tools if needed, but ONLY if truly necessary
 - If web search is disabled (web_search_enabled=false), do NOT call search_web
-- If the question is asking for ANALYSIS or EXPLANATION, do NOT call visualization tool
+- If the question is asking for ANALYSIS or EXPLANATION of user's performance, do NOT call visualization tool
 - If the question is asking for a VISUAL DISPLAY explicitly, then call visualization tool
+- For specialized domain questions (not about user's performance), use search_knowledge_base
 - Default to NO TOOLS unless you're certain a tool is needed
+
+# Tool Selection Priority:
+
+1. **User performance questions** → No tool needed (chat agent has evaluation data)
+2. **Visualization requests** → generate_visualization
+3. **Training scenario questions** → get_training_content
+4. **Specialized domain questions** → search_knowledge_base
+5. **Latest/current information** → search_web (if enabled)
 
 # Important:
 
 - You are NOT the chat agent - you only decide which tools to call
 - After calling tools (or deciding no tools are needed), the results will be passed to the chat agent
-- The chat agent will generate the final French response to the user
+- The chat agent will generate the final response to the user
 - The chat agent has access to ALL evaluation data and can answer most questions without tools
+- When using search_knowledge_base, formulate the query in domain-specific terms for better retrieval
 """
 
 
@@ -222,5 +242,26 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
             if content_result.get("status") == "success":
                 module_name = content_result.get("module_name", "Unknown module")
                 summary_parts.append(f"Training content retrieved: {module_name}. Use it to answer the user's question, referencing specific scenarios and expert opinions.")
+
+        # RAG knowledge base summary
+        if "search_knowledge_base" in tools_called:
+            rag_result = tool_results.get("search_knowledge_base", {})
+            if rag_result.get("status") == "success":
+                sources = rag_result.get("sources", [])
+                found_relevant = rag_result.get("found_relevant", False)
+                sources_str = ", ".join(sources[:3]) if sources else "reference documents"
+                
+                if found_relevant:
+                    summary_parts.append(
+                        f"Knowledge base search completed. Relevant information found from: {sources_str}. "
+                        f"Use this information to provide an evidence-based answer. "
+                        f"Cite the source documents when referencing specific information."
+                    )
+                else:
+                    summary_parts.append(
+                        f"Knowledge base search completed. Limited relevant information found from: {sources_str}. "
+                        f"Use the available information but note that it may not fully address the query. "
+                        f"Consider suggesting the user consult additional resources if needed."
+                    )
 
         return "\n".join(summary_parts)

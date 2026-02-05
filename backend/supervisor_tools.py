@@ -12,19 +12,23 @@ import json
 
 from backend.code_tool import CodeGenerationTool
 from backend.web_search_tool import WebSearchTool
+from backend.rag_tool import get_rag_module, AgenticRAGModule
 from trainings_2_experts import training_1, training_2, training_3
 
 
 # Global instances (will be initialized by supervisor)
 _code_tool_instance = None
 _web_search_tool_instance = None
+_rag_module_instance = None
 
 
 def initialize_tools(evaluations: Dict[str, Any]):
     """Initialize tool instances with evaluation data"""
-    global _code_tool_instance, _web_search_tool_instance
+    global _code_tool_instance, _web_search_tool_instance, _rag_module_instance
     _code_tool_instance = CodeGenerationTool(evaluations)
     _web_search_tool_instance = WebSearchTool()
+    # Initialize RAG module (lazy loading - will index documents on first use)
+    _rag_module_instance = get_rag_module()
 
 
 @tool
@@ -210,5 +214,85 @@ def get_training_content(module_number: int, section: str = "all") -> str:
         return json.dumps({"status": "error", "error": str(e)})
 
 
+@tool
+def search_knowledge_base(query: str, user_message: str = "") -> str:
+    """
+    Search the knowledge base using agentic RAG for specialized domain questions.
+    
+    This tool uses an intelligent retrieval system that:
+    1. Retrieves the top 10 most relevant chunks from reference documents
+    2. Uses a Ranking Agent to evaluate if the chunks answer the query
+    3. If not relevant, rewrites the query and retries (up to 3 times)
+    4. Returns the best matching content from the knowledge base
+    
+    Use this tool when the user asks:
+    - Specialized domain questions that require reference material
+    - Questions about specific concepts, criteria, or classifications
+    - Questions about best practices, protocols, or guidelines
+    - Questions that require evidence-based knowledge beyond the training content
+    - Questions about procedures, methodologies, or recommendations
+    
+    DO NOT use this tool when:
+    - User asks about their specific training performance/evaluation (use evaluation data)
+    - User asks for visualizations or charts (use generate_visualization)
+    - User asks about what experts said in training scenarios (use get_training_content)
+    - User asks about current/latest information (use search_web)
+    
+    Args:
+        query: A well-formulated search query for document retrieval.
+               Should focus on domain-specific terminology.
+        user_message: The original user message for context (helps with query rewriting)
+    
+    Returns:
+        JSON string containing:
+        - "status": "success" or "error"
+        - "chunks": List of relevant document chunks with source citations
+        - "sources": List of source document names
+        - "formatted_context": Pre-formatted context for the chat agent
+        - "attempts": Number of retrieval attempts made
+        - "found_relevant": Whether relevant content was found
+    
+    Example:
+        User: "What are the diagnostic criteria for this condition?"
+        -> Call with query="diagnostic criteria classification guidelines"
+        -> Returns relevant chunks from reference documents with citations
+    """
+    if _rag_module_instance is None:
+        return json.dumps({"status": "error", "error": "RAG module not initialized"})
+    
+    try:
+        # If no user message provided, use query as context
+        if not user_message:
+            user_message = query
+        
+        # Perform agentic RAG search
+        result = _rag_module_instance.search(query, user_message)
+        
+        if result.get("status") == "success":
+            # Format chunks for context
+            formatted_context = _rag_module_instance.format_chunks_for_context(
+                result.get("chunks", [])
+            )
+            
+            return json.dumps({
+                "status": "success",
+                "chunks": result.get("chunks", []),
+                "sources": result.get("sources", []),
+                "formatted_context": formatted_context,
+                "query_history": result.get("query_history", []),
+                "attempts": result.get("attempts", 1),
+                "found_relevant": result.get("found_relevant", False)
+            }, ensure_ascii=False)
+        else:
+            return json.dumps({
+                "status": "error",
+                "error": result.get("error", "Unknown error"),
+                "query_history": result.get("query_history", [])
+            }, ensure_ascii=False)
+            
+    except Exception as e:
+        return json.dumps({"status": "error", "error": str(e)})
+
+
 # List of all tools (for easy access)
-ALL_TOOLS = [generate_visualization, search_web, get_training_content]
+ALL_TOOLS = [generate_visualization, search_web, get_training_content, search_knowledge_base]

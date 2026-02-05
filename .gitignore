@@ -54,3 +54,6 @@ Expert*_Evaluation_Report.docx
 
 # Claude settings
 .claude/
+
+# Vector store (persists locally, generated on first run)
+.chroma_db/

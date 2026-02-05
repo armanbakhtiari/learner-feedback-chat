@@ -105,6 +105,9 @@ class ChatState(TypedDict):
     visualization_output: Optional[str]
     web_search_citations: Optional[List[Dict[str, str]]]
     training_content: Optional[str]
+    # RAG results
+    rag_context: Optional[str]
+    rag_sources: Optional[List[str]]
     # Next step
     next_step: Literal["supervisor", "respond", "end"]
 
@@ -198,6 +201,19 @@ class ChatAgent:
                 else:
                     print(f"❌ Training content failed: {content_result.get('error')}")
 
+            # Process RAG knowledge base results
+            if "search_knowledge_base" in state["tools_called"]:
+                rag_result = tool_results.get("search_knowledge_base", {})
+                if rag_result.get("status") == "success":
+                    state["rag_context"] = rag_result.get("formatted_context")
+                    state["rag_sources"] = rag_result.get("sources", [])
+                    found_relevant = rag_result.get("found_relevant", False)
+                    attempts = rag_result.get("attempts", 1)
+                    print(f"✅ Knowledge base search completed: {len(state['rag_sources'])} sources, "
+                          f"relevant={found_relevant}, attempts={attempts}")
+                else:
+                    print(f"❌ Knowledge base search failed: {rag_result.get('error')}")
+
             state["next_step"] = "respond"
 
         except Exception as e:
@@ -254,6 +270,15 @@ Objectifs d'apprentissage:
                 additional_context.append("\n\n=== TRAINING MODULE CONTENT ===")
                 additional_context.append(f"Module: {content_result.get('module_name', '')}")
                 additional_context.append(f"Content:\n{content_result.get('content', '')}")
+
+        # Add RAG knowledge base context if available
+        if "search_knowledge_base" in state.get("tools_called", []):
+            rag_context = state.get("rag_context")
+            rag_sources = state.get("rag_sources", [])
+            if rag_context:
+                additional_context.append("\n\n=== KNOWLEDGE BASE (from reference documents) ===")
+                additional_context.append(f"Sources: {', '.join(rag_sources)}")
+                additional_context.append(f"\n{rag_context}")
 
         # Combine all context
         if additional_context:
@@ -357,6 +382,8 @@ Objectifs d'apprentissage:
             "visualization_output": None,
             "web_search_citations": None,
             "training_content": None,
+            "rag_context": None,
+            "rag_sources": None,
             "next_step": "supervisor"
         }
 
