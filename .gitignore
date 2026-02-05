@@ -57,7 +57,3 @@ Expert*_Evaluation_Report.docx
 
 # Vector store (persists locally, generated on first run)
 .chroma_db/
-
-# Replit configuration (auto-generated, environment-specific)
-.replit
-replit.nix
