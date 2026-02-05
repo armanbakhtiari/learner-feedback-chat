@@ -19,6 +19,7 @@ import hashlib
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
+from pydantic import BaseModel, Field
 from langchain_openai import OpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -27,6 +28,27 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_core.documents import Document
 import chromadb
 from chromadb.config import Settings
+
+
+# =============================================================================
+# Pydantic Models for Structured Agent Outputs
+# =============================================================================
+
+class RankingResult(BaseModel):
+    """Structured output for the Ranking Agent."""
+    is_relevant: bool = Field(
+        description="Whether the retrieved chunks contain relevant information to answer the query"
+    )
+    reasoning: str = Field(
+        description="Brief explanation of the relevance decision"
+    )
+
+
+class RewrittenQuery(BaseModel):
+    """Structured output for the Rewrite Agent."""
+    query: str = Field(
+        description="The rewritten search query optimized for better document retrieval"
+    )
 
 # Path to documents folder
 DOCS_PATH = Path(__file__).parent.parent / "docs"
@@ -56,18 +78,22 @@ class AgenticRAGModule:
             openai_api_key=os.getenv("OPENAI_API_KEY")
         )
         
-        # Initialize LLMs for agents
-        self.ranking_llm = ChatAnthropic(
+        # Initialize base LLMs
+        base_ranking_llm = ChatAnthropic(
             model="claude-sonnet-4-5",
             temperature=0.1,
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
         
-        self.rewrite_llm = ChatAnthropic(
+        base_rewrite_llm = ChatAnthropic(
             model="claude-sonnet-4-5",
             temperature=0.3,
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
+        
+        # Create structured output LLMs with Pydantic models
+        self.ranking_llm = base_ranking_llm.with_structured_output(RankingResult)
+        self.rewrite_llm = base_rewrite_llm.with_structured_output(RewrittenQuery)
         
         # Ensure persist directory exists
         CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
@@ -272,6 +298,8 @@ class AgenticRAGModule:
         """
         Ranking Agent: Evaluate if the retrieved chunks contain relevant information.
         
+        Uses structured output with Pydantic model for consistent responses.
+        
         Args:
             query: The original query
             chunks: List of retrieved chunks
@@ -294,18 +322,11 @@ Your task:
 
 You are domain-agnostic and can evaluate documents from any field (education, science, business, healthcare, etc.).
 
-Respond in JSON format:
-{
-    "is_relevant": true/false,
-    "confidence": 0.0-1.0,
-    "reasoning": "Brief explanation of your decision",
-    "key_information_found": ["list", "of", "relevant", "points"] or []
-}
-
 IMPORTANT: 
 - Set is_relevant=true if the chunks contain at least some useful information to address the query
 - Set is_relevant=false ONLY if the chunks are completely unrelated or insufficient
-- Consider that partial information is better than no information"""
+- Consider that partial information is better than no information
+- Provide a brief reasoning explaining your decision"""
 
         messages = [
             SystemMessage(content=ranking_prompt),
@@ -320,21 +341,9 @@ Evaluate whether these chunks can help answer the user's query.
         ]
         
         try:
-            response = self.ranking_llm.invoke(messages)
-            result_text = response.content
-            
-            # Parse JSON response
-            # Try to extract JSON from the response
-            import re
-            json_match = re.search(r'\{[\s\S]*\}', result_text)
-            if json_match:
-                result = json.loads(json_match.group())
-                is_relevant = result.get("is_relevant", False)
-                reasoning = result.get("reasoning", "No reasoning provided")
-                return is_relevant, reasoning
-            else:
-                # Fallback: assume relevant if we got a response
-                return True, "Could not parse ranking response, assuming relevant"
+            # Invoke with structured output - returns RankingResult directly
+            result: RankingResult = self.ranking_llm.invoke(messages)
+            return result.is_relevant, result.reasoning
                 
         except Exception as e:
             print(f"❌ Ranking agent error: {e}")
@@ -344,6 +353,8 @@ Evaluate whether these chunks can help answer the user's query.
     def rewrite_query(self, original_query: str, user_message: str, attempt: int) -> str:
         """
         Rewrite Agent: Improve the query to find more relevant chunks.
+        
+        Uses structured output with Pydantic model for consistent responses.
         
         Args:
             original_query: The query that didn't find relevant results
@@ -364,9 +375,7 @@ Guidelines for rewriting:
 2. Make the query more specific or more general (depending on what might help)
 3. Focus on key concepts and terminology
 4. Consider alternative phrasings
-5. Use terms that would likely appear in professional documents, guidelines, or reference materials
-
-Respond with ONLY the rewritten query, nothing else."""
+5. Use terms that would likely appear in professional documents, guidelines, or reference materials"""
 
         messages = [
             SystemMessage(content=rewrite_prompt),
@@ -375,16 +384,13 @@ Respond with ONLY the rewritten query, nothing else."""
 
 **Current Query (that didn't work):** {original_query}
 
-Provide a better query to search the medical document database:""")
+Provide a better query to search the document database.""")
         ]
         
         try:
-            response = self.rewrite_llm.invoke(messages)
-            new_query = response.content.strip()
-            # Remove quotes if present
-            if new_query.startswith('"') and new_query.endswith('"'):
-                new_query = new_query[1:-1]
-            return new_query
+            # Invoke with structured output - returns RewrittenQuery directly
+            result: RewrittenQuery = self.rewrite_llm.invoke(messages)
+            return result.query
             
         except Exception as e:
             print(f"❌ Rewrite agent error: {e}")
