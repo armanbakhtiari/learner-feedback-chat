@@ -121,7 +121,10 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Make API_BASE_URL globally available
+window.API_BASE_URL = API_BASE_URL;
+
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { apiCall, showNotification };
+    module.exports = { apiCall, showNotification, API_BASE_URL };
 }
