@@ -37,6 +37,13 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
   - DO NOT call for analysis questions like "où", "quand", "comment", "pourquoi", "quel scénario"
   - DO NOT call for questions that can be answered with text like "in which scenario", "where did I", "what was my performance"
   - ONLY call when the user explicitly wants a visual/tabular OUTPUT, not just an analysis
+  
+  **CRITICAL for generate_visualization:**
+  - The `user_request` argument MUST describe what visualization to create
+  - The `data_context` argument MUST contain the ACTUAL DATA to visualize
+  - If the user asks to visualize something from a previous conversation turn, YOU MUST extract that data from the conversation history and pass it in `data_context`
+  - Example: If the assistant previously provided a list of criteria, and user asks "fais un tableau", pass that list in data_context
+  - DO NOT just pass "create a table" - pass the SPECIFIC DATA that should be in the table!
 
 - **search_web**: Call when user asks about latest/recent/current information
   - Keywords: "dernière", "récent", "actuel", "nouveau"
@@ -67,7 +74,7 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
 # Tool Selection Priority:
 
 1. **User performance questions** → No tool needed (chat agent has evaluation data)
-2. **Visualization requests** → generate_visualization
+2. **Visualization requests** → generate_visualization (include data_context!)
 3. **Training scenario questions** → get_training_content
 4. **Specialized domain questions** → search_knowledge_base
 5. **Latest/current information** → search_web (if enabled)
@@ -79,6 +86,7 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
 - The chat agent will generate the final response to the user
 - The chat agent has access to ALL evaluation data and can answer most questions without tools
 - When using search_knowledge_base, formulate the query in domain-specific terms for better retrieval
+- When calling generate_visualization, ALWAYS include the relevant data in `data_context` parameter
 """
 
 
@@ -208,10 +216,12 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
     def _format_conversation_history(self, messages: List[BaseMessage]) -> str:
         """Format conversation history for the supervisor"""
         formatted = []
-        for msg in messages[-5:]:  # Only last 5 messages
+        # Include more messages (last 10) to have enough context for visualization requests
+        for msg in messages[-10:]:
             if isinstance(msg, HumanMessage):
                 formatted.append({"type": "human", "content": msg.content})
             elif isinstance(msg, AIMessage):
+                # Include full content for AI messages as they may contain data to visualize
                 formatted.append({"type": "ai", "content": msg.content})
 
         return json.dumps(formatted, ensure_ascii=False)

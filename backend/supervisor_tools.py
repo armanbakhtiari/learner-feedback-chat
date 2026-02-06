@@ -32,7 +32,7 @@ def initialize_tools(evaluations: Dict[str, Any]):
 
 
 @tool
-def generate_visualization(user_request: str, conversation_history: str) -> str:
+def generate_visualization(user_request: str, conversation_history: str, data_context: str = "") -> str:
     """
     Generate a visualization (chart, table, graph) based on the user's request.
 
@@ -43,8 +43,13 @@ def generate_visualization(user_request: str, conversation_history: str) -> str:
     - Statistics display ("statistique", "diagramme", "courbe", "histogramme")
 
     Args:
-        user_request: The user's message requesting a visualization
+        user_request: The user's message requesting a visualization. 
+                      IMPORTANT: Include the SPECIFIC DATA or CONTEXT that should be visualized!
+                      If the user asks to visualize data from a previous response, include that data here.
         conversation_history: JSON string of recent conversation messages
+        data_context: Optional additional context or data to visualize (e.g., retrieved content, 
+                      previous assistant responses with specific data, tables, or lists that 
+                      should be visualized)
 
     Returns:
         JSON string containing:
@@ -54,8 +59,10 @@ def generate_visualization(user_request: str, conversation_history: str) -> str:
         - "error": Error message (if failed)
 
     Example:
-        User: "Créez un tableau de ma performance"
-        -> Call this tool
+        User: "Créez un tableau basé sur les critères diagnostiques que tu viens de mentionner"
+        -> Call this tool with:
+           user_request="Créer un tableau des critères diagnostiques"
+           data_context="Les critères diagnostiques mentionnés: 1) ..., 2) ..., 3) ..."
         -> Returns: {"status": "success", "output": "{\"image_base64\": \"...\", ...}"}
     """
     if _code_tool_instance is None:
@@ -74,8 +81,18 @@ def generate_visualization(user_request: str, conversation_history: str) -> str:
             elif msg.get("type") == "ai":
                 messages.append(AIMessage(content=msg.get("content", "")))
 
+        # If data_context is provided, add it as a synthetic message for context
+        if data_context:
+            # Add the specific data context as a message so the code tool can see it
+            messages.append(AIMessage(content=f"[Relevant Context for Visualization]:\n{data_context}"))
+        
+        # Combine user request with data context for better understanding
+        full_request = user_request
+        if data_context:
+            full_request = f"{user_request}\n\n[Data to Visualize]:\n{data_context}"
+
         # Generate visualization
-        result = _code_tool_instance.generate_code(user_request, messages)
+        result = _code_tool_instance.generate_code(full_request, messages)
 
         if result:
             # result["output"] is already a dict, not a JSON string

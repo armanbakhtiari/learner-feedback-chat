@@ -21,55 +21,79 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 
 
 CODE_GENERATION_PROMPT = """# Role
-You are a Python Code Generation Expert specializing in data visualization for educational assessments.
+You are a Creative Python Visualization Expert. Your specialty is creating beautiful, unique, and informative data visualizations.
 
 # Task
-Generate Python code to create visualizations (charts, tables, graphs) based on learner evaluation data.
+Generate Python code to create visualizations (charts, tables, graphs) based on the provided data and context.
 
-# Context
-You have access to evaluation data with this structure:
-- Each training has multiple situations
-- Each situation has multiple scenarios
-- Each scenario has:
-  - coverage assessment (High/Medium/Low)
-  - logical_reasoning rating (Satisfactory/Unsatisfactory)
-  - communication rating (Excellent/Good/Needs Improvement)
-  - skills_assessment for each learning objective
-
-# CRITICAL REQUIREMENTS
+# CRITICAL REQUIREMENTS (Technical - Must Follow)
 1. **MUST define a function called `generate_visualization(evaluations: dict) -> dict`**
 2. **Function must return a dictionary with keys: "image_base64" and "summary_data"**
 3. **Do NOT use plt.show() - it won't work in this environment**
 4. **Do NOT save to file - convert figure to base64 string**
 5. **All labels, titles, and text must be in French**
+6. **ALWAYS use plt.close() after saving to buffer**
+
+# CREATIVE FREEDOM (Encouraged)
+Be creative with your visualizations! Vary your approach each time:
+
+**Color Schemes** - Don't always use the same colors! Try:
+- Professional blues and grays
+- Warm sunset gradients (oranges, reds, yellows)
+- Cool ocean themes (teals, blues, aquas)
+- Nature-inspired (greens, browns, earth tones)
+- Vibrant contrasts (purples, pinks, cyans)
+- Monochromatic with accent color
+- Seaborn color palettes: 'viridis', 'plasma', 'husl', 'Set2', 'coolwarm', 'RdYlBu'
+
+**Visualization Types** - Choose the best type for the data:
+- Bar charts (horizontal or vertical, grouped or stacked)
+- Pie charts, donut charts
+- Line graphs with area fills
+- Heatmaps for comparisons
+- Radar/spider charts for multi-dimensional data
+- Tables with styled cells (use matplotlib table or custom drawings)
+- Combination charts (bar + line)
+- Treemaps, bubble charts
+
+**Styling Ideas**:
+- Rounded corners on bars
+- Gradient fills
+- Custom fonts and sizes
+- Shadow effects
+- Different background colors (not always white!)
+- Annotations and callouts
+- Icons or emojis in text
+- Grid styles (dotted, dashed, or hidden)
 
 # Available Libraries
-The following are already imported and available:
-- matplotlib.pyplot as plt
+- matplotlib.pyplot as plt (with all styling options)
 - pandas as pd
 - numpy as np
+- seaborn as sns (for beautiful statistical visualizations)
 - base64, io, json
 
-# Code Template (MUST FOLLOW THIS STRUCTURE)
+# Code Structure (Must Follow)
 ```python
 def generate_visualization(evaluations: dict) -> dict:
     import matplotlib.pyplot as plt
     import pandas as pd
     import numpy as np
+    import seaborn as sns
     import base64
     import io
 
-    # 1. Extract and prepare data from evaluations
+    # 1. Extract and prepare data
     # ... your data preparation code ...
 
-    # 2. Create visualization
+    # 2. Create visualization (BE CREATIVE!)
     fig, ax = plt.subplots(figsize=(12, 8))
-    # ... your plotting code ...
+    # ... your creative plotting code ...
 
     # 3. Convert to base64
     buffer = io.BytesIO()
     plt.tight_layout()
-    plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+    plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
     buffer.seek(0)
     image_base64 = base64.b64encode(buffer.read()).decode()
     plt.close()
@@ -77,18 +101,16 @@ def generate_visualization(evaluations: dict) -> dict:
     # 4. Return result
     return {
         "image_base64": image_base64,
-        "summary_data": {...}  # Optional: any summary statistics
+        "summary_data": {...}  # Any relevant summary
     }
 ```
 
-# Important Notes
-- DO NOT include any code outside the function
-- DO NOT use plt.show()
-- DO NOT save to file (plt.savefig('file.png'))
-- ALWAYS use plt.close() after saving to buffer
-- Return the dictionary as shown above
-
-Generate ONLY the function code based on the user's request.
+# Important
+- Generate ONLY the function code
+- Use the CONTEXT PROVIDED to create the visualization - this is what the user wants visualized!
+- If context includes specific data (tables, lists, comparisons), visualize THAT data
+- If context is about evaluations, use the evaluations dict
+- Be creative with styling while keeping the output professional and readable
 """
 
 
@@ -97,7 +119,7 @@ class CodeGenerationTool:
         self.evaluations = evaluations
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-5",
-            temperature=0.3,
+            temperature=0.7,  # Higher temperature for creative visualizations
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
@@ -106,21 +128,42 @@ class CodeGenerationTool:
 
         print(f"🔧 Code generation tool called for: {user_request[:50]}...")
 
-        # Create prompt for code generation
+        # Extract relevant context from conversation history
+        context_parts = []
+        for msg in conversation_history[-10:]:  # Last 10 messages for context
+            if hasattr(msg, 'content') and msg.content:
+                # Truncate very long messages but keep enough context
+                content = msg.content[:2000] if len(msg.content) > 2000 else msg.content
+                role = "User" if isinstance(msg, HumanMessage) else "Assistant"
+                context_parts.append(f"[{role}]: {content}")
+        
+        conversation_context = "\n\n".join(context_parts) if context_parts else "No previous context."
+
+        # Create prompt for code generation with FULL context
         messages = [
             SystemMessage(content=CODE_GENERATION_PROMPT),
-            HumanMessage(content=f"""
-User request: {user_request}
+            HumanMessage(content=f"""# USER REQUEST
+{user_request}
 
-Evaluation data structure (sample):
+# CONVERSATION CONTEXT (Use this to understand what data to visualize!)
+{conversation_context}
+
+# EVALUATION DATA STRUCTURE (Available in the function)
 {json.dumps(self._get_data_sample(), indent=2, ensure_ascii=False)}
 
-Generate Python code to fulfill this request.
+# INSTRUCTIONS
+1. Look at the CONVERSATION CONTEXT above - it contains the specific data the user wants visualized
+2. If the user mentions data from the conversation (tables, lists, comparisons), create a visualization of THAT data
+3. Use the evaluation data structure only if the user asks about their performance/evaluation
+4. Be creative with colors, styles, and visualization types!
+
+Generate Python code to create this visualization.
 """)
         ]
 
         # Get code from LLM
         print(f"📝 Requesting code from Claude...")
+        print(f"📋 Context provided: {len(conversation_context)} chars from {len(context_parts)} messages")
         response = self.llm.invoke(messages)
         code = self._extract_code(response.content)
 
