@@ -12,6 +12,7 @@ run = ["python3", "backend/app.py"]
 
 [env]
 REPL_DEPLOYMENT = "true"
+PYTHONUNBUFFERED = "1"
 
 [[ports]]
 localPort = 8000
