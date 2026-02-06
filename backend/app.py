@@ -295,14 +295,7 @@ _log("MODULE LOAD COMPLETE")
 if __name__ == "__main__":
     import uvicorn
 
-    # Replit Autoscale health checks go directly to port 80,
-    # bypassing the metasidecar's port forwarding.
-    is_replit = os.environ.get("REPL_ID") is not None
-    if is_replit:
-        port = 80
-    else:
-        port = int(os.environ.get("PORT", 8000))
-
-    _log(f"=== BINDING TO PORT {port} (is_replit={is_replit}) ===")
+    port = int(os.environ.get("PORT", 8000))
+    _log(f"=== BINDING TO PORT {port} ===")
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

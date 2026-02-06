@@ -10,13 +10,10 @@ packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "
 [deployment]
 build = ["pip", "install", "-r", "requirements.txt"]
 run = ["python3", "backend/app.py"]
+deploymentTarget = "cloudrun"
 
 [env]
 REPL_DEPLOYMENT = "true"
 PYTHONUNBUFFERED = "1"
 SESSION_SECRET = "sensai-feedback-chatbot-session-2026"
-
-[[ports]]
-localPort = 80
-externalPort = 80
-exposeLocalhost = true
+PORT = "8080"
