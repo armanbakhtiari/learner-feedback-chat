@@ -243,8 +243,11 @@ async def health_check():
 
 @app.get("/")
 async def root():
-    """Root endpoint - health check"""
-    _log("GET / hit")
+    """Root endpoint - serves frontend or health check"""
+    index_file = FRONTEND_DIR / "index.html"
+    _log(f"GET / - FRONTEND_DIR={FRONTEND_DIR}, exists={FRONTEND_DIR.exists()}, index_exists={index_file.exists()}, resolved={index_file.resolve()}")
+    if index_file.exists():
+        return FileResponse(str(index_file))
     return {"status": "healthy", "message": "Application is running"}
 
 
