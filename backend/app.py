@@ -1,10 +1,5 @@
-print("🔄 Starting app.py import...", flush=True)
 import sys
-print("✓ sys imported", flush=True)
-
 from fastapi import FastAPI, HTTPException
-print("✓ FastAPI imported", flush=True)
-
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -13,14 +8,10 @@ from typing import List, Dict, Any, Optional
 import json
 import os
 from pathlib import Path
-print("✓ Standard imports done", flush=True)
-
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
-print("✓ All imports done", flush=True)
 
 load_dotenv()
-print("✓ dotenv loaded", flush=True)
 
 # Configure LangSmith tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -63,28 +54,19 @@ def get_chat_agent_class():
     return _chat_agent_class
 
 
+# Get the project root directory (before lifespan to avoid errors)
+ROOT_DIR = Path(__file__).parent.parent
+FRONTEND_DIR = ROOT_DIR / "frontend"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    # Startup: Log that the app is ready
-    print("🚀 Application lifespan starting...", flush=True)
-    print(f"📁 Frontend directory: {FRONTEND_DIR}", flush=True)
-    print(f"📁 Frontend exists: {FRONTEND_DIR.exists()}", flush=True)
-    print("✅ Health check endpoint ready at /health and /", flush=True)
     print("✅ Application ready to receive requests", flush=True)
     yield
-    # Shutdown
-    print("👋 Application shutting down...", flush=True)
 
 
-print("✓ Creating FastAPI app...", flush=True)
 app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
-print("✓ FastAPI app created", flush=True)
-
-# Get the project root directory
-ROOT_DIR = Path(__file__).parent.parent
-FRONTEND_DIR = ROOT_DIR / "frontend"
-print(f"✓ Paths configured: ROOT={ROOT_DIR}, FRONTEND={FRONTEND_DIR}", flush=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -237,15 +219,13 @@ async def health_check():
 # Root endpoint - MUST respond immediately for health checks
 @app.get("/")
 async def root():
-    """Root endpoint - serves frontend or health check response"""
-    # Check if this is a health check (no Accept header for HTML)
-    # For deployment health checks, return JSON quickly
-    if FRONTEND_DIR.exists():
-        index_file = FRONTEND_DIR / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file))
-    # Fallback to JSON response (for health checks or if frontend missing)
-    return JSONResponse(content={"status": "ok", "message": "Learner Feedback Chat System"}, status_code=200)
+    """Root endpoint - returns JSON immediately for health checks"""
+    # Always return JSON for the root - this ensures health checks pass
+    # Users will access the frontend via /index.html or will be redirected
+    return JSONResponse(
+        content={"status": "ok", "message": "Learner Feedback Chat System", "frontend": "/index.html"}, 
+        status_code=200
+    )
 
 
 # Serve frontend static files (for deployment where only one port is exposed)
@@ -288,15 +268,6 @@ async def serve_index_html():
     return JSONResponse(content={"error": "File not found"}, status_code=404)
 
 
-print("✅ All routes registered, app.py import complete!", flush=True)
-
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting uvicorn server on 0.0.0.0:8000...", flush=True)
-    uvicorn.run(
-        app, 
-        host="0.0.0.0", 
-        port=8000,
-        log_level="info",
-        access_log=True
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

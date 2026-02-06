@@ -3,6 +3,9 @@ Tools for the Supervisor Agent
 
 These tools are decorated with @tool so they can be used by LangChain's create_react_agent.
 The supervisor agent will decide when and how to call these tools based on user queries.
+
+NOTE: All heavy imports (CodeGenerationTool, WebSearchTool, RAG) are lazy-loaded
+to speed up application startup and pass health checks.
 """
 
 from typing import Dict, Any, List
@@ -10,24 +13,39 @@ from langchain.tools import tool
 from langchain_core.messages import BaseMessage
 import json
 
-from backend.code_tool import CodeGenerationTool
-from backend.web_search_tool import WebSearchTool
-from backend.rag_tool import get_rag_module, AgenticRAGModule
-from trainings_2_experts import training_1, training_2, training_3
-
 
 # Global instances (will be initialized by supervisor)
 _code_tool_instance = None
 _web_search_tool_instance = None
 _rag_module_instance = None
 
+# Lazy import cache
+_training_data_cache = None
+
+
+def _get_training_data():
+    """Lazy load training data"""
+    global _training_data_cache
+    if _training_data_cache is None:
+        from trainings_2_experts import training_1, training_2, training_3
+        _training_data_cache = (training_1, training_2, training_3)
+    return _training_data_cache
+
 
 def initialize_tools(evaluations: Dict[str, Any]):
     """Initialize tool instances with evaluation data"""
     global _code_tool_instance, _web_search_tool_instance, _rag_module_instance
+    
+    # Lazy import CodeGenerationTool
+    from backend.code_tool import CodeGenerationTool
     _code_tool_instance = CodeGenerationTool(evaluations)
+    
+    # Lazy import WebSearchTool
+    from backend.web_search_tool import WebSearchTool
     _web_search_tool_instance = WebSearchTool()
-    # Initialize RAG module (lazy loading - will index documents on first use)
+    
+    # Lazy import and initialize RAG module
+    from backend.rag_tool import get_rag_module
     _rag_module_instance = get_rag_module()
 
 
@@ -200,6 +218,9 @@ def get_training_content(module_number: int, section: str = "all") -> str:
         -> Returns full module 1 content so the chat agent can answer
     """
     try:
+        # Get training data lazily
+        training_1, training_2, training_3 = _get_training_data()
+        
         # Map module numbers to training content
         modules = {
             1: {
