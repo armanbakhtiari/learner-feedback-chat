@@ -17,6 +17,6 @@ PYTHONUNBUFFERED = "1"
 SESSION_SECRET = "sensai-feedback-chatbot-session-2026"
 
 [[ports]]
-localPort = 8000
+localPort = 80
 externalPort = 80
 exposeLocalhost = true
