@@ -1,0 +1,7 @@
+[env]
+PYTHONUNBUFFERED = "1"
+
+[[ports]]
+localPort = 8000
+externalPort = 80
+exposeLocalhost = true

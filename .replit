@@ -18,3 +18,4 @@ SESSION_SECRET = "sensai-feedback-chatbot-session-2026"
 [[ports]]
 localPort = 8000
 externalPort = 80
+exposeLocalhost = true
