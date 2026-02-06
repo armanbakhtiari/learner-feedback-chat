@@ -1,17 +1,26 @@
+print("🔄 Starting app.py import...", flush=True)
+import sys
+print("✓ sys imported", flush=True)
+
 from fastapi import FastAPI, HTTPException
+print("✓ FastAPI imported", flush=True)
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
-import sys
 import os
 from pathlib import Path
+print("✓ Standard imports done", flush=True)
+
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+print("✓ All imports done", flush=True)
 
 load_dotenv()
+print("✓ dotenv loaded", flush=True)
 
 # Configure LangSmith tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -58,18 +67,24 @@ def get_chat_agent_class():
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     # Startup: Log that the app is ready
-    print("🚀 Application starting up...")
-    print("✅ Health check endpoint ready at /health")
+    print("🚀 Application lifespan starting...", flush=True)
+    print(f"📁 Frontend directory: {FRONTEND_DIR}", flush=True)
+    print(f"📁 Frontend exists: {FRONTEND_DIR.exists()}", flush=True)
+    print("✅ Health check endpoint ready at /health and /", flush=True)
+    print("✅ Application ready to receive requests", flush=True)
     yield
     # Shutdown
-    print("👋 Application shutting down...")
+    print("👋 Application shutting down...", flush=True)
 
 
+print("✓ Creating FastAPI app...", flush=True)
 app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
+print("✓ FastAPI app created", flush=True)
 
 # Get the project root directory
 ROOT_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
+print(f"✓ Paths configured: ROOT={ROOT_DIR}, FRONTEND={FRONTEND_DIR}", flush=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -215,37 +230,65 @@ async def reset_chat(session_id: str):
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "ok", "message": "Learner Feedback Chat System API"}
+    """Health check endpoint - must be very fast"""
+    return JSONResponse(content={"status": "ok"}, status_code=200)
+
+
+# Root endpoint - MUST respond immediately for health checks
+@app.get("/")
+async def root():
+    """Root endpoint - serves frontend or health check response"""
+    # Check if this is a health check (no Accept header for HTML)
+    # For deployment health checks, return JSON quickly
+    if FRONTEND_DIR.exists():
+        index_file = FRONTEND_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+    # Fallback to JSON response (for health checks or if frontend missing)
+    return JSONResponse(content={"status": "ok", "message": "Learner Feedback Chat System"}, status_code=200)
 
 
 # Serve frontend static files (for deployment where only one port is exposed)
-# These routes come AFTER API routes to avoid conflicts
-if FRONTEND_DIR.exists():
-    # Mount CSS, JS, and other static assets
-    @app.get("/styles.css")
-    async def serve_css():
-        return FileResponse(str(FRONTEND_DIR / "styles.css"), media_type="text/css")
-    
-    @app.get("/app.js")
-    async def serve_app_js():
-        return FileResponse(str(FRONTEND_DIR / "app.js"), media_type="application/javascript")
-    
-    @app.get("/chat.html")
-    async def serve_chat():
-        """Serve the chat page"""
-        return FileResponse(str(FRONTEND_DIR / "chat.html"))
-    
-    @app.get("/test.html")
-    async def serve_test():
-        """Serve the test page"""
-        return FileResponse(str(FRONTEND_DIR / "test.html"))
-    
-    @app.get("/")
-    async def serve_index():
-        """Serve the main index page"""
-        return FileResponse(str(FRONTEND_DIR / "index.html"))
+@app.get("/styles.css")
+async def serve_css():
+    css_file = FRONTEND_DIR / "styles.css"
+    if css_file.exists():
+        return FileResponse(str(css_file), media_type="text/css")
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
 
+@app.get("/app.js")
+async def serve_app_js():
+    js_file = FRONTEND_DIR / "app.js"
+    if js_file.exists():
+        return FileResponse(str(js_file), media_type="application/javascript")
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+@app.get("/chat.html")
+async def serve_chat():
+    """Serve the chat page"""
+    chat_file = FRONTEND_DIR / "chat.html"
+    if chat_file.exists():
+        return FileResponse(str(chat_file))
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+@app.get("/test.html")
+async def serve_test():
+    """Serve the test page"""
+    test_file = FRONTEND_DIR / "test.html"
+    if test_file.exists():
+        return FileResponse(str(test_file))
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+@app.get("/index.html")
+async def serve_index_html():
+    """Serve the main index page explicitly"""
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+
+print("✅ All routes registered, app.py import complete!", flush=True)
 
 if __name__ == "__main__":
     import uvicorn

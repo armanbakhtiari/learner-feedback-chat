@@ -9,10 +9,10 @@ packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "
 
 [deployment]
 run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 -m uvicorn backend.app:app --host 0.0.0.0 --port 8000"]
-healthCheckPath = "/health"
-ignorePorts = false
 
-# Primary port - FastAPI serves both frontend and API
+[env]
+REPL_DEPLOYMENT = "true"
+
 [[ports]]
 localPort = 8000
 externalPort = 80
