@@ -212,21 +212,32 @@ class AgenticRAGModule:
             print(f"📄 Processing: {pdf_file.name}")
             
             try:
-                # Load PDF
+                # Load PDF - PyMuPDFLoader provides page numbers in metadata
                 loader = PyMuPDFLoader(str(pdf_file))
                 documents = loader.load()
                 
-                # Split into chunks
+                # Split into chunks while preserving page info
                 chunks = self.text_splitter.split_documents(documents)
                 
                 # Add metadata and prepare for indexing
                 for i, chunk in enumerate(chunks):
                     chunk_id = f"{pdf_file.stem}_{i}"
                     
-                    # Add document name to metadata
+                    # Get page number from the original document metadata
+                    # PyMuPDFLoader stores page number as 'page' in metadata (0-indexed)
+                    original_page = chunk.metadata.get('page', 0)
+                    # Convert to 1-indexed for human-readable format
+                    page_number = original_page + 1 if isinstance(original_page, int) else 1
+                    
+                    # Create clean document title from filename
+                    # Remove file extension and clean up underscores/dashes
+                    doc_title = pdf_file.stem.replace("_", " ").replace("-", " ").strip()
+                    
+                    # Add document name and page number to metadata
                     metadata = {
                         "source": pdf_file.name,
-                        "document_title": pdf_file.stem.replace("_", " ").replace("-", " "),
+                        "document_title": doc_title,
+                        "page_number": page_number,
                         "chunk_index": i,
                         "total_chunks": len(chunks)
                     }
@@ -485,6 +496,7 @@ Provide a better query to search the document database.""")
                     "content": chunk["content"],
                     "source": chunk["metadata"].get("source", "Unknown"),
                     "document_title": chunk["metadata"].get("document_title", "Unknown"),
+                    "page_number": chunk["metadata"].get("page_number", 1),
                     "relevance_score": chunk.get("relevance_score", 0)
                 })
             
@@ -518,7 +530,7 @@ Provide a better query to search the document database.""")
             chunks: List of chunk dictionaries
             
         Returns:
-            Formatted string with source citations
+            Formatted string with source citations including page numbers
         """
         if not chunks:
             return "No relevant documents found."
@@ -534,8 +546,11 @@ Provide a better query to search the document database.""")
             chunks_by_source[source].append(chunk)
         
         for source, source_chunks in chunks_by_source.items():
-            formatted_parts.append(f"\n### Source: {source}\n")
+            doc_title = source_chunks[0].get("document_title", source)
+            formatted_parts.append(f"\n### Source: {doc_title}\n")
             for chunk in source_chunks:
+                page_num = chunk.get("page_number", "N/A")
+                formatted_parts.append(f"[Page {page_num}]")
                 formatted_parts.append(chunk["content"])
                 formatted_parts.append("\n---\n")
         

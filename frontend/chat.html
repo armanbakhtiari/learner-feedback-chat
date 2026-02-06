@@ -14,11 +14,6 @@
                 <p class="subtitle">Explorez vos performances de manière interactive</p>
             </div>
             <div class="header-actions">
-                <label class="web-search-toggle">
-                    <input type="checkbox" id="web-search-checkbox">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-label">🌐 Recherche Web</span>
-                </label>
                 <button id="back-btn" class="secondary-btn" onclick="goBack()">
                     ← Retour aux modules
                 </button>
@@ -43,15 +38,24 @@
             </div>
 
             <div class="chat-input-container">
-                <textarea
-                    id="chat-input"
-                    placeholder="Posez une question ou demandez des détails..."
-                    rows="3"
-                    disabled
-                ></textarea>
-                <button id="send-btn" class="send-btn" disabled>
-                    Envoyer
-                </button>
+                <div class="input-row">
+                    <textarea
+                        id="chat-input"
+                        placeholder="Posez une question ou demandez des détails..."
+                        rows="3"
+                        disabled
+                    ></textarea>
+                    <button id="send-btn" class="send-btn" disabled>
+                        Envoyer
+                    </button>
+                </div>
+                <div class="input-options">
+                    <label class="web-search-toggle-bottom">
+                        <input type="checkbox" id="web-search-checkbox">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">🌐 Recherche Web</span>
+                    </label>
+                </div>
             </div>
         </main>
     </div>
