@@ -32,7 +32,7 @@ def initialize_tools(evaluations: Dict[str, Any]):
 
 
 @tool
-def generate_visualization(user_request: str, conversation_history: str, data_context: str = "") -> str:
+def generate_visualization(user_request: str, conversation_history: str, data_context: str = "", include_evaluation_data: bool = False) -> str:
     """
     Generate a visualization (chart, table, graph) based on the user's request.
 
@@ -50,6 +50,10 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
         data_context: Optional additional context or data to visualize (e.g., retrieved content, 
                       previous assistant responses with specific data, tables, or lists that 
                       should be visualized)
+        include_evaluation_data: Set to True ONLY if the visualization is about the learner's 
+                                 performance, evaluation scores, or training results.
+                                 Set to False if visualizing other data (diagnostic criteria, 
+                                 guidelines, knowledge base content, etc.)
 
     Returns:
         JSON string containing:
@@ -58,12 +62,12 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
         - "output": Base64 image and summary data (if successful)
         - "error": Error message (if failed)
 
-    Example:
-        User: "Créez un tableau basé sur les critères diagnostiques que tu viens de mentionner"
-        -> Call this tool with:
-           user_request="Créer un tableau des critères diagnostiques"
-           data_context="Les critères diagnostiques mentionnés: 1) ..., 2) ..., 3) ..."
-        -> Returns: {"status": "success", "output": "{\"image_base64\": \"...\", ...}"}
+    Examples:
+        1. User asks about their performance:
+           -> include_evaluation_data=True, data_context="" (evaluation data will be included)
+        
+        2. User asks to visualize diagnostic criteria from knowledge base:
+           -> include_evaluation_data=False, data_context="Les critères: 1)..., 2)..."
     """
     if _code_tool_instance is None:
         return json.dumps({"status": "error", "error": "Code tool not initialized"})
@@ -91,8 +95,8 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
         if data_context:
             full_request = f"{user_request}\n\n[Data to Visualize]:\n{data_context}"
 
-        # Generate visualization
-        result = _code_tool_instance.generate_code(full_request, messages)
+        # Generate visualization - pass flag for whether to include evaluation data
+        result = _code_tool_instance.generate_code(full_request, messages, include_evaluation_data)
 
         if result:
             # result["output"] is already a dict, not a JSON string

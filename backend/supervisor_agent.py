@@ -38,12 +38,22 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
   - DO NOT call for questions that can be answered with text like "in which scenario", "where did I", "what was my performance"
   - ONLY call when the user explicitly wants a visual/tabular OUTPUT, not just an analysis
   
-  **CRITICAL for generate_visualization:**
-  - The `user_request` argument MUST describe what visualization to create
-  - The `data_context` argument MUST contain the ACTUAL DATA to visualize
-  - If the user asks to visualize something from a previous conversation turn, YOU MUST extract that data from the conversation history and pass it in `data_context`
-  - Example: If the assistant previously provided a list of criteria, and user asks "fais un tableau", pass that list in data_context
-  - DO NOT just pass "create a table" - pass the SPECIFIC DATA that should be in the table!
+  **CRITICAL for generate_visualization - Parameter Selection:**
+  
+  1. `include_evaluation_data` parameter:
+     - Set to **TRUE** ONLY when visualizing the learner's PERFORMANCE, EVALUATION SCORES, or TRAINING RESULTS
+       Examples: "graphique de ma performance", "tableau de mes scores", "comparaison de mes résultats"
+     - Set to **FALSE** for ALL OTHER visualizations (diagnostic criteria, guidelines, knowledge base content, etc.)
+       Examples: "tableau des critères diagnostiques", "graphique des recommandations"
+  
+  2. `data_context` parameter:
+     - When include_evaluation_data=FALSE: YOU MUST provide the data to visualize in this parameter
+     - Extract the relevant data from the conversation history (previous assistant responses)
+     - Example: If assistant mentioned "Les critères sont: 1)..., 2)...", include that in data_context
+  
+  3. `user_request` parameter:
+     - Describe what type of visualization to create
+     - Include any styling preferences mentioned by the user
 
 - **search_web**: Call when user asks about latest/recent/current information
   - Keywords: "dernière", "récent", "actuel", "nouveau"

@@ -123,10 +123,18 @@ class CodeGenerationTool:
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
-    def generate_code(self, user_request: str, conversation_history: List[BaseMessage]) -> Optional[Dict[str, Any]]:
-        """Generate and execute Python code for visualization"""
+    def generate_code(self, user_request: str, conversation_history: List[BaseMessage], include_evaluation_data: bool = False) -> Optional[Dict[str, Any]]:
+        """Generate and execute Python code for visualization
+        
+        Args:
+            user_request: The user's visualization request
+            conversation_history: List of conversation messages for context
+            include_evaluation_data: If True, include evaluation data in the prompt.
+                                     Only set to True for performance/training visualizations.
+        """
 
         print(f"🔧 Code generation tool called for: {user_request[:50]}...")
+        print(f"📊 Include evaluation data: {include_evaluation_data}")
 
         # Extract relevant context from conversation history
         context_parts = []
@@ -139,23 +147,35 @@ class CodeGenerationTool:
         
         conversation_context = "\n\n".join(context_parts) if context_parts else "No previous context."
 
-        # Create prompt for code generation with FULL context
+        # Build the prompt - only include evaluation data if specifically needed
+        if include_evaluation_data:
+            # Include evaluation data for performance visualizations
+            data_section = f"""# EVALUATION DATA (Available in the function as 'evaluations' parameter)
+{json.dumps(self._get_data_sample(), indent=2, ensure_ascii=False)}
+
+# INSTRUCTIONS
+1. Use the EVALUATION DATA above to create visualizations about the learner's performance
+2. The data structure contains: training modules > situations > scenarios with coverage, reasoning, communication scores
+3. Be creative with colors, styles, and visualization types!"""
+        else:
+            # Don't include evaluation data - use conversation context only
+            data_section = """# INSTRUCTIONS
+1. Use the DATA in the CONVERSATION CONTEXT above to create the visualization
+2. The data to visualize is provided in the context - DO NOT use evaluations data
+3. Parse and extract the relevant data from the context, then visualize it
+4. Be creative with colors, styles, and visualization types!
+5. The function still receives 'evaluations' parameter but IGNORE it - use the context data instead"""
+
+        # Create prompt for code generation
         messages = [
             SystemMessage(content=CODE_GENERATION_PROMPT),
             HumanMessage(content=f"""# USER REQUEST
 {user_request}
 
-# CONVERSATION CONTEXT (Use this to understand what data to visualize!)
+# CONVERSATION CONTEXT (Contains the data to visualize)
 {conversation_context}
 
-# EVALUATION DATA STRUCTURE (Available in the function)
-{json.dumps(self._get_data_sample(), indent=2, ensure_ascii=False)}
-
-# INSTRUCTIONS
-1. Look at the CONVERSATION CONTEXT above - it contains the specific data the user wants visualized
-2. If the user mentions data from the conversation (tables, lists, comparisons), create a visualization of THAT data
-3. Use the evaluation data structure only if the user asks about their performance/evaluation
-4. Be creative with colors, styles, and visualization types!
+{data_section}
 
 Generate Python code to create this visualization.
 """)
