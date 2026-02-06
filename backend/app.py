@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from contextlib import asynccontextmanager
 
 load_dotenv()
 
@@ -54,19 +53,11 @@ def get_chat_agent_class():
     return _chat_agent_class
 
 
-# Get the project root directory (before lifespan to avoid errors)
+# Get the project root directory
 ROOT_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup and shutdown events"""
-    print("✅ Application ready to receive requests", flush=True)
-    yield
-
-
-app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
+app = FastAPI(title="Learner Feedback Chat System")
 
 app.add_middleware(
     CORSMiddleware,
