@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
@@ -9,6 +9,7 @@ import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
 load_dotenv()
 
@@ -20,11 +21,51 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from trainings_2_experts import training_1, training_2, training_3, training_objectives
-from backend.evaluator import run_evaluations
-from backend.chat_agent import ChatAgent
+# Lazy imports - only import heavy modules when needed
+_training_data = None
+_evaluator_module = None
+_chat_agent_class = None
 
-app = FastAPI(title="Learner Feedback Chat System")
+
+def get_training_data():
+    """Lazy load training data"""
+    global _training_data
+    if _training_data is None:
+        from trainings_2_experts import training_1, training_2, training_3, training_objectives
+        _training_data = (training_1, training_2, training_3, training_objectives)
+    return _training_data
+
+
+def get_evaluator():
+    """Lazy load evaluator module"""
+    global _evaluator_module
+    if _evaluator_module is None:
+        from backend.evaluator import run_evaluations
+        _evaluator_module = run_evaluations
+    return _evaluator_module
+
+
+def get_chat_agent_class():
+    """Lazy load ChatAgent class"""
+    global _chat_agent_class
+    if _chat_agent_class is None:
+        from backend.chat_agent import ChatAgent
+        _chat_agent_class = ChatAgent
+    return _chat_agent_class
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events"""
+    # Startup: Log that the app is ready
+    print("🚀 Application starting up...")
+    print("✅ Health check endpoint ready at /health")
+    yield
+    # Shutdown
+    print("👋 Application shutting down...")
+
+
+app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
 
 # Get the project root directory
 ROOT_DIR = Path(__file__).parent.parent
@@ -40,7 +81,7 @@ app.add_middleware(
 
 # Store evaluations in memory (in production, use a database)
 evaluations_store: Dict[str, Any] = {}
-chat_agents: Dict[str, ChatAgent] = {}
+chat_agents: Dict[str, Any] = {}  # Type is Any to avoid importing ChatAgent at module level
 
 
 class ChatMessage(BaseModel):
@@ -63,24 +104,25 @@ class ChatResponse(BaseModel):
 @app.get("/trainings")
 async def get_trainings():
     """Get all training modules"""
+    t1, t2, t3, objectives = get_training_data()
     trainings = [
         {
             "id": "training_1",
             "name": "Module 1: Diagnostic et suivi de la migraine",
-            "content": training_1,
-            "objectives": training_objectives
+            "content": t1,
+            "objectives": objectives
         },
         {
             "id": "training_2",
             "name": "Module 2: Traitement aigu et gestion des habitudes de vie de la migraine",
-            "content": training_2,
-            "objectives": training_objectives
+            "content": t2,
+            "objectives": objectives
         },
         {
             "id": "training_3",
             "name": "Module 3: Traitement préventif de la migraine",
-            "content": training_3,
-            "objectives": training_objectives
+            "content": t3,
+            "objectives": objectives
         }
     ]
     return {"trainings": trainings}
@@ -90,6 +132,7 @@ async def get_trainings():
 async def evaluate_trainings():
     """Run evaluations on all training modules"""
     try:
+        run_evaluations = get_evaluator()
         evaluations = run_evaluations()
         session_id = "session_" + str(len(evaluations_store) + 1)
         evaluations_store[session_id] = evaluations
@@ -128,6 +171,7 @@ async def chat(message: ChatMessage):
                     status_code=404,
                     detail="Session not found. Please run evaluation first."
                 )
+            ChatAgent = get_chat_agent_class()
             chat_agents[message.session_id] = ChatAgent(
                 evaluations=evaluations_store[message.session_id]
             )

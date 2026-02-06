@@ -8,7 +8,9 @@ channel = "stable-25_05"
 packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libxcrypt", "mupdf", "openjpeg", "pkg-config", "qhull", "swig", "tcl", "tk", "xcbuild"]
 
 [deployment]
-run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 backend/app.py"]
+run = ["sh", "-c", "REPL_DEPLOYMENT=true python3 -m uvicorn backend.app:app --host 0.0.0.0 --port 8000"]
+healthCheckPath = "/health"
+ignorePorts = false
 
 # Primary port - FastAPI serves both frontend and API
 [[ports]]
