@@ -76,6 +76,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Request logging middleware to debug health checks
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+import time
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        print(f"📥 INCOMING REQUEST: {request.method} {request.url.path}", flush=True)
+        try:
+            response = await call_next(request)
+            duration = time.time() - start_time
+            print(f"📤 RESPONSE: {request.url.path} -> {response.status_code} ({duration:.3f}s)", flush=True)
+            return response
+        except Exception as e:
+            print(f"❌ ERROR in {request.url.path}: {type(e).__name__}: {e}", flush=True)
+            raise
+
+
+app.add_middleware(RequestLoggingMiddleware)
+
 # Store evaluations in memory (in production, use a database)
 evaluations_store: Dict[str, Any] = {}
 chat_agents: Dict[str, Any] = {}  # Type is Any to avoid importing ChatAgent at module level
@@ -213,6 +236,7 @@ async def reset_chat(session_id: str):
 @app.get("/health")
 async def health_check():
     """Health check endpoint - must be very fast"""
+    print("🏥 /health endpoint hit!", flush=True)
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
 
@@ -220,8 +244,7 @@ async def health_check():
 @app.get("/")
 async def root():
     """Root endpoint - returns JSON immediately for health checks"""
-    # Always return JSON for the root - this ensures health checks pass
-    # Users will access the frontend via /index.html or will be redirected
+    print("🏠 / endpoint hit!", flush=True)
     return JSONResponse(
         content={"status": "ok", "message": "Learner Feedback Chat System", "frontend": "/index.html"}, 
         status_code=200
