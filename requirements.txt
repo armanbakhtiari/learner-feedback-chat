@@ -19,7 +19,7 @@ seaborn>=0.13.0
 Pillow>=10.2.0
 requests>=2.31.0
 tavily-python>=0.3.0
-# RAG dependencies
-chromadb>=0.4.0
-pymupdf>=1.23.0
+# RAG dependencies (temporarily disabled for deployment diagnostic)
+# chromadb>=0.4.0
+# pymupdf>=1.23.0
 
