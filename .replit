@@ -9,7 +9,7 @@ packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "
 
 [deployment]
 build = ["pip", "install", "-r", "requirements.txt"]
-run = ["python3", "-m", "uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
+run = ["python3", "backend/app.py"]
 
 [env]
 REPL_DEPLOYMENT = "true"

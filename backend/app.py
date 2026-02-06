@@ -294,4 +294,29 @@ _log("MODULE LOAD COMPLETE")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    import threading
+    import urllib.request
+
+    port = int(os.environ.get("PORT", 8000))
+    _log(f"=== BINDING TO PORT {port} ===")
+    _log(f"=== PORT env var: {os.environ.get('PORT', 'NOT SET')} ===")
+    _log(f"=== REPL_ID: {os.environ.get('REPL_ID', 'NOT SET')} ===")
+    _log(f"=== All env vars with PORT/REPL: {[(k,v) for k,v in os.environ.items() if 'PORT' in k.upper() or 'REPL' in k.upper()]} ===")
+
+    def self_test():
+        """Background self-test after startup"""
+        import time
+        time.sleep(5)
+        for test_port in [port, 8000, 80, 1104]:
+            try:
+                url = f"http://127.0.0.1:{test_port}/"
+                _log(f"=== SELF-TEST: GET {url} ===")
+                req = urllib.request.urlopen(url, timeout=3)
+                _log(f"=== SELF-TEST: port {test_port} -> status {req.status} ===")
+            except Exception as e:
+                _log(f"=== SELF-TEST: port {test_port} -> FAILED: {e} ===")
+
+    t = threading.Thread(target=self_test, daemon=True)
+    t.start()
+
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="trace")
