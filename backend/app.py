@@ -1,22 +1,43 @@
 import sys
+import time
+
+_startup_time = time.time()
+
+def _log(msg):
+    elapsed = time.time() - _startup_time
+    print(f"[STARTUP +{elapsed:.2f}s] {msg}", flush=True)
+
+_log("BEGIN module import")
+
+_log("importing fastapi...")
 from fastapi import FastAPI, HTTPException
+_log("importing CORSMiddleware...")
 from fastapi.middleware.cors import CORSMiddleware
+_log("importing StaticFiles...")
 from fastapi.staticfiles import StaticFiles
+_log("importing FileResponse, JSONResponse...")
 from fastapi.responses import FileResponse, JSONResponse
+_log("importing pydantic...")
 from pydantic import BaseModel
+_log("importing typing...")
 from typing import List, Dict, Any, Optional
+_log("importing json, os, pathlib...")
 import json
 import os
 from pathlib import Path
+_log("importing dotenv...")
 from dotenv import load_dotenv
+_log("all imports done")
 
+_log("calling load_dotenv()...")
 load_dotenv()
+_log("load_dotenv() done")
 
 # Configure LangSmith tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
 if not os.getenv("LANGCHAIN_API_KEY"):
-    print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
+    _log("WARNING: LANGCHAIN_API_KEY not found")
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -57,8 +78,11 @@ def get_chat_agent_class():
 ROOT_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
 
+_log("creating FastAPI app...")
 app = FastAPI(title="Learner Feedback Chat System")
+_log("FastAPI app created")
 
+_log("adding CORS middleware...")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -66,6 +90,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+_log("CORS middleware added")
 
 # Store evaluations in memory (in production, use a database)
 evaluations_store: Dict[str, Any] = {}
@@ -84,6 +109,14 @@ class ChatResponse(BaseModel):
     code: Optional[str] = None
     code_output: Optional[str] = None
     citations: List[Dict[str, str]] = []
+
+
+_log("defining routes...")
+
+
+@app.on_event("startup")
+async def startup_event():
+    _log("FastAPI startup event fired - app is ready!")
 
 
 # API Routes (must come before static file serving)
@@ -146,7 +179,7 @@ async def chat(message: ChatMessage):
     """Chat with the feedback agent"""
     try:
         print(f"\n{'='*70}")
-        print(f"📨 INCOMING REQUEST:")
+        print(f"INCOMING REQUEST:")
         print(f"   Session ID: {message.session_id}")
         print(f"   Message: {message.message[:100]}")
         print(f"   Web Search: {message.web_search_enabled}")
@@ -169,7 +202,7 @@ async def chat(message: ChatMessage):
 
         # Log response details
         print(f"\n{'='*70}")
-        print(f"📤 OUTGOING RESPONSE:")
+        print(f"OUTGOING RESPONSE:")
         print(f"   Has code: {response.get('has_code', False)}")
         if response.get('code_output'):
             code_output_preview = str(response.get('code_output'))[:200]
@@ -187,7 +220,7 @@ async def chat(message: ChatMessage):
             citations=response.get("citations", [])
         )
     except Exception as e:
-        print(f"❌ ERROR in /chat endpoint: {e}")
+        print(f"ERROR in /chat endpoint: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -204,12 +237,14 @@ async def reset_chat(session_id: str):
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    _log("GET /health hit")
     return {"status": "healthy"}
 
 
 @app.get("/")
 async def root():
     """Root endpoint - health check"""
+    _log("GET / hit")
     return {"status": "healthy", "message": "Application is running"}
 
 
@@ -251,6 +286,10 @@ async def serve_index_html():
     if index_file.exists():
         return FileResponse(str(index_file))
     return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+
+_log("all routes defined")
+_log("MODULE LOAD COMPLETE")
 
 
 if __name__ == "__main__":
