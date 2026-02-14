@@ -153,9 +153,11 @@ class SupervisorAgent:
             messages = [
                 SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT),
                 HumanMessage(content=f"""
-User Request: {user_message}
-Web Search Enabled: {web_search_enabled}
+
 Recent Conversation: {chat_history}
+
+User's New Request: {user_message}
+Web Search Enabled: {web_search_enabled}
 
 Analyze the request and call appropriate tools. If no tools are needed, just respond with "No tools needed".
 """)
