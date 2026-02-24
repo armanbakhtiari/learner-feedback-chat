@@ -17,7 +17,7 @@ load_dotenv()
 
 # Configure LangSmith tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
+os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent_TEST"
 if not os.getenv("LANGCHAIN_API_KEY"):
     print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
 
@@ -116,16 +116,17 @@ class ChatState(TypedDict):
 class ChatAgent:
     """LangGraph-based chat agent with supervisor architecture"""
 
-    def __init__(self, evaluations: Dict[str, Any]):
+    def __init__(self, evaluations: Dict[str, Any], logger=None):
         self.evaluations = evaluations
         self.training_objectives = training_objectives
         self.conversation_history: List[BaseMessage] = []
+        self.logger = logger
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-5",
             temperature=0.5,
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
-        self.supervisor = SupervisorAgent(evaluations)
+        self.supervisor = SupervisorAgent(evaluations, logger=logger)
         self.initial_feedback_given = False
 
         # Build the LangGraph
@@ -346,6 +347,19 @@ Objectifs d'apprentissage:
 
         state["agent_response"] = response_text
 
+        # Log the response generation
+        if self.logger:
+            self.logger.log_agent_call(
+                agent_name="Chat Response Generator",
+                model_name="claude-sonnet-4-5 (temperature=0.5)",
+                input_data={
+                    "user_message": state["user_message"],
+                    "tools_called": state.get("tools_called", []),
+                    "context_additions": supervisor_decision.get("context_additions", ""),
+                },
+                output_data=response_text,
+            )
+
         # Update conversation history
         state["messages"].append(HumanMessage(content=state["user_message"]))
         state["messages"].append(AIMessage(content=response_text))
@@ -429,7 +443,20 @@ Puis suggérez 2-3 façons spécifiques dont l'apprenant peut explorer leurs ré
         ]
 
         response = self.llm.invoke(messages)
-        return response.content
+        response_text = response.content
+
+        if self.logger:
+            self.logger.log_agent_call(
+                agent_name="Initial Feedback Generator",
+                model_name="claude-sonnet-4-5 (temperature=0.5)",
+                input_data={
+                    "training_objectives": self.training_objectives[:500] + "...",
+                    "evaluations_summary": f"{len(self.evaluations)} training modules evaluated",
+                },
+                output_data=response_text,
+            )
+
+        return response_text
 
     def reset(self):
         """Reset the conversation"""

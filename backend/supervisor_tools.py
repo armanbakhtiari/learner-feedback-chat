@@ -32,21 +32,21 @@ def _get_training_data():
     return _training_data_cache
 
 
-def initialize_tools(evaluations: Dict[str, Any]):
+def initialize_tools(evaluations: Dict[str, Any], logger=None):
     """Initialize tool instances with evaluation data"""
     global _code_tool_instance, _web_search_tool_instance, _rag_module_instance
-    
+
     # Lazy import CodeGenerationTool
     from backend.code_tool import CodeGenerationTool
-    _code_tool_instance = CodeGenerationTool(evaluations)
-    
+    _code_tool_instance = CodeGenerationTool(evaluations, logger=logger)
+
     # Lazy import WebSearchTool
     from backend.web_search_tool import WebSearchTool
     _web_search_tool_instance = WebSearchTool()
-    
+
     # Lazy import and initialize RAG module
     from backend.rag_tool import get_rag_module
-    _rag_module_instance = get_rag_module()
+    _rag_module_instance = get_rag_module(logger=logger)
 
 
 @tool

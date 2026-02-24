@@ -103,11 +103,12 @@ SUPERVISOR_SYSTEM_PROMPT = """You are a supervisor agent that decides which tool
 class SupervisorAgent:
     """Supervisor agent that decides which tools to call"""
 
-    def __init__(self, evaluations: Dict[str, Any]):
+    def __init__(self, evaluations: Dict[str, Any], logger=None):
         self.evaluations = evaluations
+        self.logger = logger
 
         # Initialize tools with evaluation data
-        initialize_tools(evaluations)
+        initialize_tools(evaluations, logger=logger)
 
         # Create LLM for supervisor with tool binding
         self.llm = ChatAnthropic(
@@ -205,12 +206,29 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
             # Generate summary of what was done
             context_summary = self._generate_context_summary(tools_called, tool_results)
 
-            return {
+            result = {
                 "tools_called": tools_called,
                 "tool_results": tool_results,
                 "ready_for_chat": True,
                 "context_additions": context_summary
             }
+
+            if self.logger:
+                self.logger.log_agent_call(
+                    agent_name="Supervisor Agent",
+                    model_name="claude-sonnet-4-5 (temperature=0.3)",
+                    input_data={
+                        "user_message": user_message,
+                        "web_search_enabled": web_search_enabled,
+                        "conversation_history_length": len(conversation_history),
+                    },
+                    output_data={
+                        "tools_called": tools_called,
+                        "context_additions": context_summary,
+                    },
+                )
+
+            return result
 
         except Exception as e:
             print(f"\n❌ SUPERVISOR ERROR: {e}")

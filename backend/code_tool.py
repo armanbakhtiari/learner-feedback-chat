@@ -15,7 +15,7 @@ load_dotenv()
 
 # Configure LangSmith tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
+os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent_TEST"
 if not os.getenv("LANGCHAIN_API_KEY"):
     print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
 
@@ -115,8 +115,9 @@ def generate_visualization(evaluations: dict) -> dict:
 
 
 class CodeGenerationTool:
-    def __init__(self, evaluations: Dict[str, Any]):
+    def __init__(self, evaluations: Dict[str, Any], logger=None):
         self.evaluations = evaluations
+        self.logger = logger
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-5",
             temperature=0.7,  # Higher temperature for creative visualizations
@@ -199,6 +200,23 @@ Generate Python code to create this visualization.
             print(f"⚙️  Executing code...")
             result = self._execute_code(code)
             print(f"✅ Code executed successfully")
+
+            # Log code and figure
+            if self.logger:
+                figure_b64 = None
+                extra_output = None
+                if isinstance(result, dict):
+                    figure_b64 = result.get("image_base64")
+                    extra_output = result.get("summary_data")
+                self.logger.log_code_and_figure(
+                    agent_name="Code Generation (Visualization)",
+                    model_name="claude-sonnet-4-5 (temperature=0.7)",
+                    input_data=user_request,
+                    code=code,
+                    figure_base64=figure_b64,
+                    extra_output=extra_output,
+                )
+
             return {
                 "code": code,
                 "output": result

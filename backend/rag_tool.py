@@ -72,7 +72,8 @@ class AgenticRAGModule:
     Documents are only re-indexed if they change (detected via hash).
     """
     
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger
         self.embeddings = OpenAIEmbeddings(
             model="text-embedding-3-small",
             openai_api_key=os.getenv("OPENAI_API_KEY")
@@ -354,8 +355,23 @@ Evaluate whether these chunks can help answer the user's query.
         try:
             # Invoke with structured output - returns RankingResult directly
             result: RankingResult = self.ranking_llm.invoke(messages)
+
+            if self.logger:
+                self.logger.log_agent_call(
+                    agent_name="RAG Ranking Agent",
+                    model_name="claude-sonnet-4-5 (temperature=0.1)",
+                    input_data={
+                        "query": query,
+                        "num_chunks": len(chunks),
+                    },
+                    output_data={
+                        "is_relevant": result.is_relevant,
+                        "reasoning": result.reasoning,
+                    },
+                )
+
             return result.is_relevant, result.reasoning
-                
+
         except Exception as e:
             print(f"❌ Ranking agent error: {e}")
             # On error, assume relevant to avoid losing information
@@ -401,8 +417,21 @@ Provide a better query to search the document database.""")
         try:
             # Invoke with structured output - returns RewrittenQuery directly
             result: RewrittenQuery = self.rewrite_llm.invoke(messages)
+
+            if self.logger:
+                self.logger.log_agent_call(
+                    agent_name="RAG Query Rewrite Agent",
+                    model_name="claude-sonnet-4-5 (temperature=0.3)",
+                    input_data={
+                        "original_query": original_query,
+                        "user_message": user_message,
+                        "attempt": attempt,
+                    },
+                    output_data=result.query,
+                )
+
             return result.query
-            
+
         except Exception as e:
             print(f"❌ Rewrite agent error: {e}")
             # Return slightly modified original query
@@ -581,24 +610,24 @@ Provide a better query to search the document database.""")
 _rag_module_instance: Optional[AgenticRAGModule] = None
 
 
-def get_rag_module() -> AgenticRAGModule:
+def get_rag_module(logger=None) -> AgenticRAGModule:
     """Get or create the RAG module instance"""
     global _rag_module_instance
     if _rag_module_instance is None:
-        _rag_module_instance = AgenticRAGModule()
+        _rag_module_instance = AgenticRAGModule(logger=logger)
     return _rag_module_instance
 
 
 def search_documents(query: str, user_message: str = None) -> Dict[str, Any]:
     """
     Search the document database using the agentic RAG module.
-    
+
     This is the main entry point for the RAG tool.
-    
+
     Args:
         query: The search query (formulated for document retrieval)
         user_message: The original user message for context
-        
+
     Returns:
         Dictionary with search results and metadata
     """
