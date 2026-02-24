@@ -10,7 +10,7 @@ to complete before sending the next.
 # These are the SUBSEQUENT messages sent after the initial feedback.
 TEST_MESSAGES = [
     # TODO: Replace with your actual test messages
-    "Peux-tu me donner plus de détails sur ma performance dans le module 1?",
-    "Montre-moi un graphique de ma performance par module.",
-    "Quels sont les critères diagnostiques de la migraine?",
+    "What are my top priorities for improvement that I should focus on?",
+    "Create a table on my performance",
+    "Give me some guidelines for primary care management of headache in adults",
 ]
