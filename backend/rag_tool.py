@@ -255,18 +255,30 @@ class AgenticRAGModule:
         
         if all_chunks:
             print(f"\n🔄 Generating embeddings for {len(all_chunks)} chunks...")
-            
-            # Generate embeddings
-            embeddings = self.embeddings.embed_documents(all_chunks)
-            
-            # Add to ChromaDB
-            self.collection.add(
-                documents=all_chunks,
-                embeddings=embeddings,
-                metadatas=all_metadatas,
-                ids=all_ids
-            )
-            
+
+            # Embed and index in batches to stay within the OpenAI API limit
+            # (300,000 tokens per request; ~2000-char chunks ≈ 500 tokens each → batch of 100)
+            BATCH_SIZE = 100
+            total_batches = (len(all_chunks) + BATCH_SIZE - 1) // BATCH_SIZE
+
+            for batch_idx in range(total_batches):
+                start = batch_idx * BATCH_SIZE
+                end = min(start + BATCH_SIZE, len(all_chunks))
+
+                batch_chunks = all_chunks[start:end]
+                batch_metadatas = all_metadatas[start:end]
+                batch_ids = all_ids[start:end]
+
+                print(f"   Batch {batch_idx + 1}/{total_batches} ({len(batch_chunks)} chunks)...")
+                batch_embeddings = self.embeddings.embed_documents(batch_chunks)
+
+                self.collection.add(
+                    documents=batch_chunks,
+                    embeddings=batch_embeddings,
+                    metadatas=batch_metadatas,
+                    ids=batch_ids
+                )
+
             print(f"✅ Successfully indexed {len(all_chunks)} chunks")
         else:
             print("⚠️ No chunks to index")
