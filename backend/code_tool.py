@@ -34,6 +34,17 @@ Generate Python code to create visualizations (charts, tables, graphs) based on 
 5. **All labels, titles, and text must be in French**
 6. **ALWAYS use plt.close() after saving to buffer**
 
+
+# CRITICAL: Do NOT hallucinate data keys or column names!
+
+- **Read the EVALUATION DATA section carefully** before writing any code. The actual data with its
+  real keys is provided below — use ONLY those keys.
+- **NEVER invent or guess key/column names.** If unsure, iterate with `.keys()` or `.items()`
+  to discover structure at runtime rather than hard-coding assumed names.
+- **Use defensive access** (e.g., `.get("key", default)`) so the code won't crash on a KeyError.
+- When building DataFrames, derive column names from the actual data — do NOT fabricate columns.
+- This applies to ALL data: evaluation dicts, context data, knowledge base content, etc.
+
 # CREATIVE FREEDOM (Encouraged)
 Be creative with your visualizations! Vary your approach each time:
 

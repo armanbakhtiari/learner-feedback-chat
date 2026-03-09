@@ -192,17 +192,16 @@ def search_web(query: str) -> str:
 @tool
 def get_training_content(module_number: int, section: str = "all") -> str:
     """
-    Retrieve the full content of a training module when the user asks about specific training scenarios,
-    clinical cases, or expert panel responses that are not in the evaluation summary.
+    Retrieve the full content of a training module when the user asks about specific training scenarios, or expert panel responses that are not in the evaluation summary.
 
     Use this tool when:
     - User asks about specific scenarios/situations in a training module
     - User wants to see what experts said in a particular case
     - User asks about training content details beyond their evaluation scores
-    - User references specific module numbers (1, 2, or 3)
+    - User references the training module
 
     Args:
-        module_number: The training module number (1, 2, or 3)
+        module_number: The training module number (only module 1 is available)
         section: Which section to retrieve ("all", "scenarios", "objectives")
 
     Returns:
