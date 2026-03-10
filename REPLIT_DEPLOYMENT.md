@@ -33,18 +33,15 @@ Three issues were blocking deployment:
 The final `.replit` configuration:
 
 ```toml
-modules = ["python-3.12", "web", "nodejs-20", "nix"]
-
-[run]
-command = "python3 run.py"
+run = "python3 run.py"
 
 [nix]
 channel = "stable-25_05"
-packages = [...]
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libxcrypt", "mupdf", "openjpeg", "pkg-config", "python312Packages.pip", "qhull", "swig", "tcl", "tk", "xcbuild"]
 
 [deployment]
-build = ["pip", "install", "-r", "requirements.txt"]
-run = ["python3", "backend/app.py"]
+build = ["sh", "-c", "python3 -m venv --without-pip /home/runner/workspace/.venv && curl -sS https://bootstrap.pypa.io/get-pip.py | /home/runner/workspace/.venv/bin/python3 && /home/runner/workspace/.venv/bin/pip install -r requirements.txt"]
+run = ["/home/runner/workspace/.venv/bin/python3", "backend/app.py"]
 deploymentTarget = "cloudrun"
 
 [env]
@@ -57,7 +54,8 @@ Key points:
 - **No `[[ports]]` section** - prevents metasidecar interference
 - **`deploymentTarget = "cloudrun"`** - tells Replit to use Cloud Run routing
 - **`PORT = "8080"`** - Cloud Run's default health check port; the app reads this via `os.environ.get("PORT", 8000)`
-- **`build` command** - ensures `pip install` runs before the app starts
+- **Build uses a venv** - Replit's nix-managed Python (PEP 668) blocks direct pip installs. The build step creates a virtual environment with `--without-pip` (to skip the blocked `ensurepip`), bootstraps pip via `get-pip.py`, then installs requirements into the venv. The run command uses the venv's Python.
+- **No `.replit.toml`** - having this file can cause conflicting port configurations
 
 ## Architecture
 
