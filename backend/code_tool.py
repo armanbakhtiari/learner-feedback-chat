@@ -5,11 +5,19 @@ import os
 import json
 import sys
 import io
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend
-import matplotlib.pyplot as plt
 import base64
 from dotenv import load_dotenv
+
+_plt = None
+
+def _get_plt():
+    global _plt
+    if _plt is None:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        _plt = plt
+    return _plt
 
 load_dotenv()
 
@@ -252,6 +260,7 @@ Generate Python code to create this visualization.
     def _execute_code(self, code: str) -> Dict[str, Any]:
         """Execute the generated code safely and return the result dictionary"""
         # Create a restricted execution environment
+        plt = _get_plt()
         exec_globals = {
             'evaluations': self.evaluations,
             'plt': plt,

@@ -2,7 +2,7 @@ run = "python3 run.py"
 
 [nix]
 channel = "stable-25_05"
-packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libxcrypt", "mupdf", "openjpeg", "pkg-config", "python312Packages.pip", "python312Packages.numpy", "qhull", "swig", "tcl", "tk", "xcbuild"]
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "libxcrypt", "mupdf", "openjpeg", "pkg-config", "python312Packages.pip", "python312Packages.numpy", "qhull", "swig", "tcl", "tk", "xcbuild", "stdenv.cc.cc.lib"]
 
 [deployment]
 build = ["sh", "-c", "python3 -m venv --without-pip --system-site-packages /home/runner/workspace/.venv && curl -sS https://bootstrap.pypa.io/get-pip.py | /home/runner/workspace/.venv/bin/python3 && /home/runner/workspace/.venv/bin/pip install -r requirements.txt"]
@@ -14,3 +14,4 @@ REPL_DEPLOYMENT = "true"
 PYTHONUNBUFFERED = "1"
 SESSION_SECRET = "sensai-feedback-chatbot-session-2026"
 PORT = "8080"
+LD_LIBRARY_PATH = "/home/runner/.nix-profile/lib"
