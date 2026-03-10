@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from trainings_2_experts import training_1, training_2, training_3
 from prompts import EVALUATOR_PROMPT
 from models import TrainingEvaluation
 
@@ -50,25 +49,41 @@ def evaluate_training(training_content: str, training_name: str) -> Dict[str, An
     return evaluation_dict
 
 
-def run_evaluations() -> Dict[str, Dict[str, Any]]:
-    """Run evaluations for all training modules in parallel"""
+def run_evaluations(training_type: str = "migraine") -> Dict[str, Dict[str, Any]]:
+    """Run evaluations for training modules based on training type"""
     print("\n" + "="*80)
-    print("🚀 Starting Parallel Evaluations")
+    print(f"🚀 Starting Evaluations for training type: {training_type}")
     print("="*80)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        future_1 = executor.submit(evaluate_training, training_1, "Training 1")
-        future_2 = executor.submit(evaluate_training, training_2, "Training 2")
-        future_3 = executor.submit(evaluate_training, training_3, "Training 3")
+    if training_type == "migraine":
+        from trainings_2_experts import training_1, training_2, training_3
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            future_1 = executor.submit(evaluate_training, training_1, "Training 1")
+            future_2 = executor.submit(evaluate_training, training_2, "Training 2")
+            future_3 = executor.submit(evaluate_training, training_3, "Training 3")
 
-        eval_1 = future_1.result()
-        eval_2 = future_2.result()
-        eval_3 = future_3.result()
+            eval_1 = future_1.result()
+            eval_2 = future_2.result()
+            eval_3 = future_3.result()
 
-    print("\n✅ All evaluations completed!")
+        print("\n✅ All evaluations completed!")
+        return {
+            "training_1": eval_1,
+            "training_2": eval_2,
+            "training_3": eval_3
+        }
 
-    return {
-        "training_1": eval_1,
-        "training_2": eval_2,
-        "training_3": eval_3
-    }
+    elif training_type == "nursing_1st":
+        from trainings_nursing_1stLearner import training_1
+        eval_1 = evaluate_training(training_1, "Nursing Leadership (1st Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
+
+    elif training_type == "nursing_2nd":
+        from trainings_nursing_2ndLearner import training_1
+        eval_1 = evaluate_training(training_1, "Nursing Leadership (2nd Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
+
+    else:
+        raise ValueError(f"Unknown training type: {training_type}")

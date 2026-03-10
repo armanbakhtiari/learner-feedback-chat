@@ -57,3 +57,6 @@ Expert*_Evaluation_Report.docx
 
 # Vector store (persists locally, generated on first run)
 .chroma_db/
+
+# Session store (persists locally, auto-managed)
+.sessions/

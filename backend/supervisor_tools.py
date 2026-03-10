@@ -22,31 +22,45 @@ _rag_module_instance = None
 # Lazy import cache
 _training_data_cache = None
 
+# Current training type (set during initialization)
+_current_training_type = "migraine"
+
 
 def _get_training_data():
-    """Lazy load training data"""
+    """Lazy load training data based on current training type"""
     global _training_data_cache
     if _training_data_cache is None:
-        from trainings_2_experts import training_1, training_2, training_3
-        _training_data_cache = (training_1, training_2, training_3)
+        if _current_training_type == "migraine":
+            from trainings_2_experts import training_1, training_2, training_3
+            _training_data_cache = {"training_1": training_1, "training_2": training_2, "training_3": training_3}
+        elif _current_training_type == "nursing_1st":
+            from trainings_nursing_1stLearner import training_1
+            _training_data_cache = {"training_1": training_1}
+        elif _current_training_type == "nursing_2nd":
+            from trainings_nursing_2ndLearner import training_1
+            _training_data_cache = {"training_1": training_1}
     return _training_data_cache
 
 
-def initialize_tools(evaluations: Dict[str, Any]):
-    """Initialize tool instances with evaluation data"""
+def initialize_tools(evaluations: Dict[str, Any], training_type: str = "migraine"):
+    """Initialize tool instances with evaluation data and training type"""
     global _code_tool_instance, _web_search_tool_instance, _rag_module_instance
-    
+    global _current_training_type, _training_data_cache
+
+    _current_training_type = training_type
+    _training_data_cache = None  # Reset cache when training type changes
+
     # Lazy import CodeGenerationTool
     from backend.code_tool import CodeGenerationTool
     _code_tool_instance = CodeGenerationTool(evaluations)
-    
+
     # Lazy import WebSearchTool
     from backend.web_search_tool import WebSearchTool
     _web_search_tool_instance = WebSearchTool()
-    
-    # Lazy import and initialize RAG module
+
+    # Lazy import and initialize RAG module for the correct training type
     from backend.rag_tool import get_rag_module
-    _rag_module_instance = get_rag_module()
+    _rag_module_instance = get_rag_module(training_type)
 
 
 @tool
@@ -61,16 +75,16 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
     - Statistics display ("statistique", "diagramme", "courbe", "histogramme")
 
     Args:
-        user_request: The user's message requesting a visualization. 
+        user_request: The user's message requesting a visualization.
                       IMPORTANT: Include the SPECIFIC DATA or CONTEXT that should be visualized!
                       If the user asks to visualize data from a previous response, include that data here.
         conversation_history: JSON string of recent conversation messages
-        data_context: Optional additional context or data to visualize (e.g., retrieved content, 
-                      previous assistant responses with specific data, tables, or lists that 
+        data_context: Optional additional context or data to visualize (e.g., retrieved content,
+                      previous assistant responses with specific data, tables, or lists that
                       should be visualized)
-        include_evaluation_data: Set to True ONLY if the visualization is about the learner's 
+        include_evaluation_data: Set to True ONLY if the visualization is about the learner's
                                  performance, evaluation scores, or training results.
-                                 Set to False if visualizing other data (diagnostic criteria, 
+                                 Set to False if visualizing other data (diagnostic criteria,
                                  guidelines, knowledge base content, etc.)
 
     Returns:
@@ -83,7 +97,7 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
     Examples:
         1. User asks about their performance:
            -> include_evaluation_data=True, data_context="" (evaluation data will be included)
-        
+
         2. User asks to visualize diagnostic criteria from knowledge base:
            -> include_evaluation_data=False, data_context="Les critères: 1)..., 2)..."
     """
@@ -105,9 +119,8 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
 
         # If data_context is provided, add it as a synthetic message for context
         if data_context:
-            # Add the specific data context as a message so the code tool can see it
             messages.append(AIMessage(content=f"[Relevant Context for Visualization]:\n{data_context}"))
-        
+
         # Combine user request with data context for better understanding
         full_request = user_request
         if data_context:
@@ -117,21 +130,19 @@ def generate_visualization(user_request: str, conversation_history: str, data_co
         result = _code_tool_instance.generate_code(full_request, messages, include_evaluation_data)
 
         if result:
-            # result["output"] is already a dict, not a JSON string
             output_data = result.get("output", {})
-            
-            # If output_data is a string (error case), parse it
+
             if isinstance(output_data, str):
                 try:
                     output_data = json.loads(output_data)
                 except Exception as e:
                     print(f"❌ Failed to parse visualization output: {e}")
                     output_data = {"error": str(output_data)}
-            
+
             return json.dumps({
                 "status": "success",
                 "code": result.get("code", ""),
-                "output": output_data  # This is now guaranteed to be a dict
+                "output": output_data
             }, ensure_ascii=False)
         else:
             return json.dumps({"status": "error", "error": "Failed to generate visualization"})
@@ -201,7 +212,7 @@ def get_training_content(module_number: int, section: str = "all") -> str:
     - User references the training module
 
     Args:
-        module_number: The training module number (only module 1 is available)
+        module_number: The training module number (available modules depend on training type)
         section: Which section to retrieve ("all", "scenarios", "objectives")
 
     Returns:
@@ -217,37 +228,31 @@ def get_training_content(module_number: int, section: str = "all") -> str:
         -> Returns full module 1 content so the chat agent can answer
     """
     try:
-        # Get training data lazily
-        training_1, training_2, training_3 = _get_training_data()
-        
-        # Map module numbers to training content
-        modules = {
-            1: {
-                "name": "Module 1: Diagnostic et suivi de la migraine",
-                "content": training_1
-            },
-            2: {
-                "name": "Module 2: Traitement aigu et gestion des habitudes de vie",
-                "content": training_2
-            },
-            3: {
-                "name": "Module 3: Traitement préventif de la migraine",
-                "content": training_3
-            }
-        }
+        training_data = _get_training_data()
 
-        if module_number not in modules:
+        if _current_training_type == "migraine":
+            names = {
+                "training_1": "Module 1: Diagnostic et suivi de la migraine",
+                "training_2": "Module 2: Traitement aigu et gestion des habitudes de vie",
+                "training_3": "Module 3: Traitement préventif de la migraine"
+            }
+        else:
+            names = {
+                "training_1": "Module 1: Leadership et collaboration en soins infirmiers"
+            }
+
+        key = f"training_{module_number}"
+        if key not in training_data:
+            available = list(training_data.keys())
             return json.dumps({
                 "status": "error",
-                "error": f"Invalid module number: {module_number}. Must be 1, 2, or 3."
+                "error": f"Invalid module number: {module_number}. Available: {available}"
             })
-
-        module = modules[module_number]
 
         return json.dumps({
             "status": "success",
-            "module_name": module["name"],
-            "content": module["content"],
+            "module_name": names.get(key, key),
+            "content": training_data[key],
             "section": section
         })
 
@@ -259,40 +264,44 @@ def get_training_content(module_number: int, section: str = "all") -> str:
 def search_knowledge_base(query: str, user_message: str = "") -> str:
     """
     Search the knowledge base using agentic RAG for specialized domain questions.
-    
+
     This tool uses an intelligent retrieval system that:
     1. Retrieves the top 10 most relevant chunks from reference documents
     2. Uses a Ranking Agent to evaluate if the chunks answer the query
     3. If not relevant, rewrites the query and retries (up to 3 times)
     4. Returns the best matching content from the knowledge base
-    
+
+    IMPORTANT: If after 3 attempts no relevant information is found, this tool
+    returns found_relevant=false. The supervisor should then instruct the chat
+    agent to inform the user and suggest enabling web search.
+
     Use this tool when the user asks:
     - Specialized domain questions that require reference material
     - Questions about specific concepts, criteria, or classifications
     - Questions about best practices, protocols, or guidelines
     - Questions that require evidence-based knowledge beyond the training content
     - Questions about procedures, methodologies, or recommendations
-    
+
     DO NOT use this tool when:
     - User asks about their specific training performance/evaluation (use evaluation data)
     - User asks for visualizations or charts (use generate_visualization)
     - User asks about what experts said in training scenarios (use get_training_content)
     - User asks about current/latest information (use search_web)
-    
+
     Args:
         query: A well-formulated search query for document retrieval.
                Should focus on domain-specific terminology.
         user_message: The original user message for context (helps with query rewriting)
-    
+
     Returns:
         JSON string containing:
-        - "status": "success" or "error"
+        - "status": "success" or "no_relevant_info" or "error"
         - "chunks": List of relevant document chunks with source citations
         - "sources": List of source document names
         - "formatted_context": Pre-formatted context for the chat agent
         - "attempts": Number of retrieval attempts made
         - "found_relevant": Whether relevant content was found
-    
+
     Example:
         User: "What are the diagnostic criteria for this condition?"
         -> Call with query="diagnostic criteria classification guidelines"
@@ -300,21 +309,20 @@ def search_knowledge_base(query: str, user_message: str = "") -> str:
     """
     if _rag_module_instance is None:
         return json.dumps({"status": "error", "error": "RAG module not initialized"})
-    
+
     try:
-        # If no user message provided, use query as context
         if not user_message:
             user_message = query
-        
+
         # Perform agentic RAG search
         result = _rag_module_instance.search(query, user_message)
-        
-        if result.get("status") == "success":
-            # Format chunks for context
+
+        if result.get("found_relevant", False):
+            # Found relevant content
             formatted_context = _rag_module_instance.format_chunks_for_context(
                 result.get("chunks", [])
             )
-            
+
             return json.dumps({
                 "status": "success",
                 "chunks": result.get("chunks", []),
@@ -322,15 +330,18 @@ def search_knowledge_base(query: str, user_message: str = "") -> str:
                 "formatted_context": formatted_context,
                 "query_history": result.get("query_history", []),
                 "attempts": result.get("attempts", 1),
-                "found_relevant": result.get("found_relevant", False)
+                "found_relevant": True
             }, ensure_ascii=False)
         else:
+            # No relevant info found after all attempts
             return json.dumps({
-                "status": "error",
-                "error": result.get("error", "Unknown error"),
-                "query_history": result.get("query_history", [])
+                "status": "no_relevant_info",
+                "error": "No relevant information found in the knowledge base after 3 attempts.",
+                "query_history": result.get("query_history", []),
+                "attempts": result.get("attempts", 3),
+                "found_relevant": False
             }, ensure_ascii=False)
-            
+
     except Exception as e:
         return json.dumps({"status": "error", "error": str(e)})
 

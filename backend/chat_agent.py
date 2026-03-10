@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from trainings_2_experts import training_objectives
 from backend.supervisor_agent import SupervisorAgent
 
 load_dotenv()
@@ -80,6 +79,12 @@ The supervisor has ALREADY decided whether to call tools or not. Your job is to 
    - If you don't have enough information, say so politely
    - Do NOT ask for tools or additional data - the supervisor already decided
 
+# About Knowledge Base Failures
+If the supervisor indicates that the knowledge base search did NOT find relevant information:
+- Clearly inform the user that the reference documents do not contain information relevant to their question
+- If web search is not enabled, ask the user to enable the web search button (🌐 Recherche Web) so you can search the internet to find an answer
+- Be helpful and empathetic - do not just say "I don't know"
+
 # Important Notes
 - You can ONLY answer based on the evaluation data, training objectives, and additional context provided
 - If asked about something not in the data or context, politely say you don't have that information
@@ -116,16 +121,30 @@ class ChatState(TypedDict):
 class ChatAgent:
     """LangGraph-based chat agent with supervisor architecture"""
 
-    def __init__(self, evaluations: Dict[str, Any]):
+    def __init__(self, evaluations: Dict[str, Any], training_type: str = "migraine"):
         self.evaluations = evaluations
-        self.training_objectives = training_objectives
+        self.training_type = training_type
+
+        # Load training objectives based on training type
+        if training_type == "migraine":
+            from trainings_2_experts import training_objectives
+            self.training_objectives = training_objectives
+        elif training_type == "nursing_1st":
+            from trainings_nursing_1stLearner import training_objectives
+            self.training_objectives = training_objectives
+        elif training_type == "nursing_2nd":
+            from trainings_nursing_2ndLearner import training_objectives
+            self.training_objectives = training_objectives
+        else:
+            self.training_objectives = ""
+
         self.conversation_history: List[BaseMessage] = []
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-5",
             temperature=0.5,
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
-        self.supervisor = SupervisorAgent(evaluations)
+        self.supervisor = SupervisorAgent(evaluations, training_type)
         self.initial_feedback_given = False
 
         # Build the LangGraph
@@ -212,6 +231,11 @@ class ChatAgent:
                     attempts = rag_result.get("attempts", 1)
                     print(f"✅ Knowledge base search completed: {len(state['rag_sources'])} sources, "
                           f"relevant={found_relevant}, attempts={attempts}")
+                elif rag_result.get("status") == "no_relevant_info":
+                    # RAG exhausted all attempts - no relevant info found
+                    state["rag_context"] = None
+                    state["rag_sources"] = []
+                    print(f"⚠️ Knowledge base: no relevant info found after {rag_result.get('attempts', 3)} attempts")
                 else:
                     print(f"❌ Knowledge base search failed: {rag_result.get('error')}")
 
@@ -396,11 +420,11 @@ Objectifs d'apprentissage:
 
         # Prepare response
         viz_output = final_state.get("visualization_output")
-        
+
         # Convert visualization output to JSON string if it's a dict
         if viz_output and isinstance(viz_output, dict):
             viz_output = json.dumps(viz_output, ensure_ascii=False)
-        
+
         result = {
             "response": final_state["agent_response"],
             "has_code": "generate_visualization" in final_state.get("tools_called", []),
@@ -408,7 +432,7 @@ Objectifs d'apprentissage:
             "code_output": viz_output,
             "citations": final_state.get("web_search_citations") or []
         }
-        
+
         return result
 
     def _create_initial_feedback(self) -> str:

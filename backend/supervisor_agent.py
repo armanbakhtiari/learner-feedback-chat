@@ -46,24 +46,23 @@ you must instruct the chat agent to inform the user that this information is not
 # Available Tools:
 
 - **generate_visualization**: Call ONLY when user EXPLICITLY asks for tables, charts, graphs, or visual displays
-  - EXPLICIT keywords that REQUIRE visualization: "tableau", "graphique", "chart", "créer un tableau", "montrer un graphique", "afficher un diagramme"
+  - Pay attention to keywords that request visualization: "tableau", "graphique", "chart", "créer un tableau", "montrer un graphique", "afficher un diagramme" or other words that show the user's interest in some sort of visualization generation.
   - DO NOT call for analysis questions like "où", "quand", "comment", "pourquoi", "quel scénario"
   - DO NOT call for questions that can be answered with text like "in which scenario", "where did I", "what was my performance"
-  - ONLY call when the user explicitly wants a visual/tabular OUTPUT, not just an analysis
-  
+
   **CRITICAL for generate_visualization - Parameter Selection:**
-  
+
   1. `include_evaluation_data` parameter:
      - Set to **TRUE** ONLY when visualizing the learner's PERFORMANCE, EVALUATION SCORES, or TRAINING RESULTS
        Examples: "graphique de ma performance", "tableau de mes scores", "comparaison de mes résultats"
      - Set to **FALSE** for ALL OTHER visualizations (diagnostic criteria, guidelines, knowledge base content, etc.)
        Examples: "tableau des critères diagnostiques", "graphique des recommandations"
-  
+
   2. `data_context` parameter:
      - When include_evaluation_data=FALSE: YOU MUST provide the data to visualize in this parameter
      - Extract the relevant data from the conversation history (previous assistant responses)
      - Example: If assistant mentioned "Les critères sont: 1)..., 2)...", include that in data_context
-  
+
   3. `user_request` parameter:
      - Describe what type of visualization to create
      - Include any styling preferences mentioned by the user
@@ -108,11 +107,12 @@ you must instruct the chat agent to inform the user that this information is not
 class SupervisorAgent:
     """Supervisor agent that decides which tools to call"""
 
-    def __init__(self, evaluations: Dict[str, Any]):
+    def __init__(self, evaluations: Dict[str, Any], training_type: str = "migraine"):
         self.evaluations = evaluations
+        self.training_type = training_type
 
-        # Initialize tools with evaluation data
-        initialize_tools(evaluations)
+        # Initialize tools with evaluation data and training type
+        initialize_tools(evaluations, training_type)
 
         # Create LLM for supervisor with tool binding
         self.llm = ChatAnthropic(
@@ -208,7 +208,7 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
                 print(f"\n✅ No tools needed for this query")
 
             # Generate summary of what was done
-            context_summary = self._generate_context_summary(tools_called, tool_results)
+            context_summary = self._generate_context_summary(tools_called, tool_results, web_search_enabled)
 
             return {
                 "tools_called": tools_called,
@@ -243,7 +243,7 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
 
         return json.dumps(formatted, ensure_ascii=False)
 
-    def _generate_context_summary(self, tools_called: List[str], tool_results: Dict[str, Any]) -> str:
+    def _generate_context_summary(self, tools_called: List[str], tool_results: Dict[str, Any], web_search_enabled: bool = False) -> str:
         """Generate a human-readable summary of what tools were called and what they produced"""
         if not tools_called:
             return ""
@@ -273,22 +273,30 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
         # RAG knowledge base summary
         if "search_knowledge_base" in tools_called:
             rag_result = tool_results.get("search_knowledge_base", {})
-            if rag_result.get("status") == "success":
+            found_relevant = rag_result.get("found_relevant", False)
+
+            if found_relevant:
                 sources = rag_result.get("sources", [])
-                found_relevant = rag_result.get("found_relevant", False)
                 sources_str = ", ".join(sources[:3]) if sources else "reference documents"
-                
-                if found_relevant:
+                summary_parts.append(
+                    f"Knowledge base search completed. Relevant information found from: {sources_str}. "
+                    f"Use this information to provide an evidence-based answer. "
+                    f"Cite the source documents when referencing specific information."
+                )
+            else:
+                # RAG failed after all attempts - instruct chat agent accordingly
+                if web_search_enabled:
                     summary_parts.append(
-                        f"Knowledge base search completed. Relevant information found from: {sources_str}. "
-                        f"Use this information to provide an evidence-based answer. "
-                        f"Cite the source documents when referencing specific information."
+                        "IMPORTANT: The knowledge base search did NOT find relevant information after 3 attempts. "
+                        "Web search is enabled, but was not called for this query. "
+                        "Inform the user that the reference documents do not contain relevant information for this question. "
+                        "Suggest that you could search the web for an answer if they'd like."
                     )
                 else:
                     summary_parts.append(
-                        f"Knowledge base search completed. Limited relevant information found from: {sources_str}. "
-                        f"Use the available information but note that it may not fully address the query. "
-                        f"Consider suggesting the user consult additional resources if needed."
+                        "IMPORTANT: The knowledge base search did NOT find relevant information after 3 attempts. "
+                        "Inform the user that the reference documents do not contain relevant information for this question. "
+                        "Ask the user to enable the web search button (🌐 Recherche Web) so you can search the web to find an answer."
                     )
 
         return "\n".join(summary_parts)

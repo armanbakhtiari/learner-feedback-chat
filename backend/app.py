@@ -41,19 +41,43 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 
 sys.path.append(str(Path(__file__).parent.parent))
 
+# Import session store
+from backend.session_store import (
+    save_session, get_session, save_chat_history,
+    delete_session_chat, cleanup_expired_sessions, generate_session_id
+)
+
 # Lazy imports - only import heavy modules when needed
-_training_data = None
+_training_data_cache = {}
 _evaluator_module = None
 _chat_agent_class = None
 
 
-def get_training_data():
-    """Lazy load training data"""
-    global _training_data
-    if _training_data is None:
-        from trainings_2_experts import training_1, training_2, training_3, training_objectives
-        _training_data = (training_1, training_2, training_3, training_objectives)
-    return _training_data
+def get_training_data(training_type: str = "migraine"):
+    """Lazy load training data based on training type"""
+    global _training_data_cache
+    if training_type not in _training_data_cache:
+        if training_type == "migraine":
+            from trainings_2_experts import training_1, training_2, training_3, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1, "training_2": training_2, "training_3": training_3},
+                "objectives": training_objectives
+            }
+        elif training_type == "nursing_1st":
+            from trainings_nursing_1stLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
+        elif training_type == "nursing_2nd":
+            from trainings_nursing_2ndLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
+        else:
+            raise ValueError(f"Unknown training type: {training_type}")
+    return _training_data_cache[training_type]
 
 
 def get_evaluator():
@@ -92,9 +116,12 @@ app.add_middleware(
 )
 _log("CORS middleware added")
 
-# Store evaluations in memory (in production, use a database)
-evaluations_store: Dict[str, Any] = {}
-chat_agents: Dict[str, Any] = {}  # Type is Any to avoid importing ChatAgent at module level
+# In-memory cache for chat agents (recreated from disk if missing)
+chat_agents: Dict[str, Any] = {}
+
+
+class EvaluateRequest(BaseModel):
+    training_type: str = "migraine"
 
 
 class ChatMessage(BaseModel):
@@ -117,50 +144,62 @@ _log("defining routes...")
 @app.on_event("startup")
 async def startup_event():
     _log("FastAPI startup event fired - app is ready!")
+    # Clean up expired sessions on startup
+    cleanup_expired_sessions()
 
 
 # API Routes (must come before static file serving)
 
 
 @app.get("/trainings")
-async def get_trainings():
-    """Get all training modules"""
-    t1, t2, t3, objectives = get_training_data()
-    trainings = [
-        {
-            "id": "training_1",
-            "name": "Module 1: Diagnostic et suivi de la migraine",
-            "content": t1,
-            "objectives": objectives
-        },
-        {
-            "id": "training_2",
-            "name": "Module 2: Traitement aigu et gestion des habitudes de vie de la migraine",
-            "content": t2,
-            "objectives": objectives
-        },
-        {
-            "id": "training_3",
-            "name": "Module 3: Traitement préventif de la migraine",
-            "content": t3,
-            "objectives": objectives
+async def get_trainings(training_type: str = "migraine"):
+    """Get training modules for the selected training type"""
+    data = get_training_data(training_type)
+    trainings_dict = data["trainings"]
+    objectives = data["objectives"]
+
+    trainings = []
+    if training_type == "migraine":
+        names = {
+            "training_1": "Module 1: Diagnostic et suivi de la migraine",
+            "training_2": "Module 2: Traitement aigu et gestion des habitudes de vie de la migraine",
+            "training_3": "Module 3: Traitement preventif de la migraine"
         }
-    ]
-    return {"trainings": trainings}
+    elif training_type in ("nursing_1st", "nursing_2nd"):
+        names = {
+            "training_1": "Module 1: Leadership et collaboration en soins infirmiers"
+        }
+    else:
+        names = {}
+
+    for tid, content in trainings_dict.items():
+        trainings.append({
+            "id": tid,
+            "name": names.get(tid, tid),
+            "content": content,
+            "objectives": objectives
+        })
+
+    return {"trainings": trainings, "training_type": training_type}
 
 
 @app.post("/evaluate")
-async def evaluate_trainings():
-    """Run evaluations on all training modules"""
+async def evaluate_trainings(request: EvaluateRequest):
+    """Run evaluations on training modules for the selected training type"""
     try:
+        training_type = request.training_type
         run_evaluations = get_evaluator()
-        evaluations = run_evaluations()
-        session_id = "session_" + str(len(evaluations_store) + 1)
-        evaluations_store[session_id] = evaluations
+        evaluations = run_evaluations(training_type)
+        session_id = generate_session_id()
+
+        # Persist to disk
+        save_session(session_id, evaluations, training_type)
+
         return {
             "session_id": session_id,
             "status": "completed",
-            "evaluations": evaluations
+            "evaluations": evaluations,
+            "training_type": training_type
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -169,9 +208,10 @@ async def evaluate_trainings():
 @app.get("/evaluation/{session_id}")
 async def get_evaluation(session_id: str):
     """Get evaluation results for a session"""
-    if session_id not in evaluations_store:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return evaluations_store[session_id]
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found or expired")
+    return session["evaluations"]
 
 
 @app.post("/chat")
@@ -187,18 +227,46 @@ async def chat(message: ChatMessage):
 
         # Get or create chat agent for this session
         if message.session_id not in chat_agents:
-            if message.session_id not in evaluations_store:
+            # Try to load session from disk
+            session = get_session(message.session_id)
+            if session is None:
                 raise HTTPException(
                     status_code=404,
-                    detail="Session not found. Please run evaluation first."
+                    detail="Session not found or expired. Please run evaluation first."
                 )
+
             ChatAgent = get_chat_agent_class()
-            chat_agents[message.session_id] = ChatAgent(
-                evaluations=evaluations_store[message.session_id]
+            training_type = session.get("training_type", "migraine")
+            agent = ChatAgent(
+                evaluations=session["evaluations"],
+                training_type=training_type
             )
+
+            # Restore chat history from disk
+            stored_history = session.get("chat_history", [])
+            if stored_history:
+                from langchain_core.messages import HumanMessage, AIMessage
+                for msg in stored_history:
+                    if msg["role"] == "human":
+                        agent.conversation_history.append(HumanMessage(content=msg["content"]))
+                    elif msg["role"] == "ai":
+                        agent.conversation_history.append(AIMessage(content=msg["content"]))
+                agent.initial_feedback_given = True
+                print(f"   Restored {len(stored_history)} messages from disk")
+
+            chat_agents[message.session_id] = agent
 
         agent = chat_agents[message.session_id]
         response = agent.chat(message.message, web_search_enabled=message.web_search_enabled)
+
+        # Persist chat history to disk
+        from langchain_core.messages import HumanMessage as HM
+        serialized_history = []
+        for msg in agent.conversation_history:
+            if hasattr(msg, 'content'):
+                role = "human" if isinstance(msg, HM) else "ai"
+                serialized_history.append({"role": role, "content": msg.content})
+        save_chat_history(message.session_id, serialized_history)
 
         # Log response details
         print(f"\n{'='*70}")
@@ -219,6 +287,8 @@ async def chat(message: ChatMessage):
             code_output=response.get("code_output"),
             citations=response.get("citations", [])
         )
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"ERROR in /chat endpoint: {e}")
         import traceback
@@ -231,6 +301,7 @@ async def reset_chat(session_id: str):
     """Reset chat history for a session"""
     if session_id in chat_agents:
         del chat_agents[session_id]
+    delete_session_chat(session_id)
     return {"status": "reset"}
 
 

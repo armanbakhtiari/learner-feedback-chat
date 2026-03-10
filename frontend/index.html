@@ -3,58 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Système de Rétroaction pour l'Apprentissage</title>
+    <title>Systeme de Retroaction pour l'Apprentissage</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎓 Système de Rétroaction pour l'Apprentissage</h1>
-            <p class="subtitle">Modules de formation sur la migraine</p>
+            <h1>Systeme de Retroaction pour l'Apprentissage</h1>
+            <p class="subtitle">Modules de formation par concordance</p>
         </header>
 
         <main>
-            <section class="intro-section">
-                <h2>Bienvenue</h2>
-                <p>
-                    Ce système vous permet d'explorer vos performances dans les modules de formation
-                    sur le diagnostic et le traitement de la migraine. Vous pouvez visualiser les modules
-                    de formation et obtenir des retours personnalisés sur vos réponses.
-                </p>
+            <!-- Step 1: Training Selection -->
+            <section class="training-selection-section" id="training-selection-section">
+                <h2>Choisissez votre formation</h2>
+                <p>Selectionnez le contenu de formation que vous souhaitez evaluer :</p>
+                <div class="training-selection-grid">
+                    <div class="training-selection-card" data-type="migraine" onclick="selectTraining('migraine')">
+                        <div class="selection-icon">🧠</div>
+                        <h3>Migraine</h3>
+                        <p>Diagnostic, traitement aigu et preventif de la migraine</p>
+                        <span class="module-count">3 modules</span>
+                    </div>
+                    <div class="training-selection-card" data-type="nursing_1st" onclick="selectTraining('nursing_1st')">
+                        <div class="selection-icon">🏥</div>
+                        <h3>Leadership Infirmier (1er apprenant)</h3>
+                        <p>Competences de communication et de collaboration pour exercer un role de leader</p>
+                        <span class="module-count">1 module</span>
+                    </div>
+                    <div class="training-selection-card" data-type="nursing_2nd" onclick="selectTraining('nursing_2nd')">
+                        <div class="selection-icon">🏥</div>
+                        <h3>Leadership Infirmier (2e apprenant)</h3>
+                        <p>Competences de communication et de collaboration pour exercer un role de leader</p>
+                        <span class="module-count">1 module</span>
+                    </div>
+                </div>
             </section>
 
-            <section class="objectives-section">
-                <h2>📋 Objectifs d'apprentissage</h2>
-                <ul class="objectives-list">
-                    <li>Différencier les types de céphalées</li>
-                    <li>Poser un diagnostic pertinent en contexte clinique complexe par la discrimination des caractéristiques cliniques de la migraine, des céphalées de tension et des céphalées médicamenteuses</li>
-                    <li>Évaluer de façon critique les options thérapeutiques aiguës, préventives et hormonales dans la prise en charge des migraines</li>
+            <!-- Step 2: Training Details (shown after selection) -->
+            <section class="intro-section" id="intro-section" style="display: none;">
+                <h2>Bienvenue</h2>
+                <p id="intro-text"></p>
+            </section>
+
+            <section class="objectives-section" id="objectives-section" style="display: none;">
+                <h2>Objectifs d'apprentissage</h2>
+                <ul class="objectives-list" id="objectives-list">
                 </ul>
             </section>
 
-            <section class="trainings-section">
-                <h2>📚 Modules de formation</h2>
+            <section class="trainings-section" id="trainings-section" style="display: none;">
+                <h2>Modules de formation</h2>
                 <div id="trainings-container" class="trainings-grid">
-                    <!-- Training modules will be loaded here -->
                     <div class="loading">Chargement des modules...</div>
                 </div>
             </section>
 
-            <section class="action-section">
-                <h2>🚀 Commencer l'évaluation</h2>
+            <section class="action-section" id="action-section" style="display: none;">
+                <h2>Commencer l'evaluation</h2>
                 <p>
-                    Cliquez sur le bouton ci-dessous pour lancer l'évaluation de vos réponses.
+                    Cliquez sur le bouton ci-dessous pour lancer l'evaluation de vos reponses.
                     Cela peut prendre quelques minutes.
                 </p>
-                <button id="start-evaluation-btn" class="primary-btn">
-                    Lancer l'évaluation
-                </button>
+                <div class="action-buttons">
+                    <button id="back-to-selection-btn" class="secondary-btn" onclick="backToSelection()">
+                        ← Changer de formation
+                    </button>
+                    <button id="start-evaluation-btn" class="primary-btn">
+                        Lancer l'evaluation
+                    </button>
+                </div>
                 <div id="evaluation-status" class="status-message"></div>
             </section>
         </main>
 
         <footer>
-            <p>&copy; 2026 Système de Rétroaction pour l'Apprentissage</p>
+            <p>&copy; 2026 Systeme de Retroaction pour l'Apprentissage</p>
         </footer>
     </div>
 
@@ -69,62 +93,113 @@
 
     <script src="app.js"></script>
     <script>
+        let selectedTrainingType = null;
+
         // Get API URL - either from app.js or detect it inline
         function getApiUrl() {
-            // Try to get from app.js first
             if (window.API_BASE_URL) {
-                console.log('✅ Using API_BASE_URL from app.js:', window.API_BASE_URL);
+                console.log('Using API_BASE_URL from app.js:', window.API_BASE_URL);
                 return window.API_BASE_URL;
             }
-            
-            // Fallback: detect inline (same logic as app.js)
-            console.log('⚠️ API_BASE_URL not found, detecting inline...');
+
+            console.log('API_BASE_URL not found, detecting inline...');
             const hostname = window.location.hostname;
             const port = window.location.port;
             const protocol = window.location.protocol;
-            
-            // Local development
+
             if (hostname === 'localhost' && port === '3000') {
                 return 'http://localhost:8000';
             }
-            
-            // Replit - always use port 8000
-            const isReplit = hostname.includes('replit.app') || 
-                             hostname.includes('repl.co') || 
+
+            const isReplit = hostname.includes('replit.app') ||
+                             hostname.includes('repl.co') ||
                              hostname.includes('replit.dev') ||
                              hostname.includes('riker.replit');
-            
+
             if (isReplit && port && port !== '8000' && port !== '80' && port !== '443') {
                 return `${protocol}//${hostname}:8000`;
             }
-            
+
             return window.location.origin;
         }
 
-        // Load trainings on page load
         document.addEventListener('DOMContentLoaded', () => {
-            loadTrainings();
             setupEventListeners();
         });
 
-        async function loadTrainings() {
+        function selectTraining(trainingType) {
+            selectedTrainingType = trainingType;
+            localStorage.setItem('training_type', trainingType);
+
+            // Highlight selected card
+            document.querySelectorAll('.training-selection-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-type="${trainingType}"]`).classList.add('selected');
+
+            // Show training details
+            showTrainingDetails(trainingType);
+        }
+
+        function showTrainingDetails(trainingType) {
+            // Update intro text
+            const introText = document.getElementById('intro-text');
+            const objectivesList = document.getElementById('objectives-list');
+
+            if (trainingType === 'migraine') {
+                introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans les modules de formation sur le diagnostic et le traitement de la migraine. Vous pouvez visualiser les modules de formation et obtenir des retours personnalises sur vos reponses.';
+                objectivesList.innerHTML = `
+                    <li>Differencier les types de cephalees</li>
+                    <li>Poser un diagnostic pertinent en contexte clinique complexe par la discrimination des caracteristiques cliniques de la migraine, des cephalees de tension et des cephalees medicamenteuses</li>
+                    <li>Evaluer de facon critique les options therapeutiques aigues, preventives et hormonales dans la prise en charge des migraines</li>
+                `;
+            } else {
+                introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans le module de formation sur le leadership et la collaboration en soins infirmiers. Vous pouvez visualiser le module de formation et obtenir des retours personnalises sur vos reponses.';
+                objectivesList.innerHTML = `
+                    <li>Mobiliser les competences de communication et de collaboration pour exercer un role de leader</li>
+                `;
+            }
+
+            // Show sections
+            document.getElementById('intro-section').style.display = '';
+            document.getElementById('objectives-section').style.display = '';
+            document.getElementById('trainings-section').style.display = '';
+            document.getElementById('action-section').style.display = '';
+
+            // Load training modules
+            loadTrainings(trainingType);
+        }
+
+        function backToSelection() {
+            selectedTrainingType = null;
+            document.getElementById('intro-section').style.display = 'none';
+            document.getElementById('objectives-section').style.display = 'none';
+            document.getElementById('trainings-section').style.display = 'none';
+            document.getElementById('action-section').style.display = 'none';
+
+            document.querySelectorAll('.training-selection-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        async function loadTrainings(trainingType) {
             const container = document.getElementById('trainings-container');
             const apiUrl = getApiUrl();
 
             try {
-                console.log('📡 Loading trainings from:', `${apiUrl}/trainings`);
-                
-                const response = await fetch(`${apiUrl}/trainings`);
-                
+                console.log('Loading trainings from:', `${apiUrl}/trainings?training_type=${trainingType}`);
+
+                const response = await fetch(`${apiUrl}/trainings?training_type=${trainingType}`);
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error(`Expected JSON but got ${contentType}. The API endpoint may not be reachable.`);
                 }
-                
+
                 const data = await response.json();
                 const trainings = data.trainings;
 
@@ -134,15 +209,15 @@
                     const card = createTrainingCard(training, index + 1);
                     container.appendChild(card);
                 });
-                
-                console.log('✅ Trainings loaded successfully');
+
+                console.log('Trainings loaded successfully');
             } catch (error) {
-                console.error('❌ Error loading trainings:', error);
+                console.error('Error loading trainings:', error);
                 container.innerHTML = `
                     <div class="error">
                         <p>Erreur lors du chargement des modules</p>
                         <p style="font-size: 0.9em; color: #666;">
-                            Vérifiez que le serveur backend est en cours d'exécution sur le port 8000.
+                            Verifiez que le serveur backend est en cours d'execution sur le port 8000.
                         </p>
                         <p style="font-size: 0.8em; color: #888;">
                             API URL: ${apiUrl}<br>
@@ -209,26 +284,37 @@
         }
 
         async function startEvaluation() {
+            if (!selectedTrainingType) {
+                alert('Veuillez d\'abord selectionner une formation.');
+                return;
+            }
+
             const btn = document.getElementById('start-evaluation-btn');
             const status = document.getElementById('evaluation-status');
             const apiUrl = getApiUrl();
 
             btn.disabled = true;
-            btn.textContent = 'Évaluation en cours...';
-            status.textContent = '⏳ Évaluation des modules de formation...';
+            btn.textContent = 'Evaluation en cours...';
+            status.textContent = 'Evaluation des modules de formation...';
             status.className = 'status-message info';
 
             try {
-                console.log('🚀 Starting evaluation at:', `${apiUrl}/evaluate`);
-                
+                console.log('Starting evaluation at:', `${apiUrl}/evaluate`);
+
                 const response = await fetch(`${apiUrl}/evaluate`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        training_type: selectedTrainingType
+                    })
                 });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error(`Expected JSON but got ${contentType}. The API endpoint may not be reachable.`);
@@ -237,25 +323,26 @@
                 const data = await response.json();
 
                 if (data.status === 'completed') {
-                    status.textContent = '✅ Évaluation terminée! Redirection vers le chat...';
+                    status.textContent = 'Evaluation terminee! Redirection vers le chat...';
                     status.className = 'status-message success';
 
-                    // Store session ID and redirect to chat
+                    // Store session ID and training type, then redirect to chat
                     localStorage.setItem('session_id', data.session_id);
+                    localStorage.setItem('training_type', selectedTrainingType);
                     setTimeout(() => {
                         window.location.href = 'chat.html';
                     }, 1500);
                 }
             } catch (error) {
-                console.error('❌ Error during evaluation:', error);
+                console.error('Error during evaluation:', error);
                 status.innerHTML = `
-                    ❌ Erreur lors de l'évaluation<br>
+                    Erreur lors de l'evaluation<br>
                     <span style="font-size: 0.9em;">API URL: ${apiUrl}</span><br>
                     <span style="font-size: 0.8em;">${error.message}</span>
                 `;
                 status.className = 'status-message error';
                 btn.disabled = false;
-                btn.textContent = 'Lancer l\'évaluation';
+                btn.textContent = 'Lancer l\'evaluation';
             }
         }
     </script>

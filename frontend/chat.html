@@ -221,11 +221,19 @@
                 }
 
             } catch (error) {
-                console.error('❌ FETCH ERROR:', error);
+                console.error('FETCH ERROR:', error);
                 console.error('Error details:', error.message);
-                console.error('Error stack:', error.stack);
                 typingIndicator.remove();
-                addMessageToChat('assistant', `Désolé, une erreur s'est produite: ${error.message}`);
+
+                // Check if session expired (404)
+                if (error.message && error.message.includes('404')) {
+                    addMessageToChat('assistant',
+                        'Votre session a expiré ou n\'a pas été trouvée. Veuillez retourner à la page d\'accueil pour relancer une évaluation.');
+                    document.getElementById('chat-input').disabled = true;
+                    document.getElementById('send-btn').disabled = true;
+                } else {
+                    addMessageToChat('assistant', `Désolé, une erreur s'est produite: ${error.message}`);
+                }
             }
         }
 
