@@ -26,7 +26,6 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_core.documents import Document
 import chromadb
 from chromadb.config import Settings
@@ -214,6 +213,7 @@ class AgenticRAGModule:
 
             try:
                 # Load PDF - PyMuPDFLoader provides page numbers in metadata
+                from langchain_community.document_loaders import PyMuPDFLoader
                 loader = PyMuPDFLoader(str(pdf_file))
                 documents = loader.load()
 
