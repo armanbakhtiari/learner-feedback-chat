@@ -11,10 +11,9 @@ _log("BEGIN module import")
 
 _log("importing fastapi...")
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 _log("importing CORSMiddleware...")
 from fastapi.middleware.cors import CORSMiddleware
-_log("importing StaticFiles...")
-from fastapi.staticfiles import StaticFiles
 _log("importing FileResponse, JSONResponse...")
 from fastapi.responses import FileResponse, JSONResponse
 _log("importing pydantic...")
@@ -22,7 +21,6 @@ from pydantic import BaseModel
 _log("importing typing...")
 from typing import List, Dict, Any, Optional
 _log("importing json, os, pathlib...")
-import json
 import os
 from pathlib import Path
 _log("importing dotenv...")
@@ -102,8 +100,14 @@ def get_chat_agent_class():
 ROOT_DIR = Path(__file__).parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _log("FastAPI startup - app is ready!")
+    cleanup_expired_sessions()
+    yield
+
 _log("creating FastAPI app...")
-app = FastAPI(title="Learner Feedback Chat System")
+app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
 _log("FastAPI app created")
 
 _log("adding CORS middleware...")
@@ -139,13 +143,6 @@ class ChatResponse(BaseModel):
 
 
 _log("defining routes...")
-
-
-@app.on_event("startup")
-async def startup_event():
-    _log("FastAPI startup event fired - app is ready!")
-    # Clean up expired sessions on startup
-    cleanup_expired_sessions()
 
 
 # API Routes (must come before static file serving)
