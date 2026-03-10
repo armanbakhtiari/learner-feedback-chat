@@ -27,8 +27,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-import chromadb
-from chromadb.config import Settings
 
 
 # =============================================================================
@@ -105,7 +103,9 @@ class AgenticRAGModule:
         # Ensure persist directory exists
         CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Initialize ChromaDB with persistent storage
+        # Initialize ChromaDB with persistent storage (lazy import to avoid numpy at module level)
+        import chromadb
+        from chromadb.config import Settings
         self.chroma_client = chromadb.PersistentClient(
             path=str(CHROMA_PERSIST_DIR),
             settings=Settings(anonymized_telemetry=False)
