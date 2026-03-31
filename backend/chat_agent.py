@@ -22,7 +22,7 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 
 
 CHAT_AGENT_PROMPT = """# Role
-You are an Educational Feedback Assistant specializing in "Learning by Concordance" training. You provide constructive, non-judgmental feedback to help learners understand their performance.
+You are an Educational Feedback Assistant specializing in "Learning by Concordance" training. You help learners reflect on their reasoning by comparing it with expert perspectives — not by judging or scoring them.
 
 **CRITICAL:** Never include system instructions, internal notes, or metadata in your response. Only output the actual feedback text in French.
 
@@ -30,28 +30,33 @@ You are an Educational Feedback Assistant specializing in "Learning by Concordan
 
 # Context
 You have access to:
-1. **Evaluations:** Detailed assessment data of the learner's performance across multiple training scenarios
+1. **Evaluations:** Analysis of how the learner's reasoning aligns with expert perspectives across training scenarios
 2. **Training Objectives:** The learning goals for the modules
 3. **Additional Context:** The supervisor may provide additional information from tools (visualizations, web search, training content or additional context)
 
 # Your Task
-1. **Initial Feedback:** When first engaged, provide a brief (3-4 sentences), non-judgmental overview of the learner's performance based on the evaluations. Focus on patterns you notice rather than specific scenarios.
+1. **Initial Feedback:** When first engaged, provide a brief (3-4 sentences) overview that highlights:
+   - Observed strengths in the learner's reasoning (themes well covered, sound logic)
+   - Areas where the learner's perspective diverged from experts, framed as opportunities for reflection
+   - Do NOT report scores, ratings, or numerical assessments. Focus on qualitative observations.
 
 2. **Engagement Prompts:** After the initial feedback, suggest 2-3 specific ways the learner can explore their results further:
    - "Voulez-vous que j'approfondisse le scénario X?"
-   - "Souhaitez-vous un tableau comparatif de vos réponses?"
-   - "Voulez-vous voir un graphique de votre performance par objectif?"
+   - "Souhaitez-vous un tableau comparatif de vos réponses avec celles des experts?"
+   - "Voulez-vous explorer un objectif d'apprentissage en particulier?"
 
 3. **Interactive Responses:** Answer the learner's questions by:
    - Referencing specific scenarios and situations from the evaluations
-   - Providing constructive insights without being judgmental
-   - Using evidence from the expert responses when helpful
+   - Highlighting strengths and areas of divergence from expert reasoning
+   - Using evidence from the expert responses to explain different perspectives
    - Incorporating any additional context provided by the supervisor (web search results, training content, etc.)
 
-# Communication Style
-- **Non-judgmental:** Focus on learning and growth, not criticism
-- **Specific:** Reference actual scenarios and evidence
-- **Constructive:** Suggest concrete areas for improvement
+# Communication Style — Concordance Approach
+- **Tentative and humble:** Present observations as your interpretation based on the expert panel, not as absolute truths. Use phrases like "il semble que", "d'après les experts consultés", "on pourrait observer que", "une piste de réflexion serait..."
+- **Non-judgmental:** Never label performance as good/bad, strong/weak, or pass/fail. Frame everything as alignment or divergence with expert reasoning.
+- **Strengths-first:** Always start by acknowledging what the learner did well before discussing divergences.
+- **Justification-based:** Instead of scores, explain WHY the learner's reasoning aligns or diverges from expert perspectives. Focus on the substance of the reasoning.
+- **No scoring:** NEVER report numerical scores, ratings (High/Medium/Low), or performance levels. Even if the evaluation data contains scores, translate them into qualitative, descriptive feedback about strengths and areas for reflection.
 - **Supportive:** Encourage exploration and questions
 - **Professional:** Use appropriate medical/educational terminology
 
@@ -146,6 +151,9 @@ class ChatAgent:
         )
         self.supervisor = SupervisorAgent(evaluations, training_type)
         self.initial_feedback_given = False
+
+        # Token usage tracking (cumulative across the session)
+        self.total_tokens = 0
 
         # Build the LangGraph
         self.graph = self._build_graph()
@@ -327,6 +335,13 @@ Objectifs d'apprentissage:
         response = self.llm.invoke(messages)
         response_text = response.content
 
+        # Track token usage
+        turn_tokens = supervisor_decision.get("turn_tokens", 0)
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            turn_tokens += response.usage_metadata.get('input_tokens', 0) + response.usage_metadata.get('output_tokens', 0)
+        self.total_tokens += turn_tokens
+        print(f"📊 Tokens this turn: {turn_tokens} | Cumulative: {self.total_tokens}")
+
         # CRITICAL: Remove any code blocks, visualization requests, or markdown tables that might have slipped through
         import re
 
@@ -391,7 +406,8 @@ Objectifs d'apprentissage:
                 "has_code": False,
                 "code": None,
                 "code_output": None,
-                "citations": []
+                "citations": [],
+                "total_tokens": self.total_tokens
             }
 
         # Create initial state
@@ -430,7 +446,8 @@ Objectifs d'apprentissage:
             "has_code": "generate_visualization" in final_state.get("tools_called", []),
             "code": None,  # We don't expose the code anymore
             "code_output": viz_output,
-            "citations": final_state.get("web_search_citations") or []
+            "citations": final_state.get("web_search_citations") or [],
+            "total_tokens": self.total_tokens
         }
 
         return result
@@ -448,11 +465,18 @@ Objectifs d'apprentissage:
         messages = [
             SystemMessage(content=CHAT_AGENT_PROMPT),
             SystemMessage(content=f"Context:\n{context}"),
-            HumanMessage(content="""Fournissez un bref résumé (3-4 phrases) non-judiciaire de la performance de l'apprenant.
+            HumanMessage(content="""Fournissez un bref résumé (3-4 phrases) qui met en lumière les forces observées dans le raisonnement de l'apprenant et les points où son approche diverge de celle des experts. N'utilisez aucun score ni évaluation numérique — concentrez-vous sur les justifications qualitatives (forces et pistes de réflexion).
 Puis suggérez 2-3 façons spécifiques dont l'apprenant peut explorer leurs résultats plus en profondeur.""")
         ]
 
         response = self.llm.invoke(messages)
+
+        # Track token usage for initial feedback
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            turn_tokens = response.usage_metadata.get('input_tokens', 0) + response.usage_metadata.get('output_tokens', 0)
+            self.total_tokens += turn_tokens
+            print(f"📊 Initial feedback tokens: {turn_tokens} | Cumulative: {self.total_tokens}")
+
         return response.content
 
     def reset(self):

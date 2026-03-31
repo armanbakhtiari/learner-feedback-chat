@@ -140,6 +140,7 @@ class ChatResponse(BaseModel):
     code: Optional[str] = None
     code_output: Optional[str] = None
     citations: List[Dict[str, str]] = []
+    total_tokens: int = 0
 
 
 _log("defining routes...")
@@ -282,7 +283,8 @@ async def chat(message: ChatMessage):
             has_code=response.get("has_code", False),
             code=response.get("code"),
             code_output=response.get("code_output"),
-            citations=response.get("citations", [])
+            citations=response.get("citations", []),
+            total_tokens=response.get("total_tokens", 0)
         )
     except HTTPException:
         raise

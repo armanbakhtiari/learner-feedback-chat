@@ -14,6 +14,7 @@
                 <p class="subtitle">Explorez vos performances de manière interactive</p>
             </div>
             <div class="header-actions">
+                <span id="token-counter" class="token-counter" title="Nombre total de tokens utilisés dans cette session">🔢 Tokens: 0</span>
                 <button id="back-btn" class="secondary-btn" onclick="goBack()">
                     ← Retour aux modules
                 </button>
@@ -66,6 +67,7 @@
     <script>
         let sessionId = null;
         let isFirstMessage = true;
+        let totalTokens = 0;
 
         // Get API URL - either from app.js or detect it inline
         function getApiUrl() {
@@ -201,8 +203,15 @@
                     has_code: data.has_code,
                     code_output_type: typeof data.code_output,
                     code_output_length: data.code_output ? data.code_output.length : 0,
-                    citations_count: data.citations ? data.citations.length : 0
+                    citations_count: data.citations ? data.citations.length : 0,
+                    total_tokens: data.total_tokens
                 });
+
+                // Update token counter
+                if (data.total_tokens) {
+                    totalTokens = data.total_tokens;
+                    updateTokenCounter();
+                }
 
                 // Remove typing indicator
                 typingIndicator.remove();
@@ -327,6 +336,12 @@
             scrollToBottom();
         }
 
+        function updateTokenCounter() {
+            const counter = document.getElementById('token-counter');
+            const formatted = totalTokens.toLocaleString('fr-FR');
+            counter.textContent = `🔢 Tokens: ${formatted}`;
+        }
+
         function formatMessage(content) {
             // Convert markdown-style formatting to HTML
             return content
@@ -371,6 +386,8 @@
                 `;
 
                 isFirstMessage = true;
+                totalTokens = 0;
+                updateTokenCounter();
                 sendInitialMessage();
             } catch (error) {
                 console.error('Error resetting chat:', error);

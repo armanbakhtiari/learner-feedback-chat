@@ -411,6 +411,15 @@ footer {
     align-items: center;
 }
 
+.token-counter {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
 /* Web Search Toggle */
 .web-search-toggle {
     display: flex;

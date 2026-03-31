@@ -171,6 +171,11 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
             # Get initial response with tool calls
             response = self.llm_with_tools.invoke(messages)
 
+            # Track token usage from supervisor LLM call
+            turn_tokens = 0
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                turn_tokens += response.usage_metadata.get('input_tokens', 0) + response.usage_metadata.get('output_tokens', 0)
+
             # Initialize results
             tools_called = []
             tool_results = {}
@@ -214,7 +219,8 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
                 "tools_called": tools_called,
                 "tool_results": tool_results,
                 "ready_for_chat": True,
-                "context_additions": context_summary
+                "context_additions": context_summary,
+                "turn_tokens": turn_tokens
             }
 
         except Exception as e:
@@ -227,7 +233,8 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
                 "tool_results": {},
                 "ready_for_chat": True,
                 "context_additions": "",
-                "error": str(e)
+                "error": str(e),
+                "turn_tokens": 0
             }
 
     def _format_conversation_history(self, messages: List[BaseMessage]) -> str:

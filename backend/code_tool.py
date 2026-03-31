@@ -56,20 +56,29 @@ Generate Python code to create visualizations (charts, tables, graphs) based on 
 # CREATIVE FREEDOM (Encouraged)
 Be creative with your visualizations! Vary your approach each time:
 
-**Color Schemes** - Don't always use the same colors! Try:
-- Professional blues and grays
-- Warm sunset gradients (oranges, reds, yellows)
-- Cool ocean themes (teals, blues, aquas)
-- Nature-inspired (greens, browns, earth tones)
-- Vibrant contrasts (purples, pinks, cyans)
-- Monochromatic with accent color
-- Seaborn color palettes: 'viridis', 'plasma', 'husl', 'Set2', 'coolwarm', 'RdYlBu'
+**Color Schemes — CRITICAL RULES:**
+- **NEVER use green/red or traffic-light color schemes** (green=good, yellow=medium, red=bad). These imply judgment and scoring.
+- **NEVER use colors that suggest pass/fail, good/bad, or performance levels.**
+- Instead, use **neutral, tentative palettes** that present data without value judgment:
+  - Professional blues and grays (recommended default)
+  - Cool ocean themes (teals, blues, aquas)
+  - Soft lavender and slate tones
+  - Muted earth tones (tans, warm grays, soft browns)
+  - Monochromatic gradients (light-to-dark of a single hue)
+  - Seaborn color palettes: 'viridis', 'crest', 'flare', 'mako', 'Blues', 'BuPu'
+- Use color to distinguish categories, NOT to rank or evaluate them.
+
+**Data Presentation — CRITICAL RULES:**
+- **NEVER display numerical scores, ratings, or performance levels** (e.g., "High/Medium/Low", "Satisfactory/Unsatisfactory", "85%").
+- Instead, focus on **qualitative comparisons**: themes covered vs. themes to explore, alignment with expert reasoning, areas of convergence/divergence.
+- Labels should be descriptive and neutral (e.g., "Thèmes abordés", "Perspectives des experts", "Points de convergence") — not evaluative (e.g., "Score", "Performance", "Réussite").
+- When showing comparisons, frame them as "learner perspective vs. expert perspective" — not as right/wrong.
 
 **Visualization Types** - Choose the best type for the data:
 - Bar charts (horizontal or vertical, grouped or stacked)
 - Pie charts, donut charts
 - Line graphs with area fills
-- Heatmaps for comparisons
+- Heatmaps for comparisons (use neutral color scales)
 - Radar/spider charts for multi-dimensional data
 - Tables with styled cells (use matplotlib table or custom drawings)
 - Combination charts (bar + line)
@@ -77,7 +86,7 @@ Be creative with your visualizations! Vary your approach each time:
 
 **Styling Ideas**:
 - Rounded corners on bars
-- Gradient fills
+- Gradient fills (neutral tones)
 - Custom fonts and sizes
 - Shadow effects
 - Different background colors (not always white!)
@@ -173,9 +182,11 @@ class CodeGenerationTool:
 {json.dumps(self._get_data_sample(), indent=2, ensure_ascii=False)}
 
 # INSTRUCTIONS
-1. Use the EVALUATION DATA above to create visualizations about the learner's performance
-2. The data structure contains: training modules > situations > scenarios with coverage, reasoning, communication scores
-3. Be creative with colors, styles, and visualization types!"""
+1. Use the EVALUATION DATA above to create visualizations comparing the learner's reasoning with expert perspectives
+2. The data structure contains: training modules > situations > scenarios with coverage, reasoning, communication analyses
+3. Do NOT display numerical scores or ratings — focus on qualitative themes (strengths, divergences, expert key elements)
+4. Use neutral color palettes (blues, grays, teals) — NEVER red/green or traffic-light schemes
+5. Be creative with styles and visualization types!"""
         else:
             # Don't include evaluation data - use conversation context only
             data_section = """# INSTRUCTIONS
@@ -333,7 +344,7 @@ def generate_visualization(evaluations: dict) -> dict:
     categories = list(coverage_counts.keys())
     values = list(coverage_counts.values())
 
-    colors = ['#2ecc71', '#f39c12', '#e74c3c']
+    colors = ['#4a90d9', '#6c7a89', '#a3c1da']
     ax.bar(categories, values, color=colors, alpha=0.7)
 
     ax.set_xlabel('Niveau de couverture', fontsize=12)
