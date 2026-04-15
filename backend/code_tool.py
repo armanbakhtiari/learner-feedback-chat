@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 import asyncio
+import threading
 from langchain_core.messages import BaseMessage, HumanMessage
 import os
 import json
@@ -246,6 +247,33 @@ async def _generate_code_via_claude_agent(system_prompt: str, user_prompt: str) 
     return "".join(collected)
 
 
+def _run_in_new_thread(coro) -> str:
+    """Run an async coroutine in a fresh thread that owns its own event loop.
+
+    This avoids 'Cannot run the event loop while another loop is running'
+    which happens when calling asyncio.run() from inside FastAPI's event loop.
+    """
+    result: list = [None]
+    exc: list = [None]
+
+    def _runner():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result[0] = loop.run_until_complete(coro)
+        except Exception as e:
+            exc[0] = e
+        finally:
+            loop.close()
+
+    t = threading.Thread(target=_runner, daemon=True)
+    t.start()
+    t.join()
+    if exc[0] is not None:
+        raise exc[0]
+    return result[0] or ""
+
+
 class CodeGenerationTool:
     def __init__(self, evaluations: Dict[str, Any]):
         self.evaluations = evaluations
@@ -307,22 +335,14 @@ class CodeGenerationTool:
 Generate ONLY the Python code for the `generate_visualization` function described in the system prompt. Return it inside a single ```python code block. Do not include any explanation, commentary, or follow-up text — code only.
 """
 
-        # Get code from the Claude Agent SDK (no tools, no permissions, one turn)
+        # Get code from the Claude Agent SDK (no tools, no permissions, one turn).
+        # Run in a dedicated thread with its own event loop so this works both
+        # in pure-sync contexts and inside FastAPI's running async event loop.
         print(f"📝 Requesting code from Claude Agent SDK...")
         print(f"📋 Context provided: {len(conversation_context)} chars from {len(context_parts)} messages")
-        try:
-            response_text = asyncio.run(
-                _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
-            )
-        except RuntimeError:
-            # Already in a running event loop (e.g. inside FastAPI async context)
-            loop = asyncio.new_event_loop()
-            try:
-                response_text = loop.run_until_complete(
-                    _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
-                )
-            finally:
-                loop.close()
+        response_text = _run_in_new_thread(
+            _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
+        )
         code = self._extract_code(response_text)
 
         if not code:
