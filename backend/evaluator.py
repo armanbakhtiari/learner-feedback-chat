@@ -85,5 +85,23 @@ def run_evaluations(training_type: str = "migraine") -> Dict[str, Dict[str, Any]
         print("\n✅ Evaluation completed!")
         return {"training_1": eval_1}
 
+    elif training_type == "leadership_1st":
+        from trainings_leadership_1srLearner import training_1
+        eval_1 = evaluate_training(training_1, "Leadership (1st Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
+
+    elif training_type == "leadership_2nd":
+        from trainings_leadership_2ndLearner import training_1
+        eval_1 = evaluate_training(training_1, "Leadership (2nd Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
+
+    elif training_type == "leadership_3rd":
+        from trainings_leadership_3rdLearner import training_1
+        eval_1 = evaluate_training(training_1, "Leadership (3rd Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
+
     else:
         raise ValueError(f"Unknown training type: {training_type}")

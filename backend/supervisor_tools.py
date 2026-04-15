@@ -39,6 +39,15 @@ def _get_training_data():
         elif _current_training_type == "nursing_2nd":
             from trainings_nursing_2ndLearner import training_1
             _training_data_cache = {"training_1": training_1}
+        elif _current_training_type == "leadership_1st":
+            from trainings_leadership_1srLearner import training_1
+            _training_data_cache = {"training_1": training_1}
+        elif _current_training_type == "leadership_2nd":
+            from trainings_leadership_2ndLearner import training_1
+            _training_data_cache = {"training_1": training_1}
+        elif _current_training_type == "leadership_3rd":
+            from trainings_leadership_3rdLearner import training_1
+            _training_data_cache = {"training_1": training_1}
     return _training_data_cache
 
 
@@ -236,6 +245,10 @@ def get_training_content(module_number: int, section: str = "all") -> str:
                 "training_2": "Module 2: Traitement aigu et gestion des habitudes de vie",
                 "training_3": "Module 3: Traitement préventif de la migraine"
             }
+        elif _current_training_type in ("leadership_1st", "leadership_2nd", "leadership_3rd"):
+            names = {
+                "training_1": "Module 1: Leadership et prise de decision"
+            }
         else:
             names = {
                 "training_1": "Module 1: Leadership et collaboration en soins infirmiers"
@@ -308,7 +321,17 @@ def search_knowledge_base(query: str, user_message: str = "") -> str:
         -> Returns relevant chunks from reference documents with citations
     """
     if _rag_module_instance is None:
-        return json.dumps({"status": "error", "error": "RAG module not initialized"})
+        # No reference documents exist for this training - fail fast with the
+        # exact message the chat agent should relay to the user.
+        from backend.rag_tool import NO_DOCUMENTS_MESSAGE
+        return json.dumps({
+            "status": "no_documents",
+            "message": NO_DOCUMENTS_MESSAGE,
+            "found_relevant": False,
+            "chunks": [],
+            "sources": [],
+            "attempts": 0,
+        }, ensure_ascii=False)
 
     try:
         if not user_message:

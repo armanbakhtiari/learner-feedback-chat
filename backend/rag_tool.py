@@ -515,9 +515,30 @@ Provide a better query to search the document database.""")
 _rag_module_instances: Dict[str, AgenticRAGModule] = {}
 
 
-def get_rag_module(training_type: str = "migraine") -> AgenticRAGModule:
-    """Get or create the RAG module instance for a training type"""
+NO_DOCUMENTS_MESSAGE = (
+    "No available reference document for this training. "
+    "Please enable the web search so I can fetch the related materials"
+)
+
+
+def _has_documents(training_type: str) -> bool:
+    """Return True if the training type has reference documents available."""
+    if training_type not in TRAINING_DOCS_MAP:
+        return False
+    docs_path = TRAINING_DOCS_MAP[training_type]
+    if not docs_path.exists():
+        return False
+    return any(docs_path.glob("*.pdf"))
+
+
+def get_rag_module(training_type: str = "migraine"):
+    """Get or create the RAG module instance for a training type.
+
+    Returns None if the training type has no reference documents available.
+    """
     global _rag_module_instances
+    if not _has_documents(training_type):
+        return None
     if training_type not in _rag_module_instances:
         _rag_module_instances[training_type] = AgenticRAGModule(training_type)
     return _rag_module_instances[training_type]
@@ -535,5 +556,15 @@ def search_documents(query: str, user_message: str = None, training_type: str = 
     Returns:
         Dictionary with search results and metadata
     """
+    if not _has_documents(training_type):
+        return {
+            "status": "no_documents",
+            "found_relevant": False,
+            "message": NO_DOCUMENTS_MESSAGE,
+            "chunks": [],
+            "sources": [],
+            "attempts": 0,
+            "query_history": [],
+        }
     rag_module = get_rag_module(training_type)
     return rag_module.search(query, user_message)

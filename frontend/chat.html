@@ -313,13 +313,8 @@
                     } else {
                         console.warn('⚠️ No image_base64 in output');
                     }
-                    if (output.summary_data) {
-                        vizContent += `
-                            <div class="summary-data">
-                                <pre>${JSON.stringify(output.summary_data, null, 2)}</pre>
-                            </div>
-                        `;
-                    }
+                    // Note: output.summary_data is intentionally not rendered.
+                    // The chat agent's narrative explanation accompanies the image instead.
 
                     visualizationDiv.innerHTML = vizContent;
                     messagesContainer.appendChild(visualizationDiv);

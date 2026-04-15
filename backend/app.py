@@ -73,6 +73,24 @@ def get_training_data(training_type: str = "migraine"):
                 "trainings": {"training_1": training_1},
                 "objectives": training_objectives
             }
+        elif training_type == "leadership_1st":
+            from trainings_leadership_1srLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
+        elif training_type == "leadership_2nd":
+            from trainings_leadership_2ndLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
+        elif training_type == "leadership_3rd":
+            from trainings_leadership_3rdLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
         else:
             raise ValueError(f"Unknown training type: {training_type}")
     return _training_data_cache[training_type]
@@ -166,6 +184,10 @@ async def get_trainings(training_type: str = "migraine"):
     elif training_type in ("nursing_1st", "nursing_2nd"):
         names = {
             "training_1": "Module 1: Leadership et collaboration en soins infirmiers"
+        }
+    elif training_type in ("leadership_1st", "leadership_2nd", "leadership_3rd"):
+        names = {
+            "training_1": "Module 1: Leadership et prise de decision"
         }
     else:
         names = {}

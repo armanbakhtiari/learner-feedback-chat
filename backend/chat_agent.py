@@ -140,6 +140,15 @@ class ChatAgent:
         elif training_type == "nursing_2nd":
             from trainings_nursing_2ndLearner import training_objectives
             self.training_objectives = training_objectives
+        elif training_type == "leadership_1st":
+            from trainings_leadership_1srLearner import training_objectives
+            self.training_objectives = training_objectives
+        elif training_type == "leadership_2nd":
+            from trainings_leadership_2ndLearner import training_objectives
+            self.training_objectives = training_objectives
+        elif training_type == "leadership_3rd":
+            from trainings_leadership_3rdLearner import training_objectives
+            self.training_objectives = training_objectives
         else:
             self.training_objectives = ""
 

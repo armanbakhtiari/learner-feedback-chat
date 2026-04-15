@@ -281,8 +281,22 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
         if "search_knowledge_base" in tools_called:
             rag_result = tool_results.get("search_knowledge_base", {})
             found_relevant = rag_result.get("found_relevant", False)
+            rag_status = rag_result.get("status")
 
-            if found_relevant:
+            if rag_status == "no_documents":
+                # No reference documents exist for this training type at all.
+                # Instruct the chat agent to reply with the exact fallback message.
+                fallback_msg = rag_result.get(
+                    "message",
+                    "No available reference document for this training. "
+                    "Please enable the web search so I can fetch the related materials"
+                )
+                summary_parts.append(
+                    "IMPORTANT: There are NO reference documents available for this training. "
+                    f"Reply to the user with EXACTLY this message (translate to French if the conversation is in French, keep the same meaning): \"{fallback_msg}\". "
+                    "Do NOT add other explanations, do NOT speculate, and do NOT answer the question from your own knowledge."
+                )
+            elif found_relevant:
                 sources = rag_result.get("sources", [])
                 sources_str = ", ".join(sources[:3]) if sources else "reference documents"
                 summary_parts.append(

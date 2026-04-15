@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional, List
+from pathlib import Path
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
 import os
@@ -10,6 +11,9 @@ from dotenv import load_dotenv
 
 _plt = None
 
+ROOT_DIR = Path(__file__).parent.parent
+SENSAI_LOGO_PATH = ROOT_DIR / "frontend" / "assets" / "sensai_logo.png"
+
 def _get_plt():
     global _plt
     if _plt is None:
@@ -18,6 +22,66 @@ def _get_plt():
         import matplotlib.pyplot as plt
         _plt = plt
     return _plt
+
+
+def _make_sensai_header():
+    """Build the add_sensai_header(fig) helper injected into generated code.
+
+    If a real SENSAI logo PNG exists at SENSAI_LOGO_PATH, draw it as a
+    banner across the top of the figure. Otherwise fall back to a styled
+    text banner that matches the SENSAI brand (dark navy background,
+    light-blue 'S' and 'I', white middle letters).
+    """
+    plt = _get_plt()
+
+    def add_sensai_header(fig, height_ratio: float = 0.13):
+        # Shrink existing axes to make room for the header
+        for ax in fig.axes:
+            box = ax.get_position()
+            new_height = box.height * (1 - height_ratio)
+            ax.set_position([box.x0, box.y0, box.width, new_height])
+
+        header_ax = fig.add_axes([0, 1 - height_ratio, 1, height_ratio])
+        header_ax.set_xticks([])
+        header_ax.set_yticks([])
+        for spine in header_ax.spines.values():
+            spine.set_visible(False)
+
+        navy = "#0F2A47"
+        accent = "#3E7CB1"
+
+        if SENSAI_LOGO_PATH.exists():
+            try:
+                import matplotlib.image as mpimg
+                img = mpimg.imread(str(SENSAI_LOGO_PATH))
+                header_ax.set_facecolor(navy)
+                header_ax.imshow(img, aspect="auto", extent=(0, 1, 0, 1))
+                header_ax.set_xlim(0, 1)
+                header_ax.set_ylim(0, 1)
+                return header_ax
+            except Exception:
+                pass
+
+        # Fallback: styled text banner
+        header_ax.set_facecolor(navy)
+        header_ax.set_xlim(0, 1)
+        header_ax.set_ylim(0, 1)
+
+        # Build "SENSAI" with first/last letters in accent color
+        # Use a single styled text; matplotlib doesn't support multi-color text
+        # easily, so render "S" + "ENSA" + "I" as three pieces.
+        header_ax.text(0.45, 0.5, "S", ha="right", va="center",
+                       fontsize=36, fontweight="bold", color=accent,
+                       family="DejaVu Sans")
+        header_ax.text(0.45, 0.5, "ENSA", ha="left", va="center",
+                       fontsize=36, fontweight="bold", color="white",
+                       family="DejaVu Sans")
+        header_ax.text(0.62, 0.5, "I", ha="left", va="center",
+                       fontsize=36, fontweight="bold", color=accent,
+                       family="DejaVu Sans")
+        return header_ax
+
+    return add_sensai_header
 
 load_dotenv()
 
@@ -41,6 +105,7 @@ Generate Python code to create visualizations (charts, tables, graphs) based on 
 4. **Do NOT save to file - convert figure to base64 string**
 5. **All labels, titles, and text must be in French**
 6. **ALWAYS use plt.close() after saving to buffer**
+7. **MUST call `add_sensai_header(fig)` (already injected into globals) immediately after creating the figure to render the SENSAI brand header at the top of every visualization. Do NOT add any other title above it. Do NOT define your own header.**
 
 
 # CRITICAL: Do NOT hallucinate data keys or column names!
@@ -57,15 +122,15 @@ Generate Python code to create visualizations (charts, tables, graphs) based on 
 Be creative with your visualizations! Vary your approach each time:
 
 **Color Schemes — CRITICAL RULES:**
-- **NEVER use green/red or traffic-light color schemes** (green=good, yellow=medium, red=bad). These imply judgment and scoring.
+- **NEVER use green, red, amber, orange, or any warning-style color** — even outside a traffic-light scheme. Any saturated red/orange/amber implies judgment.
 - **NEVER use colors that suggest pass/fail, good/bad, or performance levels.**
 - Instead, use **neutral, tentative palettes** that present data without value judgment:
-  - Professional blues and grays (recommended default)
+  - Professional blues and grays (recommended default — match the SENSAI brand)
   - Cool ocean themes (teals, blues, aquas)
   - Soft lavender and slate tones
   - Muted earth tones (tans, warm grays, soft browns)
   - Monochromatic gradients (light-to-dark of a single hue)
-  - Seaborn color palettes: 'viridis', 'crest', 'flare', 'mako', 'Blues', 'BuPu'
+  - Seaborn color palettes: 'crest', 'mako', 'Blues', 'BuPu', 'PuBu' (avoid 'flare' and 'rocket' — they contain reds)
 - Use color to distinguish categories, NOT to rank or evaluate them.
 
 **Data Presentation — CRITICAL RULES:**
@@ -94,6 +159,28 @@ Be creative with your visualizations! Vary your approach each time:
 - Icons or emojis in text
 - Grid styles (dotted, dashed, or hidden)
 
+# TABLES — STRICT RULES (must follow when generating any table)
+
+Tables are notoriously bad when cells overflow. Follow ALL of these:
+
+1. **Cell text MUST be ultra-short** — single keywords or phrases of ≤4 words. NEVER full sentences inside cells.
+2. If the source content is a long sentence, **paraphrase it down to a short label** (e.g. "Communication claire", "Decision rapide"). Move the long version to `summary_data`, NOT into the cell.
+3. **Cap the row count**: at most 6 rows. If you have more, group / synthesize.
+4. **Cap the column count**: at most 4 columns.
+5. **Set explicit column widths** that match the figure size: `table = ax.table(..., colWidths=[...])` with widths summing to ≤ 1.0. Give wider columns to text columns and narrower to label columns.
+6. **Scale the row height**: `table.scale(1, 2.2)` (or higher) so cells have breathing room. Set `table.auto_set_font_size(False)` and `table.set_fontsize(10)` (or smaller).
+7. **Wrap text inside cells**: iterate `for cell in table.get_celld().values(): cell.set_text_props(wrap=True, ha='center', va='center')`.
+8. **Be creative with table SHAPE** — vary across requests:
+   - Rounded header strip with a darker neutral fill, white text
+   - Alternating row shading (very subtle: white / `#F4F6FA` / `#EAEEF5`)
+   - Card-style table (no inner borders, only horizontal separators)
+   - Two-column comparison table with an icon-prefixed header per column
+   - Compact info-card grid (multiple small tables side by side)
+9. **Hide the underlying axes** (`ax.axis('off')`) so the table is the only visible element below the SENSAI header.
+10. **Figure size**: use `fig, ax = plt.subplots(figsize=(11, 0.9 * n_rows + 2))` so the figure scales with content and never gets cramped.
+11. **No numerical scores, no "High/Medium/Low", no percentages, no "Réussi/Échoué".** Stick to qualitative, neutral labels.
+12. **No warning-style colors** anywhere in the table (no red/orange/amber, even subtle).
+
 # Available Libraries
 - matplotlib.pyplot as plt (with all styling options)
 - pandas as pd
@@ -114,24 +201,30 @@ def generate_visualization(evaluations: dict) -> dict:
     # 1. Extract and prepare data
     # ... your data preparation code ...
 
-    # 2. Create visualization (BE CREATIVE!)
+    # 2. Create figure + add SENSAI brand header (REQUIRED, always first)
     fig, ax = plt.subplots(figsize=(12, 8))
+    add_sensai_header(fig)  # injected helper - draws the SENSAI logo banner on top
+
+    # 3. Create visualization (BE CREATIVE!)
     # ... your creative plotting code ...
 
-    # 3. Convert to base64
+    # 4. Convert to base64
     buffer = io.BytesIO()
-    plt.tight_layout()
     plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
     buffer.seek(0)
     image_base64 = base64.b64encode(buffer.read()).decode()
     plt.close()
 
-    # 4. Return result
+    # 5. Return result
     return {
         "image_base64": image_base64,
         "summary_data": {...}  # Any relevant summary
     }
 ```
+
+Notes:
+- `add_sensai_header(fig)` is provided by the runtime — just call it. Do NOT redefine it, do NOT import anything for it.
+- Avoid `plt.tight_layout()` after `add_sensai_header` since it can clip the header. Use `bbox_inches='tight'` on `savefig` instead.
 
 # Important
 - Generate ONLY the function code
@@ -278,6 +371,7 @@ Generate Python code to create this visualization.
             'base64': base64,
             'io': io,
             'json': json,
+            'add_sensai_header': _make_sensai_header(),
             '__builtins__': __builtins__
         }
 

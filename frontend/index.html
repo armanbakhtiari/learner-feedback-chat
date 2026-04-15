@@ -37,6 +37,24 @@
                         <p>Competences de communication et de collaboration pour exercer un role de leader</p>
                         <span class="module-count">1 module</span>
                     </div>
+                    <div class="training-selection-card" data-type="leadership_1st" onclick="selectTraining('leadership_1st')">
+                        <div class="selection-icon">🎯</div>
+                        <h3>Leadership (1er apprenant)</h3>
+                        <p>Prise de decision, gestion de l'ambiguite et communication en contexte de leadership</p>
+                        <span class="module-count">1 module</span>
+                    </div>
+                    <div class="training-selection-card" data-type="leadership_2nd" onclick="selectTraining('leadership_2nd')">
+                        <div class="selection-icon">🎯</div>
+                        <h3>Leadership (2e apprenant)</h3>
+                        <p>Prise de decision, gestion de l'ambiguite et communication en contexte de leadership</p>
+                        <span class="module-count">1 module</span>
+                    </div>
+                    <div class="training-selection-card" data-type="leadership_3rd" onclick="selectTraining('leadership_3rd')">
+                        <div class="selection-icon">🎯</div>
+                        <h3>Leadership (3e apprenant)</h3>
+                        <p>Prise de decision, gestion de l'ambiguite et communication en contexte de leadership</p>
+                        <span class="module-count">1 module</span>
+                    </div>
                 </div>
             </section>
 
@@ -152,6 +170,16 @@
                     <li>Differencier les types de cephalees</li>
                     <li>Poser un diagnostic pertinent en contexte clinique complexe par la discrimination des caracteristiques cliniques de la migraine, des cephalees de tension et des cephalees medicamenteuses</li>
                     <li>Evaluer de facon critique les options therapeutiques aigues, preventives et hormonales dans la prise en charge des migraines</li>
+                `;
+            } else if (trainingType === 'leadership_1st' || trainingType === 'leadership_2nd' || trainingType === 'leadership_3rd') {
+                introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans le module de formation sur le leadership, la prise de decision et la gestion de l\'ambiguite. Vous pouvez visualiser le module de formation et obtenir des retours personnalises sur vos reponses.';
+                objectivesList.innerHTML = `
+                    <li>Prendre des decisions et agir selon les priorites du projet, meme avec une information incomplete</li>
+                    <li>Structurer des defis ambigus en definissant le probleme et en le decomposant en parties gerables</li>
+                    <li>Mener des experimentations a petite echelle pour ajuster rapidement le cours d'action</li>
+                    <li>Communiquer l'intention globale et le pourquoi d'une initiative en l'absence de plans concrets</li>
+                    <li>Utiliser des techniques personnelles pour gerer le stress lie a l'incertitude</li>
+                    <li>Distinguer les actions necessitant de la certitude de celles relevant du risque calcule</li>
                 `;
             } else {
                 introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans le module de formation sur le leadership et la collaboration en soins infirmiers. Vous pouvez visualiser le module de formation et obtenir des retours personnalises sur vos reponses.';
