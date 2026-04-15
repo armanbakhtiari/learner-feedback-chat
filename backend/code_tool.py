@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List
 from pathlib import Path
-from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
-from langchain_anthropic import ChatAnthropic
+import asyncio
+from langchain_core.messages import BaseMessage, HumanMessage
 import os
 import json
 import sys
@@ -27,59 +27,35 @@ def _get_plt():
 def _make_sensai_header():
     """Build the add_sensai_header(fig) helper injected into generated code.
 
-    If a real SENSAI logo PNG exists at SENSAI_LOGO_PATH, draw it as a
-    banner across the top of the figure. Otherwise fall back to a styled
-    text banner that matches the SENSAI brand (dark navy background,
-    light-blue 'S' and 'I', white middle letters).
+    Places a small "SENSAI" wordmark at the top-right of the figure with no
+    gap between it and the main content. If a real logo PNG exists at
+    SENSAI_LOGO_PATH, uses it (also small, top-right). Otherwise renders
+    a single-word "SENSAI" text label in the brand navy color.
     """
-    plt = _get_plt()
 
-    def add_sensai_header(fig, height_ratio: float = 0.13):
-        # Shrink existing axes to make room for the header
-        for ax in fig.axes:
-            box = ax.get_position()
-            new_height = box.height * (1 - height_ratio)
-            ax.set_position([box.x0, box.y0, box.width, new_height])
-
-        header_ax = fig.add_axes([0, 1 - height_ratio, 1, height_ratio])
-        header_ax.set_xticks([])
-        header_ax.set_yticks([])
-        for spine in header_ax.spines.values():
-            spine.set_visible(False)
-
+    def add_sensai_header(fig, *_, **__):
         navy = "#0F2A47"
-        accent = "#3E7CB1"
 
         if SENSAI_LOGO_PATH.exists():
             try:
                 import matplotlib.image as mpimg
                 img = mpimg.imread(str(SENSAI_LOGO_PATH))
-                header_ax.set_facecolor(navy)
-                header_ax.imshow(img, aspect="auto", extent=(0, 1, 0, 1))
-                header_ax.set_xlim(0, 1)
-                header_ax.set_ylim(0, 1)
-                return header_ax
+                # Small logo anchored at top-right of the figure, no gap
+                logo_ax = fig.add_axes([0.80, 0.93, 0.18, 0.06])
+                logo_ax.imshow(img, aspect="auto")
+                logo_ax.axis("off")
+                return logo_ax
             except Exception:
                 pass
 
-        # Fallback: styled text banner
-        header_ax.set_facecolor(navy)
-        header_ax.set_xlim(0, 1)
-        header_ax.set_ylim(0, 1)
-
-        # Build "SENSAI" with first/last letters in accent color
-        # Use a single styled text; matplotlib doesn't support multi-color text
-        # easily, so render "S" + "ENSA" + "I" as three pieces.
-        header_ax.text(0.45, 0.5, "S", ha="right", va="center",
-                       fontsize=36, fontweight="bold", color=accent,
-                       family="DejaVu Sans")
-        header_ax.text(0.45, 0.5, "ENSA", ha="left", va="center",
-                       fontsize=36, fontweight="bold", color="white",
-                       family="DejaVu Sans")
-        header_ax.text(0.62, 0.5, "I", ha="left", va="center",
-                       fontsize=36, fontweight="bold", color=accent,
-                       family="DejaVu Sans")
-        return header_ax
+        # Fallback: small single-word "SENSAI" wordmark at top-right
+        fig.text(
+            0.985, 0.975, "SENSAI",
+            ha="right", va="top",
+            fontsize=11, fontweight="bold",
+            color=navy, family="DejaVu Sans",
+        )
+        return None
 
     return add_sensai_header
 
@@ -105,7 +81,7 @@ Generate Python code to create visualizations (charts, tables, graphs) based on 
 4. **Do NOT save to file - convert figure to base64 string**
 5. **All labels, titles, and text must be in French**
 6. **ALWAYS use plt.close() after saving to buffer**
-7. **MUST call `add_sensai_header(fig)` (already injected into globals) immediately after creating the figure to render the SENSAI brand header at the top of every visualization. Do NOT add any other title above it. Do NOT define your own header.**
+7. **MUST call `add_sensai_header(fig)` (already injected into globals) immediately after creating the figure. It places a small "SENSAI" wordmark at the top-right corner of the figure with no extra spacing. Do NOT add titles, suptitles, captions, or any other text above the visualization. Do NOT define your own header.**
 
 
 # CRITICAL: Do NOT hallucinate data keys or column names!
@@ -163,23 +139,22 @@ Be creative with your visualizations! Vary your approach each time:
 
 Tables are notoriously bad when cells overflow. Follow ALL of these:
 
-1. **Cell text MUST be ultra-short** — single keywords or phrases of ≤4 words. NEVER full sentences inside cells.
-2. If the source content is a long sentence, **paraphrase it down to a short label** (e.g. "Communication claire", "Decision rapide"). Move the long version to `summary_data`, NOT into the cell.
-3. **Cap the row count**: at most 6 rows. If you have more, group / synthesize.
-4. **Cap the column count**: at most 4 columns.
-5. **Set explicit column widths** that match the figure size: `table = ax.table(..., colWidths=[...])` with widths summing to ≤ 1.0. Give wider columns to text columns and narrower to label columns.
-6. **Scale the row height**: `table.scale(1, 2.2)` (or higher) so cells have breathing room. Set `table.auto_set_font_size(False)` and `table.set_fontsize(10)` (or smaller).
-7. **Wrap text inside cells**: iterate `for cell in table.get_celld().values(): cell.set_text_props(wrap=True, ha='center', va='center')`.
-8. **Be creative with table SHAPE** — vary across requests:
-   - Rounded header strip with a darker neutral fill, white text
-   - Alternating row shading (very subtle: white / `#F4F6FA` / `#EAEEF5`)
-   - Card-style table (no inner borders, only horizontal separators)
-   - Two-column comparison table with an icon-prefixed header per column
-   - Compact info-card grid (multiple small tables side by side)
-9. **Hide the underlying axes** (`ax.axis('off')`) so the table is the only visible element below the SENSAI header.
-10. **Figure size**: use `fig, ax = plt.subplots(figsize=(11, 0.9 * n_rows + 2))` so the figure scales with content and never gets cramped.
-11. **No numerical scores, no "High/Medium/Low", no percentages, no "Réussi/Échoué".** Stick to qualitative, neutral labels.
-12. **No warning-style colors** anywhere in the table (no red/orange/amber, even subtle).
+1. **Cell text MUST be short**. The texts MUST FIT in the cells without overflow. (VERY IMPORTANT)
+2. If the source content is a long sentence, **paraphrase it down to a short label** (e.g. "Communication claire", "Decision rapide", "Experimentation rapide"). Move the long version to `summary_data`, NOT into the cell.
+6. **Set explicit column widths** that match the figure size: `table = ax.table(..., colWidths=[...])` with widths summing to ≤ 1.0. Allocate wider widths to text columns and narrower to short-label columns.
+7. **Scale the row height**: `table.scale(1, 2.4)` (or higher) so cells have breathing room. Set `table.auto_set_font_size(False)` and `table.set_fontsize(9)` for dense tables, 10 for sparse ones.
+8. **Wrap text inside cells**: iterate `for cell in table.get_celld().values(): cell.set_text_props(wrap=True, ha='center', va='center')`.
+9. **No gap between the SENSAI header and the table**. The SENSAI wordmark is a small top-right overlay — do NOT add titles, suptitles, or blank space above the table. Keep the top of the table close to the top of the figure.
+10. **Be creative with table SHAPE** — vary across requests:
+    - Rounded header strip with a darker neutral fill, white text
+    - Alternating row shading (very subtle: white / `#F4F6FA` / `#EAEEF5`)
+    - Card-style table (no inner borders, only horizontal separators)
+    - Two-column comparison table with an icon-prefixed header per column
+    - Compact info-card grid (multiple small tables side by side)
+11. **Hide the underlying axes** (`ax.axis('off')`).
+12. **Figure size**: use `fig, ax = plt.subplots(figsize=(11, 0.7 * n_rows + 1.2))` so the figure scales with content and stays compact.
+13. **No numerical scores, no "High/Medium/Low", no percentages, no "Réussi/Échoué".** Stick to qualitative, neutral labels.
+14. **No warning-style colors** anywhere in the table (no red/orange/amber, even subtle).
 
 # Available Libraries
 - matplotlib.pyplot as plt (with all styling options)
@@ -203,7 +178,7 @@ def generate_visualization(evaluations: dict) -> dict:
 
     # 2. Create figure + add SENSAI brand header (REQUIRED, always first)
     fig, ax = plt.subplots(figsize=(12, 8))
-    add_sensai_header(fig)  # injected helper - draws the SENSAI logo banner on top
+    add_sensai_header(fig)  # injected helper - small SENSAI mark at top-right
 
     # 3. Create visualization (BE CREATIVE!)
     # ... your creative plotting code ...
@@ -235,14 +210,45 @@ Notes:
 """
 
 
+async def _generate_code_via_claude_agent(system_prompt: str, user_prompt: str) -> str:
+    """Generate code via the Claude Agent SDK.
+
+    The agent runs in a fully sandboxed configuration:
+    - No tools are allowed (code-generation only).
+    - Permissions are bypassed so it never prompts the user.
+    - max_turns=1 so it cannot loop or do follow-up actions.
+    The agent's task is to return the Python code as plain text
+    (we extract the code block in `_extract_code`).
+    """
+    from claude_agent_sdk import (
+        query,
+        ClaudeAgentOptions,
+        AssistantMessage,
+        TextBlock,
+    )
+
+    collected: List[str] = []
+    options = ClaudeAgentOptions(
+        system_prompt=system_prompt,
+        allowed_tools=[],            # no tools at all
+        disallowed_tools=["Bash"],   # belt-and-suspenders: explicitly deny Bash
+        permission_mode="bypassPermissions",  # never prompt
+        max_turns=1,                 # one-shot: produce code and stop
+        setting_sources=[],          # don't load CLAUDE.md / project hooks
+    )
+
+    async for msg in query(prompt=user_prompt, options=options):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if isinstance(block, TextBlock):
+                    collected.append(block.text)
+
+    return "".join(collected)
+
+
 class CodeGenerationTool:
     def __init__(self, evaluations: Dict[str, Any]):
         self.evaluations = evaluations
-        self.llm = ChatAnthropic(
-            model="claude-sonnet-4-5",
-            temperature=0.7,  # Higher temperature for creative visualizations
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
-        )
 
     def generate_code(self, user_request: str, conversation_history: List[BaseMessage], include_evaluation_data: bool = False) -> Optional[Dict[str, Any]]:
         """Generate and execute Python code for visualization
@@ -289,10 +295,8 @@ class CodeGenerationTool:
 4. Be creative with colors, styles, and visualization types!
 5. The function still receives 'evaluations' parameter but IGNORE it - use the context data instead"""
 
-        # Create prompt for code generation
-        messages = [
-            SystemMessage(content=CODE_GENERATION_PROMPT),
-            HumanMessage(content=f"""# USER REQUEST
+        # Build the user prompt for the Claude Agent (code-generation only)
+        user_prompt = f"""# USER REQUEST
 {user_request}
 
 # CONVERSATION CONTEXT (Contains the data to visualize)
@@ -300,15 +304,26 @@ class CodeGenerationTool:
 
 {data_section}
 
-Generate Python code to create this visualization.
-""")
-        ]
+Generate ONLY the Python code for the `generate_visualization` function described in the system prompt. Return it inside a single ```python code block. Do not include any explanation, commentary, or follow-up text — code only.
+"""
 
-        # Get code from LLM
-        print(f"📝 Requesting code from Claude...")
+        # Get code from the Claude Agent SDK (no tools, no permissions, one turn)
+        print(f"📝 Requesting code from Claude Agent SDK...")
         print(f"📋 Context provided: {len(conversation_context)} chars from {len(context_parts)} messages")
-        response = self.llm.invoke(messages)
-        code = self._extract_code(response.content)
+        try:
+            response_text = asyncio.run(
+                _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
+            )
+        except RuntimeError:
+            # Already in a running event loop (e.g. inside FastAPI async context)
+            loop = asyncio.new_event_loop()
+            try:
+                response_text = loop.run_until_complete(
+                    _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
+                )
+            finally:
+                loop.close()
+        code = self._extract_code(response_text)
 
         if not code:
             print(f"⚠️  No code extracted from LLM response")
