@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
+import json
 import os
 import sys
 from pathlib import Path
@@ -23,11 +24,12 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 
 
 def get_llm_model():
-    """Initialize OpenAI model"""
+    """Initialize OpenAI model with JSON output mode."""
     return ChatOpenAI(
         model="gpt-5.4",
         temperature=0.3,
-        api_key=os.getenv("OPENAI_API_KEY")
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model_kwargs={"response_format": {"type": "json_object"}},
     )
 
 
@@ -36,18 +38,17 @@ def evaluate_training(training_content: str, training_name: str) -> Dict[str, An
     print(f"\n🔍 Evaluating {training_name}...")
 
     llm = get_llm_model()
-    structured_llm = llm.with_structured_output(TrainingEvaluation, method="function_calling")
-
     messages = [
         SystemMessage(content=EVALUATOR_PROMPT),
         HumanMessage(content=training_content)
     ]
 
-    result = invoke_with_retry(structured_llm.invoke, messages)
-    evaluation_dict = result.model_dump()
+    response = invoke_with_retry(llm.invoke, messages)
+    data = json.loads(response.content)
+    result = TrainingEvaluation.model_validate(data)
 
     print(f"✅ {training_name} evaluation completed")
-    return evaluation_dict
+    return result.model_dump()
 
 
 def run_evaluations(training_type: str = "migraine") -> Dict[str, Dict[str, Any]]:
