@@ -1,14 +1,15 @@
 from typing import Dict, Any, Optional, List
 from pathlib import Path
-import asyncio
-import threading
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 import os
 import json
 import sys
 import io
 import base64
 from dotenv import load_dotenv
+
+from .llm_retry import invoke_with_retry
 
 _plt = None
 
@@ -211,67 +212,26 @@ Notes:
 """
 
 
-async def _generate_code_via_claude_agent(system_prompt: str, user_prompt: str) -> str:
-    """Generate code via the Claude Agent SDK.
-
-    The agent runs in a fully sandboxed configuration:
-    - No tools are allowed (code-generation only).
-    - Permissions are bypassed so it never prompts the user.
-    - max_turns=1 so it cannot loop or do follow-up actions.
-    The agent's task is to return the Python code as plain text
-    (we extract the code block in `_extract_code`).
-    """
-    from claude_agent_sdk import (
-        query,
-        ClaudeAgentOptions,
-        AssistantMessage,
-        TextBlock,
+def _generate_code_via_llm(system_prompt: str, user_prompt: str) -> str:
+    """Generate code via OpenAI GPT-5.4 in a one-shot call (no tools)."""
+    llm = ChatOpenAI(
+        model="gpt-5.4",
+        temperature=0.3,
+        api_key=os.getenv("OPENAI_API_KEY"),
     )
-
-    collected: List[str] = []
-    options = ClaudeAgentOptions(
-        system_prompt=system_prompt,
-        allowed_tools=[],            # no tools at all
-        disallowed_tools=["Bash"],   # belt-and-suspenders: explicitly deny Bash
-        permission_mode="bypassPermissions",  # never prompt
-        max_turns=1,                 # one-shot: produce code and stop
-        setting_sources=[],          # don't load CLAUDE.md / project hooks
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt),
+    ]
+    response = invoke_with_retry(llm.invoke, messages)
+    content = response.content
+    if isinstance(content, str):
+        return content
+    # Fallback for list-of-content-blocks responses
+    return "".join(
+        block.get("text", "") if isinstance(block, dict) else str(block)
+        for block in content
     )
-
-    async for msg in query(prompt=user_prompt, options=options):
-        if isinstance(msg, AssistantMessage):
-            for block in msg.content:
-                if isinstance(block, TextBlock):
-                    collected.append(block.text)
-
-    return "".join(collected)
-
-
-def _run_in_new_thread(coro) -> str:
-    """Run an async coroutine in a fresh thread that owns its own event loop.
-
-    This avoids 'Cannot run the event loop while another loop is running'
-    which happens when calling asyncio.run() from inside FastAPI's event loop.
-    """
-    result: list = [None]
-    exc: list = [None]
-
-    def _runner():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            result[0] = loop.run_until_complete(coro)
-        except Exception as e:
-            exc[0] = e
-        finally:
-            loop.close()
-
-    t = threading.Thread(target=_runner, daemon=True)
-    t.start()
-    t.join()
-    if exc[0] is not None:
-        raise exc[0]
-    return result[0] or ""
 
 
 class CodeGenerationTool:
@@ -335,14 +295,10 @@ class CodeGenerationTool:
 Generate ONLY the Python code for the `generate_visualization` function described in the system prompt. Return it inside a single ```python code block. Do not include any explanation, commentary, or follow-up text — code only.
 """
 
-        # Get code from the Claude Agent SDK (no tools, no permissions, one turn).
-        # Run in a dedicated thread with its own event loop so this works both
-        # in pure-sync contexts and inside FastAPI's running async event loop.
-        print(f"📝 Requesting code from Claude Agent SDK...")
+        # Get code from OpenAI GPT-5.4 in a one-shot call.
+        print(f"📝 Requesting code from LLM...")
         print(f"📋 Context provided: {len(conversation_context)} chars from {len(context_parts)} messages")
-        response_text = _run_in_new_thread(
-            _generate_code_via_claude_agent(CODE_GENERATION_PROMPT, user_prompt)
-        )
+        response_text = _generate_code_via_llm(CODE_GENERATION_PROMPT, user_prompt)
         code = self._extract_code(response_text)
 
         if not code:

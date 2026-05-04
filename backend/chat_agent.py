@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional, TypedDict, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 import os
 import json
 import sys
@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 sys.path.append(str(Path(__file__).parent.parent))
 
 from backend.supervisor_agent import SupervisorAgent
+from backend.llm_retry import invoke_with_retry
 
 load_dotenv()
 
@@ -153,10 +154,10 @@ class ChatAgent:
             self.training_objectives = ""
 
         self.conversation_history: List[BaseMessage] = []
-        self.llm = ChatAnthropic(
-            model="claude-sonnet-4-5",
+        self.llm = ChatOpenAI(
+            model="gpt-5.4",
             temperature=0.5,
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            api_key=os.getenv("OPENAI_API_KEY")
         )
         self.supervisor = SupervisorAgent(evaluations, training_type)
         self.initial_feedback_given = False
@@ -341,7 +342,7 @@ Objectifs d'apprentissage:
         messages.append(HumanMessage(content=state["user_message"]))
 
         # Get response from LLM
-        response = self.llm.invoke(messages)
+        response = invoke_with_retry(self.llm.invoke, messages)
         response_text = response.content
 
         # Track token usage
@@ -478,7 +479,7 @@ Objectifs d'apprentissage:
 Puis suggérez 2-3 façons spécifiques dont l'apprenant peut explorer leurs résultats plus en profondeur.""")
         ]
 
-        response = self.llm.invoke(messages)
+        response = invoke_with_retry(self.llm.invoke, messages)
 
         # Track token usage for initial feedback
         if hasattr(response, 'usage_metadata') and response.usage_metadata:

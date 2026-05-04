@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 import os
 import sys
 from pathlib import Path
@@ -11,6 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from prompts import EVALUATOR_PROMPT
 from models import TrainingEvaluation
+from backend.llm_retry import invoke_with_retry
 
 load_dotenv()
 
@@ -21,12 +22,12 @@ if not os.getenv("LANGCHAIN_API_KEY"):
     print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
 
 
-def get_claude_model():
-    """Initialize Claude model"""
-    return ChatAnthropic(
-        model="claude-sonnet-4-5",
+def get_llm_model():
+    """Initialize OpenAI model"""
+    return ChatOpenAI(
+        model="gpt-5.4",
         temperature=0.3,
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+        api_key=os.getenv("OPENAI_API_KEY")
     )
 
 
@@ -34,7 +35,7 @@ def evaluate_training(training_content: str, training_name: str) -> Dict[str, An
     """Evaluate a single training module"""
     print(f"\n🔍 Evaluating {training_name}...")
 
-    llm = get_claude_model()
+    llm = get_llm_model()
     structured_llm = llm.with_structured_output(TrainingEvaluation)
 
     messages = [
@@ -42,7 +43,7 @@ def evaluate_training(training_content: str, training_name: str) -> Dict[str, An
         HumanMessage(content=training_content)
     ]
 
-    result = structured_llm.invoke(messages)
+    result = invoke_with_retry(structured_llm.invoke, messages)
     evaluation_dict = result.model_dump()
 
     print(f"✅ {training_name} evaluation completed")

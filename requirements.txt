@@ -1,7 +1,6 @@
 langchain>=0.3.0
 langchain-core>=0.3.81
 langchain-openai>=0.2.0
-langchain-anthropic>=0.3.0
 langchain-google-genai>=2.0.0
 langchain-text-splitters>=0.3.9
 langchain-community>=0.3.27
@@ -22,5 +21,3 @@ tavily-python>=0.5.0
 # RAG dependencies
 chromadb>=0.6.0
 pymupdf>=1.24.0
-# Claude Agent SDK (code generation)
-claude-agent-sdk>=0.1.59

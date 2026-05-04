@@ -22,11 +22,12 @@ from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
 from pydantic import BaseModel, Field
-from langchain_openai import OpenAIEmbeddings
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+
+from .llm_retry import invoke_with_retry
 
 
 # =============================================================================
@@ -84,16 +85,16 @@ class AgenticRAGModule:
         )
 
         # Initialize base LLMs
-        base_ranking_llm = ChatAnthropic(
-            model="claude-sonnet-4-5",
+        base_ranking_llm = ChatOpenAI(
+            model="gpt-5.4",
             temperature=0.1,
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            api_key=os.getenv("OPENAI_API_KEY")
         )
 
-        base_rewrite_llm = ChatAnthropic(
-            model="claude-sonnet-4-5",
+        base_rewrite_llm = ChatOpenAI(
+            model="gpt-5.4",
             temperature=0.3,
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            api_key=os.getenv("OPENAI_API_KEY")
         )
 
         # Create structured output LLMs with Pydantic models
@@ -329,7 +330,7 @@ Evaluate whether these chunks can help answer the user's query.
         ]
 
         try:
-            result: RankingResult = self.ranking_llm.invoke(messages)
+            result: RankingResult = invoke_with_retry(self.ranking_llm.invoke, messages)
             return result.is_relevant, result.reasoning
 
         except Exception as e:
@@ -362,7 +363,7 @@ Provide a better query to search the document database.""")
         ]
 
         try:
-            result: RewrittenQuery = self.rewrite_llm.invoke(messages)
+            result: RewrittenQuery = invoke_with_retry(self.rewrite_llm.invoke, messages)
             return result.query
 
         except Exception as e:
