@@ -36,7 +36,7 @@ def evaluate_training(training_content: str, training_name: str) -> Dict[str, An
     print(f"\n🔍 Evaluating {training_name}...")
 
     llm = get_llm_model()
-    structured_llm = llm.with_structured_output(TrainingEvaluation)
+    structured_llm = llm.with_structured_output(TrainingEvaluation, method="function_calling")
 
     messages = [
         SystemMessage(content=EVALUATOR_PROMPT),
