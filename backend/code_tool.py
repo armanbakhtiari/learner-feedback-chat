@@ -141,7 +141,7 @@ Be creative with your visualizations! Vary your approach each time:
 
 Tables are notoriously bad when cells overflow. Follow ALL of these:
 
-1. **Cell text MUST be short**. The texts MUST FIT in the cells without overflow. (VERY IMPORTANT)
+1. **Cell text MUST be short**. The texts MUST FIT in the cells without overflow. (VERY IMPORTANT) The cells boundries MUST be desgined according with the content and the text. OVERFLOW MUST BE AVOIDED.
 2. If the source content is a long sentence, **paraphrase it down to a short label** (e.g. "Communication claire", "Decision rapide", "Experimentation rapide"). Move the long version to `summary_data`, NOT into the cell.
 6. **Set explicit column widths** that match the figure size: `table = ax.table(..., colWidths=[...])` with widths summing to ≤ 1.0. Allocate wider widths to text columns and narrower to short-label columns.
 7. **Scale the row height**: `table.scale(1, 2.4)` (or higher) so cells have breathing room. Set `table.auto_set_font_size(False)` and `table.set_fontsize(9)` for dense tables, 10 for sparse ones.
@@ -205,6 +205,7 @@ Notes:
 
 # Important
 - Generate ONLY the function code
+- OVERFLOW MUST BE AVOIDED. THE CELL BOUNDRIES MUST BE DESGINDED ACCORDING WITH THE CONTENT AND THE TEXT.
 - Use the CONTEXT PROVIDED to create the visualization - this is what the user wants visualized!
 - If context includes specific data (tables, lists, comparisons), visualize THAT data
 - If context is about evaluations, use the evaluations dict
