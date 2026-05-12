@@ -7,7 +7,7 @@ It uses Claude with tool binding to handle tool calling automatically.
 
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 import os
 import json
@@ -116,10 +116,10 @@ class SupervisorAgent:
         initialize_tools(evaluations, training_type)
 
         # Create LLM for supervisor with tool binding
-        self.llm = ChatOpenAI(
-            model="gpt-5.4",
+        self.llm = ChatAnthropic(
+            model="claude-sonnet-4-6",
             temperature=0.3,  # Lower temperature for more consistent decisions
-            api_key=os.getenv("OPENAI_API_KEY")
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
         # Bind tools to the LLM

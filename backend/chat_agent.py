@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional, TypedDict, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 import os
 import json
 import sys
@@ -154,10 +154,10 @@ class ChatAgent:
             self.training_objectives = ""
 
         self.conversation_history: List[BaseMessage] = []
-        self.llm = ChatOpenAI(
-            model="gpt-5.4",
+        self.llm = ChatAnthropic(
+            model="claude-sonnet-4-6",
             temperature=0.5,
-            api_key=os.getenv("OPENAI_API_KEY")
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
         self.supervisor = SupervisorAgent(evaluations, training_type)
         self.initial_feedback_given = False

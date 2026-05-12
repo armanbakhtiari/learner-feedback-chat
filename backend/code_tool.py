@@ -1,15 +1,14 @@
 from typing import Dict, Any, Optional, List
 from pathlib import Path
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+import asyncio
+import threading
+from langchain_core.messages import BaseMessage, HumanMessage
 import os
 import json
 import sys
 import io
 import base64
 from dotenv import load_dotenv
-
-from .llm_retry import invoke_with_retry
 
 _plt = None
 
@@ -70,7 +69,7 @@ if not os.getenv("LANGCHAIN_API_KEY"):
     print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
 
 
-CODE_GENERATION_PROMPT = """# Role
+CODE_REQUIREMENTS = """# Role
 You are a Creative Python Visualization Expert. Your specialty is creating beautiful, unique, and informative data visualizations.
 
 # Task
@@ -213,26 +212,59 @@ Notes:
 """
 
 
-def _generate_code_via_llm(system_prompt: str, user_prompt: str) -> str:
-    """Generate code via OpenAI GPT-5.4 in a one-shot call (no tools)."""
-    llm = ChatOpenAI(
-        model="gpt-5.4",
-        temperature=0.3,
-        api_key=os.getenv("OPENAI_API_KEY"),
+async def _generate_code_via_claude_agent(system_prompt: str, user_prompt: str) -> str:
+    """Generate code via the Claude Agent SDK (one-shot, no tools)."""
+    from claude_agent_sdk import (
+        query,
+        ClaudeAgentOptions,
+        AssistantMessage,
+        TextBlock,
     )
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_prompt),
-    ]
-    response = invoke_with_retry(llm.invoke, messages)
-    content = response.content
-    if isinstance(content, str):
-        return content
-    # Fallback for list-of-content-blocks responses
-    return "".join(
-        block.get("text", "") if isinstance(block, dict) else str(block)
-        for block in content
+
+    collected: List[str] = []
+    options = ClaudeAgentOptions(
+        system_prompt=system_prompt,
+        allowed_tools=[],
+        disallowed_tools=["Bash"],
+        permission_mode="bypassPermissions",
+        max_turns=1,
+        setting_sources=[],
     )
+
+    async for msg in query(prompt=user_prompt, options=options):
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if isinstance(block, TextBlock):
+                    collected.append(block.text)
+
+    return "".join(collected)
+
+
+def _run_in_new_thread(coro) -> str:
+    """Run an async coroutine in a fresh thread with its own event loop.
+
+    Avoids 'Cannot run the event loop while another loop is running'
+    when called from inside FastAPI's async event loop.
+    """
+    result: list = [None]
+    exc: list = [None]
+
+    def _runner():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result[0] = loop.run_until_complete(coro)
+        except Exception as e:
+            exc[0] = e
+        finally:
+            loop.close()
+
+    t = threading.Thread(target=_runner, daemon=True)
+    t.start()
+    t.join()
+    if exc[0] is not None:
+        raise exc[0]
+    return result[0] or ""
 
 
 class CodeGenerationTool:
@@ -296,10 +328,12 @@ class CodeGenerationTool:
 Generate ONLY the Python code for the `generate_visualization` function described in the system prompt. Return it inside a single ```python code block. Do not include any explanation, commentary, or follow-up text — code only.
 """
 
-        # Get code from OpenAI GPT-5.4 in a one-shot call.
-        print(f"📝 Requesting code from LLM...")
+        # Get code from the Claude Agent SDK (Claude Code default prompt + our requirements).
+        print(f"📝 Requesting code from Claude Agent SDK...")
         print(f"📋 Context provided: {len(conversation_context)} chars from {len(context_parts)} messages")
-        response_text = _generate_code_via_llm(CODE_GENERATION_PROMPT, user_prompt)
+        response_text = _run_in_new_thread(
+            _generate_code_via_claude_agent(CODE_REQUIREMENTS, user_prompt)
+        )
         code = self._extract_code(response_text)
 
         if not code:

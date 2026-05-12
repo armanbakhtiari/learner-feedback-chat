@@ -22,7 +22,8 @@ from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
 from pydantic import BaseModel, Field
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -85,16 +86,16 @@ class AgenticRAGModule:
         )
 
         # Initialize base LLMs
-        base_ranking_llm = ChatOpenAI(
-            model="gpt-5.4",
+        base_ranking_llm = ChatAnthropic(
+            model="claude-sonnet-4-6",
             temperature=0.1,
-            api_key=os.getenv("OPENAI_API_KEY")
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
-        base_rewrite_llm = ChatOpenAI(
-            model="gpt-5.4",
+        base_rewrite_llm = ChatAnthropic(
+            model="claude-sonnet-4-6",
             temperature=0.3,
-            api_key=os.getenv("OPENAI_API_KEY")
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
         )
 
         # Create structured output LLMs with Pydantic models
