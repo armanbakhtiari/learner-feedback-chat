@@ -43,7 +43,6 @@ sys.path.append(str(Path(__file__).parent.parent))
 from backend.session_store import (
     save_session, get_session, save_chat_history,
     delete_session_chat, cleanup_expired_sessions, generate_session_id,
-    update_session_field,
 )
 
 # Lazy imports - only import heavy modules when needed
@@ -204,34 +203,6 @@ async def get_trainings(training_type: str = "migraine"):
     return {"trainings": trainings, "training_type": training_type}
 
 
-def _prewarm_chat_session(session_id: str, evaluations: Dict[str, Any], training_type: str):
-    """Background pre-warm: instantiate ChatAgent, force RAG init via supervisor,
-    pre-generate initial feedback, and persist results so chat.html opens
-    instantly. Failures are swallowed — the chat page falls back to today's
-    on-demand initial-message flow.
-    """
-    try:
-        print(f"\n🔥 [prewarm] starting for session {session_id}")
-        ChatAgent = get_chat_agent_class()
-        agent = ChatAgent(evaluations=evaluations, training_type=training_type)
-        agent.prewarm()
-        chat_agents[session_id] = agent
-
-        from langchain_core.messages import HumanMessage as HM
-        serialized = []
-        for msg in agent.conversation_history:
-            if hasattr(msg, "content"):
-                role = "human" if isinstance(msg, HM) else "ai"
-                serialized.append({"role": role, "content": msg.content})
-        save_chat_history(session_id, serialized)
-        update_session_field(session_id, initial_feedback_ready=True)
-        print(f"✅ [prewarm] complete for session {session_id}")
-    except Exception as e:
-        print(f"⚠️  [prewarm] failed for session {session_id}: {e}")
-        import traceback
-        traceback.print_exc()
-
-
 @app.post("/evaluate")
 async def evaluate_trainings(request: EvaluateRequest):
     """Run evaluations on training modules for the selected training type"""
@@ -251,16 +222,7 @@ async def evaluate_trainings(request: EvaluateRequest):
             import traceback
             traceback.print_exc()
 
-        # Persist to disk
         save_session(session_id, evaluations, training_type, performance_table=performance_table)
-
-        # Kick off chat pre-warm in background — do not await.
-        import threading
-        threading.Thread(
-            target=_prewarm_chat_session,
-            args=(session_id, evaluations, training_type),
-            daemon=True,
-        ).start()
 
         return {
             "session_id": session_id,
@@ -283,18 +245,6 @@ async def get_performance_table(session_id: str):
     if not table:
         raise HTTPException(status_code=404, detail="Performance table not available")
     return {"performance_table": table}
-
-
-@app.get("/chat/history/{session_id}")
-async def get_chat_history_endpoint(session_id: str):
-    """Return persisted chat history + whether the initial feedback has been pre-warmed."""
-    session = get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
-    return {
-        "chat_history": session.get("chat_history", []),
-        "initial_feedback_ready": session.get("initial_feedback_ready", False),
-    }
 
 
 @app.get("/evaluation/{session_id}")
