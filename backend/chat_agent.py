@@ -489,6 +489,22 @@ Puis suggérez 2-3 façons spécifiques dont l'apprenant peut explorer leurs ré
 
         return response.content
 
+    def prewarm(self, opening_message: str = "Bonjour! Je voudrais voir ma rétroaction.") -> str:
+        """Pre-generate the initial feedback so the first /chat call is instant.
+
+        Seeds conversation_history with one user/AI exchange matching what
+        chat.html's auto-sent opening message would have produced, and flips
+        initial_feedback_given so subsequent /chat calls route through the
+        supervisor graph normally.
+        """
+        if self.initial_feedback_given:
+            return ""
+        initial = self._create_initial_feedback()
+        self.conversation_history.append(HumanMessage(content=opening_message))
+        self.conversation_history.append(AIMessage(content=initial))
+        self.initial_feedback_given = True
+        return initial
+
     def reset(self):
         """Reset the conversation"""
         self.conversation_history = []

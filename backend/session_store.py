@@ -28,7 +28,12 @@ def _session_path(session_id: str) -> Path:
     return SESSIONS_DIR / f"{safe_id}.json"
 
 
-def save_session(session_id: str, evaluations: Dict[str, Any], training_type: str = "migraine"):
+def save_session(
+    session_id: str,
+    evaluations: Dict[str, Any],
+    training_type: str = "migraine",
+    performance_table: Optional[str] = None,
+):
     """Save evaluation data for a session"""
     _ensure_dir()
     data = {
@@ -37,10 +42,26 @@ def save_session(session_id: str, evaluations: Dict[str, Any], training_type: st
         "training_type": training_type,
         "created_at": time.time(),
         "last_accessed": time.time(),
-        "chat_history": []
+        "chat_history": [],
+        "performance_table": performance_table,
+        "initial_feedback_ready": False,
     }
     path = _session_path(session_id)
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def update_session_field(session_id: str, **fields):
+    """Merge arbitrary fields into the session file."""
+    path = _session_path(session_id)
+    if not path.exists():
+        return
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data.update(fields)
+        data["last_accessed"] = time.time()
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    except (json.JSONDecodeError, OSError):
+        pass
 
 
 def get_session(session_id: str) -> Optional[Dict[str, Any]]:

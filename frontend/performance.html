@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance globale pour cette formation</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .performance-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .performance-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .performance-header h1 {
+            margin-bottom: 8px;
+        }
+        .performance-subtitle {
+            color: #555;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .performance-image-wrap {
+            background: #F8F9FA;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            margin-bottom: 24px;
+        }
+        .performance-image-wrap img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .performance-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .performance-status {
+            text-align: center;
+            color: #666;
+            min-height: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="performance-container">
+        <header class="performance-header">
+            <h1>Performance globale pour cette formation</h1>
+            <p class="performance-subtitle">
+                Voici un aperçu structuré de vos réponses comparées à celles des experts.
+                Prenez un instant pour le parcourir, puis poursuivez vers le chat pour explorer vos résultats plus en détail.
+            </p>
+        </header>
+
+        <main>
+            <div class="performance-image-wrap" id="performance-image-wrap">
+                <p id="performance-loading">Chargement du tableau...</p>
+            </div>
+
+            <div class="performance-actions">
+                <button id="back-btn" class="secondary-btn" onclick="goBack()">
+                    ← Retour à la sélection
+                </button>
+                <button id="continue-btn" class="primary-btn" onclick="goToChat()">
+                    Continuer vers le chat →
+                </button>
+            </div>
+
+            <p class="performance-status" id="performance-status"></p>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Systeme de Retroaction pour l'Apprentissage</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function getApiUrl() {
+            if (window.API_BASE_URL) return window.API_BASE_URL;
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            if (hostname === 'localhost' && port === '3000') {
+                return 'http://localhost:8000';
+            }
+            const isReplit = hostname.includes('replit.app') ||
+                             hostname.includes('repl.co') ||
+                             hostname.includes('replit.dev') ||
+                             hostname.includes('riker.replit');
+            if (isReplit && port && port !== '8000' && port !== '80' && port !== '443') {
+                return `${protocol}//${hostname}:8000`;
+            }
+            return window.location.origin;
+        }
+
+        const API_URL = getApiUrl();
+        const sessionId = localStorage.getItem('session_id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!sessionId) {
+                alert('Aucune session trouvée. Veuillez d\'abord lancer une évaluation.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const cached = localStorage.getItem('performance_table');
+            if (cached) {
+                renderTable(cached);
+            } else {
+                try {
+                    const resp = await fetch(`${API_URL}/performance/${sessionId}`);
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const data = await resp.json();
+                    if (data.performance_table) {
+                        localStorage.setItem('performance_table', data.performance_table);
+                        renderTable(data.performance_table);
+                    } else {
+                        showFallback();
+                    }
+                } catch (e) {
+                    console.error('Failed to load performance table:', e);
+                    showFallback();
+                }
+            }
+        });
+
+        function renderTable(b64) {
+            const wrap = document.getElementById('performance-image-wrap');
+            wrap.innerHTML = `<img alt="Tableau de performance" src="data:image/png;base64,${b64.trim()}" />`;
+        }
+
+        function showFallback() {
+            const wrap = document.getElementById('performance-image-wrap');
+            wrap.innerHTML = `
+                <div style="text-align:center; color:#777;">
+                    <p>Le tableau de performance n'est pas disponible pour cette session.</p>
+                    <p>Vous pouvez tout de même continuer vers le chat.</p>
+                </div>`;
+        }
+
+        function goToChat() {
+            window.location.href = 'chat.html';
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

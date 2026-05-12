@@ -351,15 +351,19 @@
                 const data = await response.json();
 
                 if (data.status === 'completed') {
-                    status.textContent = 'Evaluation terminee! Redirection vers le chat...';
+                    status.textContent = 'Evaluation terminee! Affichage de votre performance...';
                     status.className = 'status-message success';
 
-                    // Store session ID and training type, then redirect to chat
                     localStorage.setItem('session_id', data.session_id);
                     localStorage.setItem('training_type', selectedTrainingType);
+                    if (data.performance_table) {
+                        localStorage.setItem('performance_table', data.performance_table);
+                    } else {
+                        localStorage.removeItem('performance_table');
+                    }
                     setTimeout(() => {
-                        window.location.href = 'chat.html';
-                    }, 1500);
+                        window.location.href = data.performance_table ? 'performance.html' : 'chat.html';
+                    }, 1200);
                 }
             } catch (error) {
                 console.error('Error during evaluation:', error);

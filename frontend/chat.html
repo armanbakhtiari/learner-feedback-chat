@@ -104,7 +104,7 @@
         const API_URL = getApiUrl();
         console.log('🔗 Chat using API URL:', API_URL);
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             sessionId = localStorage.getItem('session_id');
 
             if (!sessionId) {
@@ -114,9 +114,44 @@
             }
 
             setupEventListeners();
-            // Automatically send first message to get initial feedback
-            sendInitialMessage();
+            await loadOrStartConversation();
         });
+
+        async function loadOrStartConversation() {
+            // Try to render the pre-warmed conversation. Retry once after 2s if
+            // the prewarm thread hasn't finished yet; then fall back to the
+            // on-demand sendInitialMessage() path.
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const resp = await fetch(`${API_URL}/chat/history/${sessionId}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.initial_feedback_ready && data.chat_history && data.chat_history.length > 0) {
+                            renderHistory(data.chat_history);
+                            enableInput();
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('chat history fetch failed:', e);
+                }
+                if (attempt === 0) {
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+            // Fallback: legacy on-demand initial-message flow.
+            sendInitialMessage();
+        }
+
+        function renderHistory(history) {
+            const welcomeMsg = document.querySelector('.welcome-message');
+            if (welcomeMsg) welcomeMsg.remove();
+            for (const msg of history) {
+                const role = msg.role === 'human' ? 'user' : 'assistant';
+                addMessageToChat(role, msg.content);
+            }
+            isFirstMessage = false;
+        }
 
         function setupEventListeners() {
             const sendBtn = document.getElementById('send-btn');
