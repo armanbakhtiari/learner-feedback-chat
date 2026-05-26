@@ -223,11 +223,15 @@ async def _generate_code_via_claude_agent(system_prompt: str, user_prompt: str) 
 
     collected: List[str] = []
     options = ClaudeAgentOptions(
-        system_prompt=system_prompt,
+        system_prompt={
+            "type": "preset",
+            "preset": "claude_code",
+            "append": system_prompt,
+        },
         allowed_tools=[],
         disallowed_tools=["Bash"],
         permission_mode="bypassPermissions",
-        max_turns=1,
+        max_turns=20,
         setting_sources=[],
     )
 
