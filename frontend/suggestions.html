@@ -14,8 +14,16 @@
         .gap-item { margin-bottom: 12px; }
         .gap-item .gap-obj { font-weight: 600; }
         .gap-item .gap-summary { color: #444; }
-        .suggestion-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .suggestion-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s; }
+        .suggestion-card:hover { box-shadow: 0 6px 18px rgba(67,56,202,0.12); transform: translateY(-2px); border-color: #c7d2fe; }
         .suggestion-card h3 { margin: 0 0 6px; }
+        .view-hint { margin-top: 12px; font-size: 0.85rem; color: #4338ca; font-weight: 600; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 30px 16px; overflow-y: auto; }
+        .modal-overlay.open { display: block; }
+        .modal-box { background: #fff; max-width: 860px; margin: 0 auto; border-radius: 14px; padding: 24px 28px; position: relative; }
+        .modal-box .modal-close { position: absolute; top: 14px; right: 18px; font-size: 1.6rem; line-height: 1; cursor: pointer; color: #6b7280; background: none; border: none; }
+        .modal-box h2 { margin: 0 28px 4px 0; }
+        .modal-box .modal-content-text { white-space: pre-wrap; font-family: inherit; line-height: 1.6; color: #374151; margin-top: 16px; }
         .suggestion-badge { display: inline-block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; background: #eef2ff; color: #4338ca; border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; }
         .suggestion-rationale { color: #374151; line-height: 1.55; }
         .rank-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #4338ca; color: #fff; font-weight: 700; margin-right: 10px; }
@@ -39,6 +47,15 @@
         </div>
     </div>
 
+    <div id="situation-modal" class="modal-overlay" onclick="closeSituationModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeSituationModal()" aria-label="Fermer">&times;</button>
+            <span class="suggestion-badge" id="modal-domain"></span>
+            <h2 id="modal-title"></h2>
+            <div class="modal-content-text" id="modal-content"></div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         function getApiUrl() {
@@ -57,10 +74,33 @@
 
         const API_URL = getApiUrl();
         const sessionId = localStorage.getItem('session_id');
+        let currentSuggestions = [];
 
         function goBackToChat() {
             window.location.href = 'chat.html';
         }
+
+        function openSituationModal(index) {
+            const s = currentSuggestions[index];
+            if (!s) return;
+            document.getElementById('modal-domain').textContent = domainLabel(s.domain);
+            document.getElementById('modal-title').textContent = s.title;
+            document.getElementById('modal-content').textContent =
+                s.content && s.content.trim()
+                    ? s.content
+                    : "Le contenu détaillé de cette situation n'est pas disponible.";
+            document.getElementById('situation-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSituationModal(event) {
+            document.getElementById('situation-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSituationModal();
+        });
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -97,13 +137,15 @@
                 html += '</div>';
             }
 
-            // Suggestions
+            // Suggestions (cards are clickable to reveal the full situation content)
+            currentSuggestions = data.suggestions;
             html += '<h2>Situations recommandées pour aller plus loin</h2>';
             data.suggestions.forEach((s, i) => {
-                html += `<div class="suggestion-card">
+                html += `<div class="suggestion-card" onclick="openSituationModal(${i})">
                     <span class="suggestion-badge">${escapeHtml(domainLabel(s.domain))}</span>
                     <h3><span class="rank-num">${i + 1}</span>${escapeHtml(s.title)}</h3>
                     <p class="suggestion-rationale">${escapeHtml(s.rationale)}</p>
+                    <div class="view-hint">👁️ Cliquez pour voir la situation et les scénarios →</div>
                 </div>`;
             });
 

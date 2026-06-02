@@ -205,10 +205,19 @@ def suggest_new_trainings(session_id: str) -> Dict[str, Any]:
 
     result = suggest_trainings(gaps, retrieved)
 
+    # Attach the full situation content so the UI can display each suggested situation.
+    suggestions = []
+    for s in result.suggestions:
+        item = s.model_dump()
+        entry = get_bank_situation(s.situation_id)
+        item["content"] = entry.get("content", "")
+        item["objectives"] = entry.get("objectives", "")
+        suggestions.append(item)
+
     return {
         "status": "success",
         "query": gap_query.query,
         "query_reasoning": gap_query.reasoning,
-        "suggestions": [s.model_dump() for s in result.suggestions],
+        "suggestions": suggestions,
         "gaps": gaps,
     }
