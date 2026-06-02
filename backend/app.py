@@ -56,9 +56,16 @@ def get_training_data(training_type: str = "migraine"):
     global _training_data_cache
     if training_type not in _training_data_cache:
         if training_type == "migraine":
-            from trainings_2_experts import training_1, training_2, training_3, training_objectives
+            # Only module 1 is evaluated/displayed; modules 2 & 3 live in the situation bank.
+            from trainings_2_experts import training_1, training_objectives
             _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1, "training_2": training_2, "training_3": training_3},
+                "trainings": {"training_1": training_1},
+                "objectives": training_objectives
+            }
+        elif training_type == "grh_1st":
+            from trainings_grh_1stLearner import training_1, training_objectives
+            _training_data_cache[training_type] = {
+                "trainings": {"training_1": training_1},
                 "objectives": training_objectives
             }
         elif training_type == "nursing_1st":
@@ -177,9 +184,11 @@ async def get_trainings(training_type: str = "migraine"):
     trainings = []
     if training_type == "migraine":
         names = {
-            "training_1": "Module 1: Diagnostic et suivi de la migraine",
-            "training_2": "Module 2: Traitement aigu et gestion des habitudes de vie de la migraine",
-            "training_3": "Module 3: Traitement preventif de la migraine"
+            "training_1": "Module 1: Diagnostic et suivi de la migraine"
+        }
+    elif training_type == "grh_1st":
+        names = {
+            "training_1": "Module 1: Gestion d'un employe en sous-performance"
         }
     elif training_type in ("nursing_1st", "nursing_2nd"):
         names = {
@@ -222,7 +231,32 @@ async def evaluate_trainings(request: EvaluateRequest):
             import traceback
             traceback.print_exc()
 
-        save_session(session_id, evaluations, training_type, performance_table=performance_table)
+        # Extract the learner's learning gaps (best-effort).
+        learning_gaps = None
+        try:
+            from backend.learning_gaps import extract_learning_gaps
+            objectives = get_training_data(training_type)["objectives"]
+            learning_gaps = extract_learning_gaps(evaluations, objectives, training_type)
+        except Exception as e:
+            print(f"⚠️  Learning gaps extraction failed: {e}")
+            import traceback
+            traceback.print_exc()
+
+        save_session(
+            session_id,
+            evaluations,
+            training_type,
+            performance_table=performance_table,
+            learning_gaps=learning_gaps,
+        )
+
+        # Ensure the bank-of-situations vector store is built (always, regardless of the
+        # selected training) so the "Suggest new trainings" page is ready (best-effort).
+        try:
+            from backend.bank_rag import ensure_bank_indexed
+            ensure_bank_indexed()
+        except Exception as e:
+            print(f"⚠️  Bank indexing failed: {e}")
 
         return {
             "session_id": session_id,
@@ -339,6 +373,24 @@ async def chat(message: ChatMessage):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/suggest-trainings/{session_id}")
+async def suggest_trainings_endpoint(session_id: str):
+    """Suggest 1-3 further-practice situations from the bank based on the learner's gaps."""
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found or expired")
+    if not session.get("learning_gaps"):
+        raise HTTPException(status_code=404, detail="No learning gaps available for this session")
+    try:
+        from backend.suggestions_agent import suggest_new_trainings
+        return suggest_new_trainings(session_id)
+    except Exception as e:
+        print(f"ERROR in /suggest-trainings endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/chat/reset/{session_id}")
 async def reset_chat(session_id: str):
     """Reset chat history for a session"""
@@ -386,6 +438,14 @@ async def serve_chat():
     chat_file = FRONTEND_DIR / "chat.html"
     if chat_file.exists():
         return FileResponse(str(chat_file))
+    return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+@app.get("/suggestions.html")
+async def serve_suggestions():
+    """Serve the training-suggestions page"""
+    suggestions_file = FRONTEND_DIR / "suggestions.html"
+    if suggestions_file.exists():
+        return FileResponse(str(suggestions_file))
     return JSONResponse(content={"error": "File not found"}, status_code=404)
 
 @app.get("/performance.html")

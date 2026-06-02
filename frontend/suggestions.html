@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formations suggérées</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .suggestions-wrapper { max-width: 980px; margin: 0 auto; padding: 24px; }
+        .suggestions-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+        .suggestions-intro { color: #555; margin: 8px 0 24px; }
+        .gaps-panel { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+        .gaps-panel h2 { margin-top: 0; font-size: 1.1rem; }
+        .gap-item { margin-bottom: 12px; }
+        .gap-item .gap-obj { font-weight: 600; }
+        .gap-item .gap-summary { color: #444; }
+        .suggestion-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .suggestion-card h3 { margin: 0 0 6px; }
+        .suggestion-badge { display: inline-block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; background: #eef2ff; color: #4338ca; border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; }
+        .suggestion-rationale { color: #374151; line-height: 1.55; }
+        .rank-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #4338ca; color: #fff; font-weight: 700; margin-right: 10px; }
+        .loading, .error, .empty { text-align: center; padding: 40px; color: #666; }
+        .error { color: #b91c1c; }
+        .query-note { font-size: 0.85rem; color: #6b7280; margin-top: 18px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="suggestions-wrapper">
+        <div class="suggestions-header">
+            <div>
+                <h1>🎯 Formations suggérées</h1>
+                <p class="suggestions-intro">Des situations supplémentaires sélectionnées en fonction de vos lacunes d'apprentissage.</p>
+            </div>
+            <button class="secondary-btn" onclick="goBackToChat()">← Retour au chat</button>
+        </div>
+
+        <div id="content">
+            <div class="loading">Analyse de vos lacunes et recherche de formations pertinentes…</div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function getApiUrl() {
+            if (window.API_BASE_URL) return window.API_BASE_URL;
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            if (hostname === 'localhost' && port === '3000') return 'http://localhost:8000';
+            const isReplit = hostname.includes('replit.app') || hostname.includes('repl.co') ||
+                             hostname.includes('replit.dev') || hostname.includes('riker.replit');
+            if (isReplit && port && port !== '8000' && port !== '80' && port !== '443') {
+                return `${protocol}//${hostname}:8000`;
+            }
+            return window.location.origin;
+        }
+
+        const API_URL = getApiUrl();
+        const sessionId = localStorage.getItem('session_id');
+
+        function goBackToChat() {
+            window.location.href = 'chat.html';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : text;
+            return div.innerHTML;
+        }
+
+        function domainLabel(domain) {
+            const map = { migraine: 'Migraine', grh: 'Gestion des ressources humaines' };
+            return map[domain] || domain;
+        }
+
+        function render(data) {
+            const content = document.getElementById('content');
+
+            if (data.status === 'no_gaps' || !data.suggestions || data.suggestions.length === 0) {
+                content.innerHTML = `<div class="empty">
+                    <p>${escapeHtml(data.message || "Aucune formation supplémentaire n'a pu être suggérée pour le moment.")}</p>
+                </div>`;
+                return;
+            }
+
+            let html = '';
+
+            // Learning gaps panel
+            if (data.gaps && data.gaps.length > 0) {
+                html += '<div class="gaps-panel"><h2>Vos lacunes d\'apprentissage identifiées</h2>';
+                data.gaps.forEach(gap => {
+                    html += `<div class="gap-item">
+                        <div class="gap-obj">${escapeHtml(gap.learning_objective)}</div>
+                        <div class="gap-summary">${escapeHtml(gap.gap_summary)}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            // Suggestions
+            html += '<h2>Situations recommandées pour aller plus loin</h2>';
+            data.suggestions.forEach((s, i) => {
+                html += `<div class="suggestion-card">
+                    <span class="suggestion-badge">${escapeHtml(domainLabel(s.domain))}</span>
+                    <h3><span class="rank-num">${i + 1}</span>${escapeHtml(s.title)}</h3>
+                    <p class="suggestion-rationale">${escapeHtml(s.rationale)}</p>
+                </div>`;
+            });
+
+            if (data.query) {
+                html += `<p class="query-note">Recherche effectuée à partir de : « ${escapeHtml(data.query)} »</p>`;
+            }
+
+            content.innerHTML = html;
+        }
+
+        async function loadSuggestions() {
+            const content = document.getElementById('content');
+            if (!sessionId) {
+                content.innerHTML = '<div class="error">Aucune session trouvée. Veuillez d\'abord lancer une évaluation.</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/suggest-trainings/${sessionId}`);
+                if (response.status === 404) {
+                    content.innerHTML = '<div class="empty"><p>Aucune lacune d\'apprentissage disponible pour cette session. Les suggestions sont générées après une évaluation.</p></div>';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                render(data);
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                content.innerHTML = `<div class="error">
+                    <p>Erreur lors du chargement des suggestions.</p>
+                    <p style="font-size:0.85rem;">${escapeHtml(error.message)}</p>
+                </div>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSuggestions);
+    </script>
+</body>
+</html>

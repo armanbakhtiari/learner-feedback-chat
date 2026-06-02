@@ -33,6 +33,7 @@ def save_session(
     evaluations: Dict[str, Any],
     training_type: str = "migraine",
     performance_table: Optional[str] = None,
+    learning_gaps: Optional[Dict[str, Any]] = None,
 ):
     """Save evaluation data for a session"""
     _ensure_dir()
@@ -44,6 +45,7 @@ def save_session(
         "last_accessed": time.time(),
         "chat_history": [],
         "performance_table": performance_table,
+        "learning_gaps": learning_gaps,
     }
     path = _session_path(session_id)
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -101,6 +103,29 @@ def get_chat_history(session_id: str) -> List[Dict[str, str]]:
     if session is None:
         return []
     return session.get("chat_history", [])
+
+
+def save_learning_gaps(session_id: str, learning_gaps: Dict[str, Any]):
+    """Save (or update) the learner's learning gaps for a session"""
+    path = _session_path(session_id)
+    if not path.exists():
+        return
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["learning_gaps"] = learning_gaps
+        data["last_accessed"] = time.time()
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    except (json.JSONDecodeError, OSError):
+        pass
+
+
+def get_learning_gaps(session_id: str) -> Optional[Dict[str, Any]]:
+    """Load the learner's learning gaps for a session, or None if absent/expired"""
+    session = get_session(session_id)
+    if session is None:
+        return None
+    return session.get("learning_gaps")
 
 
 def delete_session_chat(session_id: str):

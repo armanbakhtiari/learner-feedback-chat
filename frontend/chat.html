@@ -15,6 +15,9 @@
             </div>
             <div class="header-actions">
                 <span id="token-counter" class="token-counter" title="Nombre total de tokens utilisés dans cette session">🔢 Tokens: 0</span>
+                <button id="suggest-btn" class="primary-btn" onclick="goToSuggestions()" title="Découvrir des formations supplémentaires basées sur vos lacunes d'apprentissage">
+                    🎯 Suggérer de nouvelles formations
+                </button>
                 <button id="back-btn" class="secondary-btn" onclick="goBack()">
                     ← Retour aux modules
                 </button>
@@ -352,6 +355,10 @@
 
         function goBack() {
             window.location.href = 'index.html';
+        }
+
+        function goToSuggestions() {
+            window.location.href = 'suggestions.html';
         }
 
         async function resetChat() {

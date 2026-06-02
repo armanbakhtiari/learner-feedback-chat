@@ -4,7 +4,6 @@ from langchain_anthropic import ChatAnthropic
 import os
 import sys
 from pathlib import Path
-import concurrent.futures
 from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -56,22 +55,18 @@ def run_evaluations(training_type: str = "migraine") -> Dict[str, Dict[str, Any]
     print("="*80)
 
     if training_type == "migraine":
-        from trainings_2_experts import training_1, training_2, training_3
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            future_1 = executor.submit(evaluate_training, training_1, "Training 1")
-            future_2 = executor.submit(evaluate_training, training_2, "Training 2")
-            future_3 = executor.submit(evaluate_training, training_3, "Training 3")
+        # Only the first module (training_1) is evaluated. Modules 2 & 3 are kept in
+        # trainings_2_experts.py and surfaced through the situation bank instead.
+        from trainings_2_experts import training_1
+        eval_1 = evaluate_training(training_1, "Migraine Module 1")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
 
-            eval_1 = future_1.result()
-            eval_2 = future_2.result()
-            eval_3 = future_3.result()
-
-        print("\n✅ All evaluations completed!")
-        return {
-            "training_1": eval_1,
-            "training_2": eval_2,
-            "training_3": eval_3
-        }
+    elif training_type == "grh_1st":
+        from trainings_grh_1stLearner import training_1
+        eval_1 = evaluate_training(training_1, "GRH (1st Learner)")
+        print("\n✅ Evaluation completed!")
+        return {"training_1": eval_1}
 
     elif training_type == "nursing_1st":
         from trainings_nursing_1stLearner import training_1

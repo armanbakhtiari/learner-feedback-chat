@@ -22,8 +22,14 @@
                     <div class="training-selection-card" data-type="migraine" onclick="selectTraining('migraine')">
                         <div class="selection-icon">🧠</div>
                         <h3>Migraine</h3>
-                        <p>Diagnostic, traitement aigu et preventif de la migraine</p>
-                        <span class="module-count">3 modules</span>
+                        <p>Diagnostic et suivi de la migraine</p>
+                        <span class="module-count">1 module</span>
+                    </div>
+                    <div class="training-selection-card" data-type="grh_1st" onclick="selectTraining('grh_1st')">
+                        <div class="selection-icon">💼</div>
+                        <h3>Gestion des ressources humaines</h3>
+                        <p>Prise de decision en gestion d'equipe et ethique au travail</p>
+                        <span class="module-count">1 module</span>
                     </div>
                     <div class="training-selection-card" data-type="nursing_1st" onclick="selectTraining('nursing_1st')">
                         <div class="selection-icon">🏥</div>
@@ -170,6 +176,14 @@
                     <li>Differencier les types de cephalees</li>
                     <li>Poser un diagnostic pertinent en contexte clinique complexe par la discrimination des caracteristiques cliniques de la migraine, des cephalees de tension et des cephalees medicamenteuses</li>
                     <li>Evaluer de facon critique les options therapeutiques aigues, preventives et hormonales dans la prise en charge des migraines</li>
+                `;
+            } else if (trainingType === 'grh_1st') {
+                introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans le module de formation sur la gestion des ressources humaines, la prise de decision en gestion d\'equipe et l\'ethique au travail. Vous pouvez visualiser le module de formation et obtenir des retours personnalises sur vos reponses.';
+                objectivesList.innerHTML = `
+                    <li>Adopter un comportement exemplaire et conforme aux lois, aux normes formelles et informelles ainsi qu'aux codes sociaux en vigueur</li>
+                    <li>Contribuer a developper, soutenir et modifier des comportements, des politiques et des reglements conformement a l'ethique du travail</li>
+                    <li>Organiser le travail, gerer son temps et celui des autres et etablir des priorites</li>
+                    <li>Structurer les taches de maniere a etre le plus efficace possible et a respecter les echeances</li>
                 `;
             } else if (trainingType === 'leadership_1st' || trainingType === 'leadership_2nd' || trainingType === 'leadership_3rd') {
                 introText.textContent = 'Ce systeme vous permet d\'explorer vos performances dans le module de formation sur le leadership, la prise de decision et la gestion de l\'ambiguite. Vous pouvez visualiser le module de formation et obtenir des retours personnalises sur vos reponses.';

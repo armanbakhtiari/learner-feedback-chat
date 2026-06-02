@@ -135,6 +135,9 @@ class ChatAgent:
         if training_type == "migraine":
             from trainings_2_experts import training_objectives
             self.training_objectives = training_objectives
+        elif training_type == "grh_1st":
+            from trainings_grh_1stLearner import training_objectives
+            self.training_objectives = training_objectives
         elif training_type == "nursing_1st":
             from trainings_nursing_1stLearner import training_objectives
             self.training_objectives = training_objectives

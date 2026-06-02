@@ -51,3 +51,27 @@ class SituationEvaluation(BaseModel):
 class TrainingEvaluation(BaseModel):
     """Complete evaluation for a training module"""
     situations: Dict[str, SituationEvaluation]
+
+
+# ============= Learning Gaps (structured output) =============
+
+class LearningGap(BaseModel):
+    """A single learning gap tied to one learning objective."""
+    learning_objective: str = Field(
+        description="The learning objective (verbatim) this gap relates to"
+    )
+    gap_summary: str = Field(
+        description="One-sentence summary of where the learner diverged from the experts"
+    )
+    justification: str = Field(
+        description="Evidence-based justification citing the relevant scenarios/expert reasoning"
+    )
+    related_scenarios: List[str] = Field(
+        default_factory=list,
+        description="Identifiers of the scenarios where this gap was observed (e.g. 'situation 1 / scenario 2')"
+    )
+
+
+class LearningGapsResult(BaseModel):
+    """Structured list of the learner's learning gaps."""
+    gaps: List[LearningGap]
