@@ -20,12 +20,7 @@ Pillow>=12.1.1
 requests>=2.32.0
 tavily-python>=0.5.0
 # RAG dependencies
-# Replit's package firewall 403s the entire recent chromadb 1.5.x batch (1.5.7/1.5.8/1.5.9
-# all failed) — it hasn't approved those newest releases yet. Pin below 1.5.0 so pip installs
-# the latest 1.4.x, which is old enough to be firewall-approved. The chromadb API we use
-# (PersistentClient, get_or_create_collection, add/query/count, delete/create_collection) is
-# unchanged across 1.4.x–1.5.x, so this is safe.
-chromadb>=0.6.0,<1.5.0
+chromadb>=0.6.0
 pymupdf>=1.24.0
 # Claude Agent SDK (code generation)
 claude-agent-sdk>=0.1.59
