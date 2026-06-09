@@ -20,11 +20,12 @@ Pillow>=12.1.1
 requests>=2.32.0
 tavily-python>=0.5.0
 # RAG dependencies
-# Pin below 1.5.9: Replit's package firewall returns 403 for the brand-new 1.5.9 wheel
-# (not yet mirrored/approved). 1.5.8 is already approved and the chromadb API we use
-# (PersistentClient, get_or_create_collection, add/query/count, delete/create_collection)
-# is unchanged. If 1.5.8 also 403s, lower this pin further (e.g. ==1.5.5).
-chromadb>=0.6.0,<1.5.9
+# Replit's package firewall 403s the newest chromadb wheels that it hasn't scanned/approved
+# yet (1.5.9 AND 1.5.8 both 403'd). Pin to the last already-approved release. The chromadb
+# API we use (PersistentClient, get_or_create_collection, add/query/count,
+# delete/create_collection) is unchanged across the 1.5.x line, so this is safe.
+# If 1.5.7 still 403s, step down further: try <1.5.0 (latest 1.4.x), then <1.0.0 (latest 0.6.x).
+chromadb>=0.6.0,<1.5.8
 pymupdf>=1.24.0
 # Claude Agent SDK (code generation)
 claude-agent-sdk>=0.1.59
