@@ -30,6 +30,29 @@
         .loading, .error, .empty { text-align: center; padding: 40px; color: #666; }
         .error { color: #b91c1c; }
         .query-note { font-size: 0.85rem; color: #6b7280; margin-top: 18px; font-style: italic; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* Generated scenarios */
+        .gen-section { margin-top: 36px; }
+        .gen-section > h2 { border-top: 2px solid #e5e7eb; padding-top: 26px; }
+        .gen-intro { color: #555; margin: -4px 0 20px; }
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.5); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -3px; margin-right: 8px; }
+        .gen-loading { text-align: center; padding: 30px; color: #4338ca; font-weight: 600; }
+        .gen-loading .spinner { border-color: rgba(67,56,202,0.25); border-top-color: #4338ca; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .situation-block { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .situation-block > h3 { margin: 0 0 6px; }
+        .situation-text { color: #4b5563; line-height: 1.55; white-space: pre-wrap; margin: 6px 0 18px; padding-bottom: 16px; border-bottom: 1px dashed #e5e7eb; }
+        .scenario-item { background: #fff8f1; border: 1px solid #fde3c7; border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+        .scenario-item:last-child { margin-bottom: 0; }
+        .scenario-label { font-weight: 700; color: #c2410c; margin-bottom: 8px; }
+        .scenario-line { line-height: 1.55; color: #374151; margin: 4px 0; }
+        .scenario-line .lab { font-weight: 600; color: #9a3412; }
+        .gap-chips { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .gap-chip { font-size: 0.72rem; background: #eef2ff; color: #4338ca; border-radius: 999px; padding: 3px 9px; }
+        .reasoning-toggle { margin-top: 10px; }
+        .reasoning-toggle summary { cursor: pointer; font-size: 0.85rem; color: #6b7280; font-weight: 600; }
+        .reasoning-toggle .reasoning-text { margin-top: 8px; font-size: 0.88rem; color: #4b5563; line-height: 1.5; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -39,12 +62,19 @@
                 <h1>🎯 Formations suggérées</h1>
                 <p class="suggestions-intro">Des situations supplémentaires sélectionnées en fonction de vos lacunes d'apprentissage.</p>
             </div>
-            <button class="secondary-btn" onclick="goBackToChat()">← Retour au chat</button>
+            <div class="header-actions">
+                <button id="create-scenarios-btn" class="primary-btn" onclick="createNewScenarios()" title="Générer de nouveaux scénarios ciblant vos lacunes pour les situations déjà évaluées">
+                    🛠️ Créer de nouveaux scénarios
+                </button>
+                <button class="secondary-btn" onclick="goBackToChat()">← Retour au chat</button>
+            </div>
         </div>
 
         <div id="content">
             <div class="loading">Analyse de vos lacunes et recherche de formations pertinentes…</div>
         </div>
+
+        <div id="generated-scenarios"></div>
     </div>
 
     <div id="situation-modal" class="modal-overlay" onclick="closeSituationModal(event)">
@@ -180,6 +210,107 @@
                     <p>Erreur lors du chargement des suggestions.</p>
                     <p style="font-size:0.85rem;">${escapeHtml(error.message)}</p>
                 </div>`;
+            }
+        }
+
+        // ---- Create New Scenarios (gap-focused, inline) ----------------------------
+
+        function scenarioDomainLabel(trainingType) {
+            const map = {
+                migraine: 'Migraine',
+                grh_1st: 'Gestion des ressources humaines',
+                nursing_1st: 'Leadership infirmier', nursing_2nd: 'Leadership infirmier',
+                leadership_1st: 'Leadership', leadership_2nd: 'Leadership', leadership_3rd: 'Leadership',
+            };
+            return map[trainingType] || trainingType;
+        }
+
+        function renderGeneratedScenarios(data) {
+            const container = document.getElementById('generated-scenarios');
+
+            if (data.status === 'no_situations' || !data.situations || data.situations.length === 0) {
+                container.innerHTML = `<div class="gen-section"><div class="empty">
+                    <p>${escapeHtml(data.message || "Aucun nouveau scénario n'a pu être généré.")}</p>
+                </div></div>`;
+                return;
+            }
+
+            let html = '<div class="gen-section">';
+            html += '<h2>🛠️ Nouveaux scénarios ciblant vos lacunes</h2>';
+            html += `<p class="gen-intro">Pour ${data.situations.length > 1 ? 'chacune des situations' : 'la situation'} sur lesquelles vous avez été évalué(e), voici de nouveaux scénarios conçus pour travailler vos lacunes d'apprentissage.</p>`;
+
+            data.situations.forEach((sit, si) => {
+                html += `<div class="situation-block">
+                    <span class="suggestion-badge">${escapeHtml(scenarioDomainLabel(data.training_type))}</span>
+                    <h3>Situation ${si + 1} — ${escapeHtml(sit.title)}</h3>
+                    <div class="situation-text">${escapeHtml(sit.text)}</div>`;
+
+                if (!sit.scenarios || sit.scenarios.length === 0) {
+                    html += `<p class="empty">Aucun scénario généré pour cette situation.</p>`;
+                } else {
+                    sit.scenarios.forEach((sc, ci) => {
+                        html += `<div class="scenario-item">
+                            <div class="scenario-label">🟠 Scénario ${ci + 1}</div>
+                            <p class="scenario-line"><span class="lab">Si vous pensiez à…</span> ${escapeHtml(sc.hypothesis)}</p>
+                            <p class="scenario-line"><span class="lab">Et qu'alors…</span> ${escapeHtml(sc.new_information)}</p>`;
+                        if (sc.targeted_learning_gaps && sc.targeted_learning_gaps.length > 0) {
+                            html += '<div class="gap-chips">';
+                            sc.targeted_learning_gaps.forEach(g => {
+                                html += `<span class="gap-chip">🎯 ${escapeHtml(g)}</span>`;
+                            });
+                            html += '</div>';
+                        }
+                        if (sc.chain_of_thought && sc.chain_of_thought.trim()) {
+                            html += `<details class="reasoning-toggle">
+                                <summary>Voir le raisonnement</summary>
+                                <div class="reasoning-text">${escapeHtml(sc.chain_of_thought)}</div>
+                            </details>`;
+                        }
+                        html += '</div>';
+                    });
+                }
+                html += '</div>';
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function createNewScenarios() {
+            const btn = document.getElementById('create-scenarios-btn');
+            const container = document.getElementById('generated-scenarios');
+
+            if (!sessionId) {
+                container.innerHTML = '<div class="gen-section"><div class="error">Aucune session trouvée. Veuillez d\'abord lancer une évaluation.</div></div>';
+                return;
+            }
+
+            const originalLabel = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Génération…';
+            container.innerHTML = '<div class="gen-section"><div class="gen-loading"><span class="spinner"></span> Création de nouveaux scénarios ciblant vos lacunes… cela peut prendre un moment.</div></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/create-scenarios/${sessionId}`, { method: 'POST' });
+                if (response.status === 404) {
+                    container.innerHTML = '<div class="gen-section"><div class="empty"><p>Aucune lacune d\'apprentissage disponible. Les scénarios sont générés après une évaluation.</p></div></div>';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                renderGeneratedScenarios(data);
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (error) {
+                console.error('Error creating scenarios:', error);
+                container.innerHTML = `<div class="gen-section"><div class="error">
+                    <p>Erreur lors de la génération des scénarios.</p>
+                    <p style="font-size:0.85rem;">${escapeHtml(error.message)}</p>
+                </div></div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalLabel;
             }
         }
 

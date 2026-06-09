@@ -391,6 +391,28 @@ async def suggest_trainings_endpoint(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/create-scenarios/{session_id}")
+async def create_scenarios_endpoint(session_id: str):
+    """Generate new gap-focused scenarios for the situations the learner was evaluated on."""
+    session = get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found or expired")
+    learning_gaps = session.get("learning_gaps")
+    if not learning_gaps:
+        raise HTTPException(status_code=404, detail="No learning gaps available for this session")
+    try:
+        training_type = session.get("training_type", "migraine")
+        objectives = get_training_data(training_type)["objectives"]
+        gaps = learning_gaps.get("gaps", [])
+        from backend.scenario_generator import generate_new_scenarios
+        return generate_new_scenarios(training_type, objectives, gaps)
+    except Exception as e:
+        print(f"ERROR in /create-scenarios endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/chat/reset/{session_id}")
 async def reset_chat(session_id: str):
     """Reset chat history for a session"""
