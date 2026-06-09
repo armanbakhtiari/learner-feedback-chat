@@ -20,7 +20,7 @@ Pillow>=12.1.1
 requests>=2.32.0
 tavily-python>=0.5.0
 # RAG dependencies
-chromadb>=0.6.0
+chromadb>=1.5.0
 pymupdf>=1.24.0
 # Claude Agent SDK (code generation)
 claude-agent-sdk>=0.1.59
