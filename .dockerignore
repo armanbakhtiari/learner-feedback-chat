@@ -1,0 +1,36 @@
+# Version control / tooling
+.git
+.gitignore
+.github
+.vscode
+.idea
+.claude
+
+# Python caches / virtualenvs
+__pycache__
+*.py[cod]
+.venv
+venv
+env
+
+# Secrets — provided via Cloud Run env vars / Secret Manager, never baked in
+.env
+
+# Local-only state (not used in the deployed image)
+.chroma_db
+.sessions
+*.log
+.DS_Store
+
+# NOTE: Docs_migraine / Docs_nursing are intentionally kept in the image. They are
+# small (~16MB) and backend/rag_tool._has_documents() checks for their presence at
+# runtime to decide whether a training type has a knowledge base to query. They are
+# NOT re-indexed at runtime (indexing only happens in scripts/ingest.py).
+
+# Sensitive evaluation documents
+*_Evaluation_Report.docx
+
+# Replit + deployment docs (not needed in the container)
+.replit
+replit.nix
+REPLIT_DEPLOYMENT.md

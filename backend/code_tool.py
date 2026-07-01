@@ -62,11 +62,12 @@ def _make_sensai_header():
 
 load_dotenv()
 
-# Configure LangSmith tracing
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
-if not os.getenv("LANGCHAIN_API_KEY"):
-    print("⚠️  Warning: LANGCHAIN_API_KEY not found in .env file. LangSmith tracing will be disabled.")
+# Configure LangSmith tracing only when an API key is present.
+if os.getenv("LANGCHAIN_API_KEY"):
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
+else:
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 
 CODE_REQUIREMENTS = """# Role

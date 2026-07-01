@@ -32,11 +32,14 @@ ROOT_DIR = Path(__file__).parent.parent
 CHROMA_PERSIST_DIR = ROOT_DIR / ".chroma_db"
 BANK_COLLECTION_NAME = "bank_situations"
 
+# Max records per collection.add() request (Chroma Cloud free-tier caps this at 300).
+CHROMA_ADD_BATCH = 250
+
 
 class BankRAGModule:
     """Vector store + retriever over the bank of situations."""
 
-    def __init__(self):
+    def __init__(self, index: bool = False):
         self.collection_name = BANK_COLLECTION_NAME
 
         self.embeddings = OpenAIEmbeddings(
@@ -44,15 +47,9 @@ class BankRAGModule:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
         )
 
-        CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
-
-        # Lazy import of chromadb to avoid importing numpy at module import time.
-        import chromadb
-        from chromadb.config import Settings
-        self.chroma_client = chromadb.PersistentClient(
-            path=str(CHROMA_PERSIST_DIR),
-            settings=Settings(anonymized_telemetry=False),
-        )
+        # ChromaDB client (Chroma Cloud in prod, local PersistentClient in dev).
+        from .chroma_client import get_chroma_client
+        self.chroma_client = get_chroma_client()
 
         self.collection = self.chroma_client.get_or_create_collection(
             name=self.collection_name,
@@ -69,7 +66,10 @@ class BankRAGModule:
 
         self.bank_hash_file = CHROMA_PERSIST_DIR / f".bank_hash_{self.collection_name}"
 
-        self._ensure_indexed()
+        # Indexing only runs from the offline ingest script (index=True). At runtime we
+        # connect read-only to the already-populated (Chroma Cloud) collection.
+        if index:
+            self._ensure_indexed()
 
     # ------------------------------------------------------------------ indexing
 
@@ -79,6 +79,11 @@ class BankRAGModule:
         return ""
 
     def _save_hash(self, value: str):
+        # Local-cache guard only; skipped on Chroma Cloud (no local .chroma_db dir).
+        from .chroma_client import using_chroma_cloud
+        if using_chroma_cloud():
+            return
+        self.bank_hash_file.parent.mkdir(parents=True, exist_ok=True)
         self.bank_hash_file.write_text(value)
 
     def _ensure_indexed(self):
@@ -145,12 +150,15 @@ class BankRAGModule:
 
         print(f"🔄 Generating embeddings for {len(all_chunks)} bank chunks...")
         embeddings = self.embeddings.embed_documents(all_chunks)
-        self.collection.add(
-            documents=all_chunks,
-            embeddings=embeddings,
-            metadatas=all_metadatas,
-            ids=all_ids,
-        )
+        # Add in batches (Chroma Cloud caps records per add request).
+        for start in range(0, len(all_chunks), CHROMA_ADD_BATCH):
+            end = start + CHROMA_ADD_BATCH
+            self.collection.add(
+                documents=all_chunks[start:end],
+                embeddings=embeddings[start:end],
+                metadatas=all_metadatas[start:end],
+                ids=all_ids[start:end],
+            )
         print(f"✅ Indexed {len(all_chunks)} bank chunks ({len(BANK_SITUATIONS)} situations)")
 
     # ------------------------------------------------------------------ retrieval

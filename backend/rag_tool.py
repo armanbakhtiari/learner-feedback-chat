@@ -56,6 +56,9 @@ class RewrittenQuery(BaseModel):
 ROOT_DIR = Path(__file__).parent.parent
 CHROMA_PERSIST_DIR = ROOT_DIR / ".chroma_db"
 
+# Max records per collection.add() request (Chroma Cloud free-tier caps this at 300).
+CHROMA_ADD_BATCH = 250
+
 # Mapping of training types to document folders
 TRAINING_DOCS_MAP = {
     "migraine": ROOT_DIR / "Docs_migraine",
@@ -72,7 +75,7 @@ class AgenticRAGModule:
     per training type. Each training type indexes from its own docs folder.
     """
 
-    def __init__(self, training_type: str = "migraine"):
+    def __init__(self, training_type: str = "migraine", index: bool = False):
         self.training_type = training_type
         self.docs_path = TRAINING_DOCS_MAP.get(training_type, TRAINING_DOCS_MAP["migraine"])
         self.collection_name = f"knowledge_base_{training_type}"
@@ -102,16 +105,9 @@ class AgenticRAGModule:
         self.ranking_llm = base_ranking_llm.with_structured_output(RankingResult)
         self.rewrite_llm = base_rewrite_llm.with_structured_output(RewrittenQuery)
 
-        # Ensure persist directory exists
-        CHROMA_PERSIST_DIR.mkdir(parents=True, exist_ok=True)
-
-        # Initialize ChromaDB with persistent storage (lazy import to avoid numpy at module level)
-        import chromadb
-        from chromadb.config import Settings
-        self.chroma_client = chromadb.PersistentClient(
-            path=str(CHROMA_PERSIST_DIR),
-            settings=Settings(anonymized_telemetry=False)
-        )
+        # Initialize ChromaDB client (Chroma Cloud in prod, local PersistentClient in dev)
+        from .chroma_client import get_chroma_client
+        self.chroma_client = get_chroma_client()
 
         # Get or create collection for this training type
         self.collection = self.chroma_client.get_or_create_collection(
@@ -130,8 +126,10 @@ class AgenticRAGModule:
         # Hash file per collection
         self.docs_hash_file = CHROMA_PERSIST_DIR / f".docs_hash_{self.collection_name}"
 
-        # Initialize document store if needed (with change detection)
-        self._ensure_documents_indexed()
+        # Indexing only runs from the offline ingest script (index=True). At runtime we
+        # connect read-only to the already-populated (Chroma Cloud) collection and query it.
+        if index:
+            self._ensure_documents_indexed()
 
     def _compute_docs_hash(self) -> str:
         """Compute a hash of all documents to detect changes"""
@@ -158,7 +156,11 @@ class AgenticRAGModule:
         return ""
 
     def _save_hash(self, hash_value: str):
-        """Save the current documents hash"""
+        """Save the current documents hash (local-cache guard only; skipped on Chroma Cloud)."""
+        from .chroma_client import using_chroma_cloud
+        if using_chroma_cloud():
+            return
+        self.docs_hash_file.parent.mkdir(parents=True, exist_ok=True)
         self.docs_hash_file.write_text(hash_value)
 
     def _ensure_documents_indexed(self):
@@ -222,9 +224,14 @@ class AgenticRAGModule:
                 # Split into chunks while preserving page info
                 chunks = self.text_splitter.split_documents(documents)
 
+                # Short, stable per-file token. Chroma Cloud caps IDs at 128 bytes, and
+                # some PDF filenames exceed that, so we hash the filename instead of using
+                # the full stem. The human-readable source/title live in chunk metadata.
+                file_token = hashlib.md5(pdf_file.name.encode()).hexdigest()[:10]
+
                 # Add metadata and prepare for indexing
                 for i, chunk in enumerate(chunks):
-                    chunk_id = f"{pdf_file.stem}_{i}"
+                    chunk_id = f"{file_token}_{i}"
 
                     # Get page number from the original document metadata
                     original_page = chunk.metadata.get('page', 0)
@@ -257,13 +264,15 @@ class AgenticRAGModule:
             # Generate embeddings
             embeddings = self.embeddings.embed_documents(all_chunks)
 
-            # Add to ChromaDB
-            self.collection.add(
-                documents=all_chunks,
-                embeddings=embeddings,
-                metadatas=all_metadatas,
-                ids=all_ids
-            )
+            # Add to ChromaDB in batches (Chroma Cloud caps records per add request).
+            for start in range(0, len(all_chunks), CHROMA_ADD_BATCH):
+                end = start + CHROMA_ADD_BATCH
+                self.collection.add(
+                    documents=all_chunks[start:end],
+                    embeddings=embeddings[start:end],
+                    metadatas=all_metadatas[start:end],
+                    ids=all_ids[start:end],
+                )
 
             print(f"✅ Successfully indexed {len(all_chunks)} chunks")
         else:

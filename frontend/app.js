@@ -1,59 +1,31 @@
 // Shared JavaScript utilities for the application
 
+// Production backend (Google Cloud Run). The frontend (hosted on Vercel) calls this
+// directly via CORS. We do NOT proxy through Vercel rewrites because some endpoints
+// (e.g. /evaluate) run for ~2 minutes, which exceeds Vercel's gateway timeout.
+const PROD_BACKEND_URL = 'https://feedback-chatbot-75563101301.northamerica-northeast1.run.app';
+
 // Auto-detect API base URL based on environment
 function detectApiBaseUrl() {
     const hostname = window.location.hostname;
     const port = window.location.port;
-    const protocol = window.location.protocol;
-    
-    console.log('🔍 API URL Detection:');
-    console.log('   Hostname:', hostname);
-    console.log('   Port:', port);
-    console.log('   Protocol:', protocol);
-    console.log('   Full URL:', window.location.href);
-    
-    // If we're on localhost with port 3000, backend is on 8000
-    if (hostname === 'localhost' && port === '3000') {
-        const backendUrl = 'http://localhost:8000';
-        console.log('🏠 Local development mode (separate ports)');
-        console.log('   Backend URL:', backendUrl);
-        return backendUrl;
+
+    // Local development: static frontend on :3000, backend on :8000.
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '3000') {
+        return 'http://localhost:8000';
     }
-    
-    // Check if running on Replit (any Replit domain)
-    const isReplit = hostname.includes('replit.app') || 
-                     hostname.includes('repl.co') || 
-                     hostname.includes('replit.dev') ||
-                     hostname.includes('riker.replit');
-    
-    if (isReplit) {
-        console.log('🔧 Detected Replit environment');
-        
-        // Always use port 8000 for Replit - FastAPI serves everything
-        // This works for both preview and deployment
-        if (port && port !== '8000' && port !== '80' && port !== '443' && port !== '') {
-            // We're on a different port, redirect API calls to 8000
-            const backendUrl = `${protocol}//${hostname}:8000`;
-            console.log('   Mode: Preview - redirecting to backend port');
-            console.log('   Backend URL:', backendUrl);
-            return backendUrl;
-        } else {
-            // Same origin (deployed or already on correct port)
-            const backendUrl = window.location.origin;
-            console.log('   Mode: Same origin');
-            console.log('   Backend URL:', backendUrl);
-            return backendUrl;
-        }
+
+    // Local: backend serving the frontend itself (same origin).
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return window.location.origin;
     }
-    
-    // Fallback: use same origin (works for most deployment scenarios)
-    const backendUrl = window.location.origin;
-    console.log('🌐 Using same origin for API');
-    console.log('   Backend URL:', backendUrl);
-    return backendUrl;
+
+    // Production (Vercel or any other host): talk to Cloud Run directly.
+    return PROD_BACKEND_URL;
 }
 
 const API_BASE_URL = detectApiBaseUrl();
+console.log('🌐 API base URL:', API_BASE_URL);
 
 // API Helper Functions
 async function apiCall(endpoint, options = {}) {

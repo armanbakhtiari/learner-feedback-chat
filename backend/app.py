@@ -31,11 +31,14 @@ _log("calling load_dotenv()...")
 load_dotenv()
 _log("load_dotenv() done")
 
-# Configure LangSmith tracing
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
-if not os.getenv("LANGCHAIN_API_KEY"):
-    _log("WARNING: LANGCHAIN_API_KEY not found")
+# Configure LangSmith tracing only when an API key is present (avoids export
+# noise/latency in environments without LangSmith configured, e.g. Cloud Run).
+if os.getenv("LANGCHAIN_API_KEY"):
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
+else:
+    os.environ["LANGCHAIN_TRACING_V2"] = "false"
+    _log("LANGCHAIN_API_KEY not found - LangSmith tracing disabled")
 
 sys.path.append(str(Path(__file__).parent.parent))
 
