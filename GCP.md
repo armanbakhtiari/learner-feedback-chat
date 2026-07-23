@@ -103,6 +103,15 @@ To move secrets into **Secret Manager** later:
 - `backend/chroma_client.py::get_chroma_client()` picks Chroma Cloud when `CHROMA_API_KEY`
   is set, else a local `.chroma_db` PersistentClient — so local dev needs no cloud account.
 
+## Frontend (Vercel) deploy
+
+`frontend/` is a **Next.js app** (Clerk auth), deployed with `cd frontend && vercel --prod`.
+The Vercel project predates the rewrite and its framework preset was the old static one, which
+made every route 404 even though `next build` succeeded — **`frontend/vercel.json` pins
+`"framework": "nextjs"`; don't remove it.** Production env vars are set on the Vercel project
+(`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`); update them with `vercel env`.
+
 ## Gotchas for the next session
 
 - **PDFs ship in the image on purpose.** `.dockerignore` keeps `Docs_*` because
