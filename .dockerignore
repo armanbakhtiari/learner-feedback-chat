@@ -15,6 +15,15 @@ env
 
 # Secrets — provided via Cloud Run env vars / Secret Manager, never baked in
 .env
+.env.local
+
+# Frontend (Next.js) — deployed separately to Vercel, not part of the backend image
+frontend
+node_modules
+
+# Supabase CLI project files — not needed at runtime
+supabase/.temp
+supabase/.branches
 
 # Local-only state (not used in the deployed image)
 .chroma_db
