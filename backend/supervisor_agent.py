@@ -15,7 +15,6 @@ import json
 from backend.supervisor_tools import (
     ALL_TOOLS,
     initialize_tools,
-    generate_visualization,
     search_web,
     get_training_content,
     search_knowledge_base
@@ -32,7 +31,6 @@ Every response MUST be grounded in one of these sources:
 2. The **training content** (retrieved via get_training_content)
 3. The **knowledge base** (retrieved via search_knowledge_base)
 4. **Web search results** (retrieved via search_web, if enabled)
-5. A **visualization** (generated via generate_visualization)
 
 If a question cannot be answered by the evaluation data alone, you MUST call the appropriate tool.
 If no tool can provide the answer (e.g., knowledge base has no relevant info and web search is disabled),
@@ -44,29 +42,13 @@ you must instruct the chat agent to inform the user that this information is not
 2. **Call the appropriate tool(s)** to gather necessary information
 3. **Return the tool results** so the chat agent can generate a grounded response
 
+# Note on tables/charts:
+The chat agent renders its OWN tables and diagrams directly in Markdown (GitHub-flavored
+tables and ```mermaid blocks). There is NO separate visualization tool. If the user asks for
+a table/graph of their results, DO NOT call a tool for it — the evaluation data is already in
+context and the chat agent will render the table/diagram itself.
+
 # Available Tools:
-
-- **generate_visualization**: Call ONLY when user EXPLICITLY asks for tables, charts, graphs, or visual displays
-  - Pay attention to keywords that request visualization: "tableau", "graphique", "chart", "créer un tableau", "montrer un graphique", "afficher un diagramme" or other words that show the user's interest in some sort of visualization generation.
-  - DO NOT call for analysis questions like "où", "quand", "comment", "pourquoi", "quel scénario"
-  - DO NOT call for questions that can be answered with text like "in which scenario", "where did I", "what was my performance"
-
-  **CRITICAL for generate_visualization - Parameter Selection:**
-
-  1. `include_evaluation_data` parameter:
-     - Set to **TRUE** ONLY when visualizing the learner's PERFORMANCE, EVALUATION SCORES, or TRAINING RESULTS
-       Examples: "graphique de ma performance", "tableau de mes scores", "comparaison de mes résultats"
-     - Set to **FALSE** for ALL OTHER visualizations (diagnostic criteria, guidelines, knowledge base content, etc.)
-       Examples: "tableau des critères diagnostiques", "graphique des recommandations"
-
-  2. `data_context` parameter:
-     - When include_evaluation_data=FALSE: YOU MUST provide the data to visualize in this parameter
-     - Extract the relevant data from the conversation history (previous assistant responses)
-     - Example: If assistant mentioned "Les critères sont: 1)..., 2)...", include that in data_context
-
-  3. `user_request` parameter:
-     - Describe what type of visualization to create
-     - Include any styling preferences mentioned by the user
 
 - **search_web**: Call when user asks about latest/recent/current information, OR when other tools
   cannot provide the needed information
@@ -88,11 +70,10 @@ you must instruct the chat agent to inform the user that this information is not
 
 # Decision Logic (follow in order):
 
-1. **Learner performance / evaluation scores** → No tool needed (evaluation data is already in context)
-2. **Explicit visualization request** → generate_visualization (include data_context!)
-3. **Training scenario or expert opinion details** → get_training_content
-4. **Any domain/conceptual/theoretical question** → search_knowledge_base
-5. **Latest/current information OR knowledge base returned no relevant info** → search_web (if enabled)
+1. **Learner performance / evaluation scores / requests for a table or chart of results** → No tool needed (evaluation data is already in context; the chat agent renders any table/diagram itself)
+2. **Training scenario or expert opinion details** → get_training_content
+3. **Any domain/conceptual/theoretical question** → search_knowledge_base
+4. **Latest/current information OR knowledge base returned no relevant info** → search_web (if enabled)
 
 # Important:
 
@@ -100,7 +81,6 @@ you must instruct the chat agent to inform the user that this information is not
 - After calling tools (or deciding no tools are needed), the results will be passed to the chat agent
 - The chat agent will generate the final response to the user
 - When using search_knowledge_base, formulate the query in domain-specific terms for better retrieval
-- When calling generate_visualization, ALWAYS include the relevant data in `data_context` parameter
 - If web search is disabled (web_search_enabled=false), do NOT call search_web
 """
 
@@ -257,12 +237,6 @@ Analyze the request and call appropriate tools. If no tools are needed, just res
             return ""
 
         summary_parts = []
-
-        # Visualization summary
-        if "generate_visualization" in tools_called:
-            viz_result = tool_results.get("generate_visualization", {})
-            if viz_result.get("status") == "success":
-                summary_parts.append("A visualization has been generated and will appear as an image. Write a brief 1-2 sentence introduction starting with 'Le tableau ci-dessus présente...' then provide insights. Do NOT create markdown tables.")
 
         # Web search summary
         if "search_web" in tools_called:

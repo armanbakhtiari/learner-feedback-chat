@@ -2,16 +2,17 @@
 Bank-of-Situations Vector Store + Retriever
 ===========================================
 
-A dedicated vector database for the bank of situations (``bank_situations.BANK_SITUATIONS``).
+A dedicated vector database for the shared **bank of trainings** (Supabase trainings
+with origin ``seed_bank`` / ``suggested_bank``, each a situation the learner can practice).
 Unlike ``backend/rag_tool.py`` (which indexes per-training PDF knowledge bases), this module
-indexes the *text* of candidate future-training situations and is built **once, always**,
-independently of which training the learner selected for evaluation.
+indexes the *text* of candidate future-training situations.
 
-It is used by ``backend/suggestions_agent.py`` to retrieve situations relevant to a learner's
-learning gaps on the "Suggest new trainings" page.
+It is used by ``backend/suggestions_agent.py`` to retrieve trainings relevant to a learner's
+learning gaps on the "Suggest new trainings" tab. The bank grows over time (new bank
+trainings), so it is (re)indexed at runtime whenever the DB bank content changes.
 
 Mirrors the structure of ``AgenticRAGModule`` (Chroma client, OpenAI embeddings, hash-based
-re-index guard) but its documents come from Python text rather than PDF files.
+re-index guard) but its documents come from the Supabase bank rather than PDF files.
 """
 
 import os
@@ -24,7 +25,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
-from bank_situations import BANK_SITUATIONS, compute_bank_hash
+from backend.db import repo
 
 
 # Reuse the same persistent Chroma directory as the main RAG module.
@@ -39,7 +40,7 @@ CHROMA_ADD_BATCH = 250
 class BankRAGModule:
     """Vector store + retriever over the bank of situations."""
 
-    def __init__(self, index: bool = False):
+    def __init__(self, index: bool = True):
         self.collection_name = BANK_COLLECTION_NAME
 
         self.embeddings = OpenAIEmbeddings(
@@ -64,49 +65,25 @@ class BankRAGModule:
             separators=["\n\n", "\n", ". ", " ", ""],
         )
 
-        self.bank_hash_file = CHROMA_PERSIST_DIR / f".bank_hash_{self.collection_name}"
-
-        # Indexing only runs from the offline ingest script (index=True). At runtime we
-        # connect read-only to the already-populated (Chroma Cloud) collection.
+        # Index at first use if the collection is empty. Content changes are applied
+        # via explicit reindex()/add_training() calls (seed script, new bank trainings),
+        # which is Chroma-Cloud-friendly (no per-request re-embedding).
         if index:
             self._ensure_indexed()
 
     # ------------------------------------------------------------------ indexing
 
-    def _get_stored_hash(self) -> str:
-        if self.bank_hash_file.exists():
-            return self.bank_hash_file.read_text().strip()
-        return ""
-
-    def _save_hash(self, value: str):
-        # Local-cache guard only; skipped on Chroma Cloud (no local .chroma_db dir).
-        from .chroma_client import using_chroma_cloud
-        if using_chroma_cloud():
-            return
-        self.bank_hash_file.parent.mkdir(parents=True, exist_ok=True)
-        self.bank_hash_file.write_text(value)
-
     def _ensure_indexed(self):
-        """Index the bank if empty or if its content changed since last index."""
-        current_hash = compute_bank_hash()
-        stored_hash = self._get_stored_hash()
+        """Index the bank once if the collection is empty."""
         doc_count = self.collection.count()
-
         if doc_count == 0:
-            print(f"📚 [{self.collection_name}] No documents. Indexing bank of situations...")
-            self._index_situations()
-            self._save_hash(current_hash)
-            return
+            print(f"📚 [{self.collection_name}] Empty. Indexing bank of trainings from DB...")
+            self._index_bank()
+        else:
+            print(f"📚 [{self.collection_name}] Using existing bank vector store ({doc_count} chunks)")
 
-        if current_hash != stored_hash:
-            print(f"📚 [{self.collection_name}] Bank changed. Re-indexing...")
-            self._clear_and_reindex()
-            self._save_hash(current_hash)
-            return
-
-        print(f"📚 [{self.collection_name}] Using cached bank vector store ({doc_count} chunks)")
-
-    def _clear_and_reindex(self):
+    def reindex(self):
+        """Force a full rebuild from the current DB bank. Call after seeding/bank changes."""
         try:
             self.chroma_client.delete_collection(self.collection_name)
         except Exception:
@@ -115,51 +92,64 @@ class BankRAGModule:
             name=self.collection_name,
             metadata={"hnsw:space": "cosine"},
         )
-        self._index_situations()
+        self._index_bank()
 
-    def _index_situations(self):
-        all_chunks: List[str] = []
-        all_metadatas: List[Dict[str, Any]] = []
-        all_ids: List[str] = []
-
-        for entry in BANK_SITUATIONS:
-            situation_id = entry["id"]
-            content = entry["content"]
-
-            # Most situations fit comfortably in one chunk; split only the long ones.
-            if len(content) <= 2200:
-                pieces = [content]
-            else:
-                pieces = self.text_splitter.split_text(content)
-
-            for i, piece in enumerate(pieces):
-                all_chunks.append(piece)
-                all_metadatas.append({
-                    "situation_id": situation_id,
-                    "domain": entry["domain"],
-                    "title": entry["title"],
-                    "objectives": entry["objectives"],
+    def _entry_docs(self, entry: Dict[str, Any]):
+        """Yield (id, document, metadata) for one bank training entry."""
+        import json
+        content = entry["content"]
+        pieces = [content] if len(content) <= 2200 else self.text_splitter.split_text(content)
+        for i, piece in enumerate(pieces):
+            yield (
+                f"{entry['id']}_{i}",
+                piece,
+                {
+                    "training_id": entry["id"],
+                    "domain": entry.get("domain", ""),
+                    "title": entry.get("title", ""),
+                    # Chroma metadata values must be scalars → serialize the objectives list.
+                    "objectives": json.dumps(entry.get("objectives", []), ensure_ascii=False),
                     "chunk_index": i,
                     "total_chunks": len(pieces),
-                })
-                all_ids.append(f"{situation_id}_{i}")
+                },
+            )
 
-        if not all_chunks:
-            print("⚠️ No bank situations to index")
+    def _add_docs(self, ids, docs, metas):
+        if not docs:
             return
-
-        print(f"🔄 Generating embeddings for {len(all_chunks)} bank chunks...")
-        embeddings = self.embeddings.embed_documents(all_chunks)
-        # Add in batches (Chroma Cloud caps records per add request).
-        for start in range(0, len(all_chunks), CHROMA_ADD_BATCH):
+        embeddings = self.embeddings.embed_documents(docs)
+        for start in range(0, len(docs), CHROMA_ADD_BATCH):
             end = start + CHROMA_ADD_BATCH
             self.collection.add(
-                documents=all_chunks[start:end],
+                documents=docs[start:end],
                 embeddings=embeddings[start:end],
-                metadatas=all_metadatas[start:end],
-                ids=all_ids[start:end],
+                metadatas=metas[start:end],
+                ids=ids[start:end],
             )
-        print(f"✅ Indexed {len(all_chunks)} bank chunks ({len(BANK_SITUATIONS)} situations)")
+
+    def _index_bank(self):
+        entries = repo.list_bank_trainings()
+        all_ids: List[str] = []
+        all_docs: List[str] = []
+        all_metas: List[Dict[str, Any]] = []
+        for entry in entries:
+            for _id, doc, meta in self._entry_docs(entry):
+                all_ids.append(_id)
+                all_docs.append(doc)
+                all_metas.append(meta)
+        if not all_docs:
+            print("⚠️ No bank trainings to index")
+            return
+        print(f"🔄 Embedding {len(all_docs)} bank chunks ({len(entries)} trainings)...")
+        self._add_docs(all_ids, all_docs, all_metas)
+        print(f"✅ Indexed {len(all_docs)} bank chunks")
+
+    def add_training(self, entry: Dict[str, Any]):
+        """Incrementally index a single new bank training (id/title/domain/objectives/content)."""
+        ids, docs, metas = [], [], []
+        for _id, doc, meta in self._entry_docs(entry):
+            ids.append(_id); docs.append(doc); metas.append(meta)
+        self._add_docs(ids, docs, metas)
 
     # ------------------------------------------------------------------ retrieval
 
@@ -172,17 +162,22 @@ class BankRAGModule:
             include=["documents", "metadatas", "distances"],
         )
 
+        import json
         chunks: List[Dict[str, Any]] = []
         if results and results.get("documents"):
             for i, doc in enumerate(results["documents"][0]):
                 metadata = results["metadatas"][0][i] if results.get("metadatas") else {}
                 distance = results["distances"][0][i] if results.get("distances") else 0
+                try:
+                    objectives = json.loads(metadata.get("objectives", "[]"))
+                except Exception:
+                    objectives = metadata.get("objectives", "")
                 chunks.append({
                     "content": doc,
-                    "situation_id": metadata.get("situation_id", "unknown"),
+                    "training_id": metadata.get("training_id", "unknown"),
                     "domain": metadata.get("domain", "unknown"),
                     "title": metadata.get("title", "Unknown"),
-                    "objectives": metadata.get("objectives", ""),
+                    "objectives": objectives,
                     "relevance_score": 1 - distance,
                 })
         return chunks
@@ -201,5 +196,12 @@ def get_bank_rag() -> BankRAGModule:
 
 
 def ensure_bank_indexed() -> BankRAGModule:
-    """Ensure the bank vector store is built. Safe to call on every /evaluate."""
+    """Ensure the bank vector store is built (indexes once if empty). Safe to call often."""
     return get_bank_rag()
+
+
+def reindex_bank() -> BankRAGModule:
+    """Force a full rebuild of the bank vector store from the DB. Call after seeding."""
+    bank = get_bank_rag()
+    bank.reindex()
+    return bank

@@ -22,5 +22,7 @@ tavily-python>=0.5.0
 # RAG dependencies
 chromadb>=1.5.0
 pymupdf>=1.24.0
-# Claude Agent SDK (code generation)
-claude-agent-sdk>=0.1.59
+# Supabase (Postgres data layer) + Clerk JWT auth
+supabase>=2.9.0
+pyjwt[crypto]>=2.8.0
+certifi>=2024.2.2

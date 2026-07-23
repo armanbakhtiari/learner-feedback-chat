@@ -1,511 +1,308 @@
-import sys
-import time
+"""
+FastAPI backend for the multi-user SENSAI Feedback Agent.
 
-_startup_time = time.time()
+Backend-mediated auth (Clerk JWT) + Supabase data layer + all agents. The browser
+sends a Clerk JWT; the backend verifies it, is the only writer to Supabase, and runs
+the completion pipeline in the background. See GCP.md / DEPLOYMENT.md.
+"""
 
-def _log(msg):
-    elapsed = time.time() - _startup_time
-    print(f"[STARTUP +{elapsed:.2f}s] {msg}", flush=True)
-
-_log("BEGIN module import")
-
-_log("importing fastapi...")
-from fastapi import FastAPI, HTTPException
-from contextlib import asynccontextmanager
-_log("importing CORSMiddleware...")
-from fastapi.middleware.cors import CORSMiddleware
-_log("importing FileResponse, JSONResponse...")
-from fastapi.responses import FileResponse, JSONResponse
-_log("importing pydantic...")
-from pydantic import BaseModel
-_log("importing typing...")
-from typing import List, Dict, Any, Optional
-_log("importing json, os, pathlib...")
 import os
-from pathlib import Path
-_log("importing dotenv...")
+from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional
+
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from dotenv import load_dotenv
-_log("all imports done")
 
-_log("calling load_dotenv()...")
 load_dotenv()
-_log("load_dotenv() done")
 
-# Configure LangSmith tracing only when an API key is present (avoids export
-# noise/latency in environments without LangSmith configured, e.g. Cloud Run).
 if os.getenv("LANGCHAIN_API_KEY"):
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
     os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
 else:
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
-    _log("LANGCHAIN_API_KEY not found - LangSmith tracing disabled")
 
-sys.path.append(str(Path(__file__).parent.parent))
-
-# Import session store
-from backend.session_store import (
-    save_session, get_session, save_chat_history,
-    delete_session_chat, cleanup_expired_sessions, generate_session_id,
-)
-
-# Lazy imports - only import heavy modules when needed
-_training_data_cache = {}
-_evaluator_module = None
-_chat_agent_class = None
+from backend.auth import get_current_user
+from backend.db import repo
 
 
-def get_training_data(training_type: str = "migraine"):
-    """Lazy load training data based on training type"""
-    global _training_data_cache
-    if training_type not in _training_data_cache:
-        if training_type == "migraine":
-            # Only module 1 is evaluated/displayed; modules 2 & 3 live in the situation bank.
-            from trainings_2_experts import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "grh_1st":
-            from trainings_grh_1stLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "nursing_1st":
-            from trainings_nursing_1stLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "nursing_2nd":
-            from trainings_nursing_2ndLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "leadership_1st":
-            from trainings_leadership_1srLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "leadership_2nd":
-            from trainings_leadership_2ndLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        elif training_type == "leadership_3rd":
-            from trainings_leadership_3rdLearner import training_1, training_objectives
-            _training_data_cache[training_type] = {
-                "trainings": {"training_1": training_1},
-                "objectives": training_objectives
-            }
-        else:
-            raise ValueError(f"Unknown training type: {training_type}")
-    return _training_data_cache[training_type]
-
-
-def get_evaluator():
-    """Lazy load evaluator module"""
-    global _evaluator_module
-    if _evaluator_module is None:
-        from backend.evaluator import run_evaluations
-        _evaluator_module = run_evaluations
-    return _evaluator_module
-
-
-def get_chat_agent_class():
-    """Lazy load ChatAgent class"""
-    global _chat_agent_class
-    if _chat_agent_class is None:
-        from backend.chat_agent import ChatAgent
-        _chat_agent_class = ChatAgent
-    return _chat_agent_class
-
-
-# Get the project root directory
-ROOT_DIR = Path(__file__).parent.parent
-FRONTEND_DIR = ROOT_DIR / "frontend"
-
+# ------------------------------------------------------------------ app
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    _log("FastAPI startup - app is ready!")
-    cleanup_expired_sessions()
     yield
 
-_log("creating FastAPI app...")
-app = FastAPI(title="Learner Feedback Chat System", lifespan=lifespan)
-_log("FastAPI app created")
 
-_log("adding CORS middleware...")
+app = FastAPI(title="SENSAI Feedback Agent", lifespan=lifespan)
+
+_allowed = [o for o in os.environ.get("CORS_ORIGINS", "").split(",") if o] or [
+    "http://localhost:3000",
+    "https://feedback-chat-agent.vercel.app",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-_log("CORS middleware added")
-
-# In-memory cache for chat agents (recreated from disk if missing)
-chat_agents: Dict[str, Any] = {}
 
 
-class EvaluateRequest(BaseModel):
-    training_type: str = "migraine"
+# ------------------------------------------------------------------ schemas
+class ResponseItem(BaseModel):
+    scenario_id: str
+    likert: Optional[str] = None
+    justification: Optional[str] = None
 
 
-class ChatMessage(BaseModel):
-    session_id: str
+class SaveResponses(BaseModel):
+    responses: List[ResponseItem]
+
+
+class AssistRequest(BaseModel):
+    scenario_id: str
+
+
+class ChatRequest(BaseModel):
     message: str
     web_search_enabled: bool = False
 
 
-class ChatResponse(BaseModel):
-    response: str
-    has_code: bool = False
-    code: Optional[str] = None
-    code_output: Optional[str] = None
-    citations: List[Dict[str, str]] = []
-    total_tokens: int = 0
+class PickSuggestion(BaseModel):
+    training_id: str
 
 
-_log("defining routes...")
+class GenerateRequest(BaseModel):
+    user_training_id: str
 
 
-# API Routes (must come before static file serving)
+def _own_user_training(user: Dict[str, Any], user_training_id: str) -> Dict[str, Any]:
+    ut = repo.get_user_training(user_training_id)
+    if not ut or ut["user_id"] != user["id"]:
+        raise HTTPException(status_code=404, detail="Training not found")
+    return ut
 
 
-@app.get("/trainings")
-async def get_trainings(training_type: str = "migraine"):
-    """Get training modules for the selected training type"""
-    data = get_training_data(training_type)
-    trainings_dict = data["trainings"]
-    objectives = data["objectives"]
-
-    trainings = []
-    if training_type == "migraine":
-        names = {
-            "training_1": "Module 1: Diagnostic et suivi de la migraine"
-        }
-    elif training_type == "grh_1st":
-        names = {
-            "training_1": "Module 1: Gestion d'un employe en sous-performance"
-        }
-    elif training_type in ("nursing_1st", "nursing_2nd"):
-        names = {
-            "training_1": "Module 1: Leadership et collaboration en soins infirmiers"
-        }
-    elif training_type in ("leadership_1st", "leadership_2nd", "leadership_3rd"):
-        names = {
-            "training_1": "Module 1: Leadership et prise de decision"
-        }
-    else:
-        names = {}
-
-    for tid, content in trainings_dict.items():
-        trainings.append({
-            "id": tid,
-            "name": names.get(tid, tid),
-            "content": content,
-            "objectives": objectives
-        })
-
-    return {"trainings": trainings, "training_type": training_type}
+def _own_conversation(user: Dict[str, Any], conversation_id: str) -> Dict[str, Any]:
+    conv = repo.get_conversation(conversation_id)
+    if not conv or conv["user_id"] != user["id"]:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return conv
 
 
-@app.post("/evaluate")
-async def evaluate_trainings(request: EvaluateRequest):
-    """Run evaluations on training modules for the selected training type"""
-    try:
-        training_type = request.training_type
-        run_evaluations = get_evaluator()
-        evaluations = run_evaluations(training_type)
-        session_id = generate_session_id()
-
-        # Generate performance table synchronously (best-effort).
-        performance_table = None
-        try:
-            from backend.table_generator import generate_performance_table
-            performance_table = generate_performance_table(evaluations)
-        except Exception as e:
-            print(f"⚠️  Performance table generation failed: {e}")
-            import traceback
-            traceback.print_exc()
-
-        # Extract the learner's learning gaps (best-effort).
-        learning_gaps = None
-        try:
-            from backend.learning_gaps import extract_learning_gaps
-            objectives = get_training_data(training_type)["objectives"]
-            learning_gaps = extract_learning_gaps(evaluations, objectives, training_type)
-        except Exception as e:
-            print(f"⚠️  Learning gaps extraction failed: {e}")
-            import traceback
-            traceback.print_exc()
-
-        save_session(
-            session_id,
-            evaluations,
-            training_type,
-            performance_table=performance_table,
-            learning_gaps=learning_gaps,
-        )
-
-        # Ensure the bank-of-situations vector store is built (always, regardless of the
-        # selected training) so the "Suggest new trainings" page is ready (best-effort).
-        try:
-            from backend.bank_rag import ensure_bank_indexed
-            ensure_bank_indexed()
-        except Exception as e:
-            print(f"⚠️  Bank indexing failed: {e}")
-
-        return {
-            "session_id": session_id,
-            "status": "completed",
-            "evaluations": evaluations,
-            "training_type": training_type,
-            "performance_table": performance_table,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/performance/{session_id}")
-async def get_performance_table(session_id: str):
-    """Fetch the cached performance-table PNG (base64) for a session."""
-    session = get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
-    table = session.get("performance_table")
-    if not table:
-        raise HTTPException(status_code=404, detail="Performance table not available")
-    return {"performance_table": table}
-
-
-@app.get("/evaluation/{session_id}")
-async def get_evaluation(session_id: str):
-    """Get evaluation results for a session"""
-    session = get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
-    return session["evaluations"]
-
-
-@app.post("/chat")
-async def chat(message: ChatMessage):
-    """Chat with the feedback agent"""
-    try:
-        print(f"\n{'='*70}")
-        print(f"INCOMING REQUEST:")
-        print(f"   Session ID: {message.session_id}")
-        print(f"   Message: {message.message[:100]}")
-        print(f"   Web Search: {message.web_search_enabled}")
-        print(f"{'='*70}\n")
-
-        # Get or create chat agent for this session
-        if message.session_id not in chat_agents:
-            # Try to load session from disk
-            session = get_session(message.session_id)
-            if session is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Session not found or expired. Please run evaluation first."
-                )
-
-            ChatAgent = get_chat_agent_class()
-            training_type = session.get("training_type", "migraine")
-            agent = ChatAgent(
-                evaluations=session["evaluations"],
-                training_type=training_type
-            )
-
-            # Restore chat history from disk
-            stored_history = session.get("chat_history", [])
-            if stored_history:
-                from langchain_core.messages import HumanMessage, AIMessage
-                for msg in stored_history:
-                    if msg["role"] == "human":
-                        agent.conversation_history.append(HumanMessage(content=msg["content"]))
-                    elif msg["role"] == "ai":
-                        agent.conversation_history.append(AIMessage(content=msg["content"]))
-                agent.initial_feedback_given = True
-                print(f"   Restored {len(stored_history)} messages from disk")
-
-            chat_agents[message.session_id] = agent
-
-        agent = chat_agents[message.session_id]
-        response = agent.chat(message.message, web_search_enabled=message.web_search_enabled)
-
-        # Persist chat history to disk
-        from langchain_core.messages import HumanMessage as HM
-        serialized_history = []
-        for msg in agent.conversation_history:
-            if hasattr(msg, 'content'):
-                role = "human" if isinstance(msg, HM) else "ai"
-                serialized_history.append({"role": role, "content": msg.content})
-        save_chat_history(message.session_id, serialized_history)
-
-        # Log response details
-        print(f"\n{'='*70}")
-        print(f"OUTGOING RESPONSE:")
-        print(f"   Has code: {response.get('has_code', False)}")
-        if response.get('code_output'):
-            code_output_preview = str(response.get('code_output'))[:200]
-            print(f"   Code output (first 200 chars): {code_output_preview}...")
-            print(f"   Code output type: {type(response.get('code_output'))}")
-        citations = response.get('citations') or []
-        print(f"   Citations count: {len(citations)}")
-        print(f"{'='*70}\n")
-
-        return ChatResponse(
-            response=response.get("response", ""),
-            has_code=response.get("has_code", False),
-            code=response.get("code"),
-            code_output=response.get("code_output"),
-            citations=response.get("citations", []),
-            total_tokens=response.get("total_tokens", 0)
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"ERROR in /chat endpoint: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/suggest-trainings/{session_id}")
-async def suggest_trainings_endpoint(session_id: str):
-    """Suggest 1-3 further-practice situations from the bank based on the learner's gaps."""
-    session = get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
-    if not session.get("learning_gaps"):
-        raise HTTPException(status_code=404, detail="No learning gaps available for this session")
-    try:
-        from backend.suggestions_agent import suggest_new_trainings
-        return suggest_new_trainings(session_id)
-    except Exception as e:
-        print(f"ERROR in /suggest-trainings endpoint: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/create-scenarios/{session_id}")
-async def create_scenarios_endpoint(session_id: str):
-    """Generate new gap-focused scenarios for the situations the learner was evaluated on."""
-    session = get_session(session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
-    learning_gaps = session.get("learning_gaps")
-    if not learning_gaps:
-        raise HTTPException(status_code=404, detail="No learning gaps available for this session")
-    try:
-        training_type = session.get("training_type", "migraine")
-        objectives = get_training_data(training_type)["objectives"]
-        gaps = learning_gaps.get("gaps", [])
-        from backend.scenario_generator import generate_new_scenarios
-        return generate_new_scenarios(training_type, objectives, gaps)
-    except Exception as e:
-        print(f"ERROR in /create-scenarios endpoint: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/chat/reset/{session_id}")
-async def reset_chat(session_id: str):
-    """Reset chat history for a session"""
-    if session_id in chat_agents:
-        del chat_agents[session_id]
-    delete_session_chat(session_id)
-    return {"status": "reset"}
-
-
+# ------------------------------------------------------------------ health
 @app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    _log("GET /health hit")
+async def health():
     return {"status": "healthy"}
 
 
-@app.get("/")
-async def root():
-    """Root endpoint - serves frontend or health check"""
-    index_file = FRONTEND_DIR / "index.html"
-    _log(f"GET / - FRONTEND_DIR={FRONTEND_DIR}, exists={FRONTEND_DIR.exists()}, index_exists={index_file.exists()}, resolved={index_file.resolve()}")
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return {"status": "healthy", "message": "Application is running"}
+# ------------------------------------------------------------------ user / dashboard
+@app.get("/me")
+async def me(user: Dict[str, Any] = Depends(get_current_user)):
+    repo.ensure_bootstrap(user)  # idempotent safety net
+    return {"id": user["id"], "email": user.get("email"), "full_name": user.get("full_name")}
 
 
-# Serve frontend static files (for deployment where only one port is exposed)
-@app.get("/styles.css")
-async def serve_css():
-    css_file = FRONTEND_DIR / "styles.css"
-    if css_file.exists():
-        return FileResponse(str(css_file), media_type="text/css")
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/app.js")
-async def serve_app_js():
-    js_file = FRONTEND_DIR / "app.js"
-    if js_file.exists():
-        return FileResponse(str(js_file), media_type="application/javascript")
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/chat.html")
-async def serve_chat():
-    """Serve the chat page"""
-    chat_file = FRONTEND_DIR / "chat.html"
-    if chat_file.exists():
-        return FileResponse(str(chat_file))
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/suggestions.html")
-async def serve_suggestions():
-    """Serve the training-suggestions page"""
-    suggestions_file = FRONTEND_DIR / "suggestions.html"
-    if suggestions_file.exists():
-        return FileResponse(str(suggestions_file))
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/performance.html")
-async def serve_performance():
-    """Serve the performance overview page"""
-    perf_file = FRONTEND_DIR / "performance.html"
-    if perf_file.exists():
-        return FileResponse(str(perf_file))
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/test.html")
-async def serve_test():
-    """Serve the test page"""
-    test_file = FRONTEND_DIR / "test.html"
-    if test_file.exists():
-        return FileResponse(str(test_file))
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
-
-@app.get("/index.html")
-async def serve_index_html():
-    """Serve the main index page explicitly"""
-    index_file = FRONTEND_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return JSONResponse(content={"error": "File not found"}, status_code=404)
+@app.get("/dashboard")
+async def dashboard(user: Dict[str, Any] = Depends(get_current_user)):
+    return {"trainings": repo.list_dashboard(user["id"])}
 
 
-_log("all routes defined")
-_log("MODULE LOAD COMPLETE")
+@app.get("/completed")
+async def completed(user: Dict[str, Any] = Depends(get_current_user)):
+    return {"trainings": repo.list_completed(user["id"])}
 
 
-if __name__ == "__main__":
-    import uvicorn
+# ------------------------------------------------------------------ training page
+@app.get("/trainings/{user_training_id}")
+async def get_training(user_training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    ut = _own_user_training(user, user_training_id)
+    # Client view: NO expert responses.
+    training = repo.get_training_content(ut["training_id"], include_experts=False)
+    responses = {r["scenario_id"]: r for r in repo.get_responses(user_training_id)}
+    for sit in training.get("situations", []):
+        for sc in sit.get("scenarios", []):
+            r = responses.get(sc["id"])
+            sc["response"] = {"likert": r.get("likert"), "justification": r.get("justification")} if r else None
+    return {"user_training": ut, "training": training}
 
-    port = int(os.environ.get("PORT", 8000))
-    _log(f"=== BINDING TO PORT {port} ===")
 
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+@app.put("/trainings/{user_training_id}/responses")
+async def save_responses(user_training_id: str, body: SaveResponses,
+                         user: Dict[str, Any] = Depends(get_current_user)):
+    ut = _own_user_training(user, user_training_id)
+    if ut["status"] == "completed":
+        raise HTTPException(status_code=400, detail="Training already completed")
+    repo.upsert_responses(user_training_id, [r.model_dump() for r in body.responses])
+    if ut["status"] == "not_started":
+        repo.set_status(user_training_id, "in_progress", started=True)
+    return {"status": "saved"}
+
+
+@app.post("/trainings/{user_training_id}/assist")
+async def assist(user_training_id: str, body: AssistRequest,
+                 user: Dict[str, Any] = Depends(get_current_user)):
+    _own_user_training(user, user_training_id)
+    scenario = repo.get_scenario_with_situation(body.scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    from backend.answer_assist import generate_assisted_answer
+    situation_text = (scenario.get("situation") or {}).get("text", "")
+    return generate_assisted_answer(situation_text, scenario["hypothesis"], scenario["new_information"])
+
+
+@app.post("/trainings/{user_training_id}/evaluate", status_code=202)
+async def evaluate(user_training_id: str, background: BackgroundTasks,
+                   user: Dict[str, Any] = Depends(get_current_user)):
+    ut = _own_user_training(user, user_training_id)
+    if ut["status"] == "completed":
+        raise HTTPException(status_code=400, detail="Training already completed")
+
+    # Require an answer for every scenario before evaluating.
+    training = repo.get_training_content(ut["training_id"], include_experts=False)
+    scenario_ids = [sc["id"] for sit in training.get("situations", []) for sc in sit.get("scenarios", [])]
+    answered = {
+        r["scenario_id"] for r in repo.get_responses(user_training_id)
+        if r.get("likert") and (r.get("justification") or "").strip()
+    }
+    missing = [sid for sid in scenario_ids if sid not in answered]
+    if missing:
+        raise HTTPException(status_code=400,
+                            detail=f"{len(missing)} scénario(s) sans réponse complète.")
+
+    repo.set_status(user_training_id, "completed", completed=True)
+
+    from backend.pipeline import run_completion_pipeline
+    background.add_task(run_completion_pipeline, user, user_training_id)
+    return {"status": "processing", "user_training_id": user_training_id}
+
+
+# ------------------------------------------------------------------ conversations / chat
+@app.get("/conversations")
+async def conversations(user: Dict[str, Any] = Depends(get_current_user)):
+    return {"conversations": repo.list_conversations(user["id"])}
+
+
+@app.get("/conversations/{conversation_id}/messages")
+async def conversation_messages(conversation_id: str, include_internal: bool = False,
+                                user: Dict[str, Any] = Depends(get_current_user)):
+    _own_conversation(user, conversation_id)
+    roles = None if include_internal else ["user_message", "response_message"]
+    return {"messages": repo.get_messages(conversation_id, roles=roles)}
+
+
+@app.post("/conversations/{conversation_id}/chat")
+async def conversation_chat(conversation_id: str, body: ChatRequest,
+                            user: Dict[str, Any] = Depends(get_current_user)):
+    conv = _own_conversation(user, conversation_id)
+    ut = repo.get_user_training(conv["user_training_id"])
+    evaluation = repo.get_evaluation(conv["user_training_id"])
+    if not evaluation:
+        raise HTTPException(status_code=400, detail="Evaluation not ready for this conversation")
+
+    training = repo.get_training(ut["training_id"]) or {}
+    objectives = training.get("learning_objectives") or []
+    objectives_str = "\n".join(f"- {o}" for o in objectives)
+    gap = repo.get_learning_gap(user["id"]).get("content", "")
+
+    # Rehydrate chat history (user + response messages only).
+    from langchain_core.messages import HumanMessage, AIMessage
+    history = []
+    for m in repo.get_messages(conversation_id, roles=["user_message", "response_message"]):
+        if m["role"] == "user_message":
+            history.append(HumanMessage(content=m["content"]))
+        else:
+            history.append(AIMessage(content=m["content"]))
+
+    from backend.chat_agent import ChatAgent
+    agent = ChatAgent(evaluation["evaluation_json"], objectives_str, learning_gap=gap,
+                      conversation_history=history)
+    result = agent.chat(body.message, web_search_enabled=body.web_search_enabled,
+                        conversation_id=conversation_id)
+    return result
+
+
+# ------------------------------------------------------------------ learning gaps
+@app.get("/learning-gaps")
+async def learning_gaps(user: Dict[str, Any] = Depends(get_current_user)):
+    gap = repo.get_learning_gap(user["id"])
+    return {"content": gap.get("content", ""), "structured": gap.get("structured", {}),
+            "updated_at": gap.get("updated_at")}
+
+
+# ------------------------------------------------------------------ notifications
+@app.get("/notifications")
+async def notifications(unread_only: bool = False, user: Dict[str, Any] = Depends(get_current_user)):
+    return {"notifications": repo.list_notifications(user["id"], unread_only=unread_only)}
+
+
+@app.post("/notifications/{notification_id}/read")
+async def read_notification(notification_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    repo.mark_notification_read(notification_id)
+    return {"status": "read"}
+
+
+# ------------------------------------------------------------------ suggestions
+@app.get("/suggestions")
+async def suggestions(user: Dict[str, Any] = Depends(get_current_user)):
+    gap = repo.get_learning_gap(user["id"]).get("content", "")
+    from backend.suggestions import suggest_bank_trainings
+    result = suggest_bank_trainings(user["id"], gap)
+    result["completed"] = [
+        {"user_training_id": c["id"], "title": (c.get("training") or {}).get("title", "")}
+        for c in repo.list_completed(user["id"])
+    ]
+    return result
+
+
+@app.post("/suggestions/pick")
+async def pick_suggestion(body: PickSuggestion, user: Dict[str, Any] = Depends(get_current_user)):
+    training = repo.get_training(body.training_id)
+    if not training:
+        raise HTTPException(status_code=404, detail="Training not found")
+    ut = repo.assign_training(user["id"], body.training_id)
+    return {"status": "assigned", "user_training_id": ut["id"]}
+
+
+@app.post("/suggestions/generate")
+async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depends(get_current_user)):
+    """Path 2: generate a NEW training from a completed one's situation(s), gap-focused."""
+    ut = _own_user_training(user, body.user_training_id)
+    if ut["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Select a completed training")
+
+    source = repo.get_training_content(ut["training_id"], include_experts=False)
+    objectives = source.get("learning_objectives") or []
+    objectives_str = "\n".join(f"- {o}" for o in objectives)
+    gap = repo.get_learning_gap(user["id"])
+    gaps = (gap.get("structured") or {}).get("objectives", [])
+
+    from backend.scenario_generator import generate_scenarios_for_situation
+    from backend.expert_panel_agent import generate_expert_panel
+
+    new_training = repo.create_training(
+        title=f"{source['title']} — nouveaux scénarios",
+        domain=source.get("domain", "migraine"),
+        origin="generated",
+        objectives=objectives,
+        created_by=user["id"],
+        source_training_id=source["id"],
+    )
+    for s_i, sit in enumerate(source.get("situations", []), start=1):
+        new_sit = repo.add_situation(new_training["id"], s_i, sit.get("title"), sit["text"])
+        try:
+            generated = generate_scenarios_for_situation(sit, objectives_str, gaps).scenarios
+        except Exception as e:
+            print(f"⚠️  scenario generation failed: {e}")
+            generated = []
+        for c_i, sc in enumerate(generated, start=1):
+            scenario = repo.add_scenario(new_sit["id"], c_i, sc.hypothesis, sc.new_information)
+            try:
+                panel = generate_expert_panel(sit["text"], sc.hypothesis, sc.new_information)
+                repo.add_expert_responses(scenario["id"], panel)
+            except Exception as e:
+                print(f"⚠️  expert panel failed: {e}")
+
+    assigned = repo.assign_training(user["id"], new_training["id"])
+    return {"status": "created", "training_id": new_training["id"], "user_training_id": assigned["id"],
+            "title": new_training["title"]}

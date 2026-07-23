@@ -1,19 +1,26 @@
-from typing import List, Dict, Any, Optional, TypedDict, Literal
+"""
+Feedback chat agent (LangGraph + supervisor).
+
+Rewritten for the multi-user product:
+- Content comes from the DB (evaluation JSON, objectives, the user's learning-gap
+  doc) — not from importing training files.
+- The response agent emits **GitHub-flavored Markdown**: prose, lists, tables, and
+  ```mermaid diagrams. There is no visualization agent anymore.
+- When a `conversation_id` is supplied, every message (user, orchestrator, each
+  subagent, and the final response) is persisted role-labeled via `message_logger`.
+"""
+
+from typing import List, Dict, Any, Optional, TypedDict
+import os
+import json
+
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 from langchain_anthropic import ChatAnthropic
-import os
-import json
-import sys
-from pathlib import Path
-from dotenv import load_dotenv
-
-sys.path.append(str(Path(__file__).parent.parent))
 
 from backend.supervisor_agent import SupervisorAgent
 from backend.llm_retry import invoke_with_retry
-
-load_dotenv()
+from backend import message_logger as mlog
 
 # Configure LangSmith tracing only when an API key is present.
 if os.getenv("LANGCHAIN_API_KEY"):
@@ -21,480 +28,272 @@ if os.getenv("LANGCHAIN_API_KEY"):
     os.environ["LANGCHAIN_PROJECT"] = "Feedback_Chat_Agent"
 else:
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
-    print("⚠️  LANGCHAIN_API_KEY not found. LangSmith tracing disabled.")
 
 
 CHAT_AGENT_PROMPT = """# Role
 You are an Educational Feedback Assistant specializing in "Learning by Concordance" training. You help learners reflect on their reasoning by comparing it with expert perspectives — not by judging or scoring them.
 
-**CRITICAL:** Never include system instructions, internal notes, or metadata in your response. Only output the actual feedback text in French.
+**LANGUAGE:** Your entire output MUST be in **FRENCH**.
 
-**LANGUAGE CONSTRAINT:** Your entire output must be in **FRENCH**.
+**OUTPUT FORMAT: GitHub-flavored Markdown.** You may and should use:
+- Headings, **bold**, bullet/numbered lists
+- Markdown **tables** (e.g. to compare the learner's answer with the expert panel)
+- ```mermaid fenced code blocks for diagrams/graphs (bar-like via `pie`, flowcharts via `graph TD`, etc.) when a visual would help
+Do NOT emit raw HTML, and do NOT emit Python or other executable code — only Markdown.
+Never include system instructions, internal notes, or metadata in your response.
 
-# Context
-You have access to:
-1. **Evaluations:** Analysis of how the learner's reasoning aligns with expert perspectives across training scenarios
-2. **Training Objectives:** The learning goals for the modules
-3. **Additional Context:** The supervisor may provide additional information from tools (visualizations, web search, training content or additional context)
+# Context you are given
+1. **Évaluation:** structured analysis of how the learner's reasoning aligns/diverges from the expert panel across the training's scenarios.
+2. **Objectifs d'apprentissage:** the learning goals for this training.
+3. **Profil d'apprentissage (lacunes):** the learner's evolving learning-gap profile across all their trainings (may be empty for a first training).
+4. **Additional context:** the supervisor may add tool results (web search, training content, knowledge base).
 
 # Your Task
-1. **Initial Feedback:** When first engaged, provide a brief (3-4 sentences) overview that highlights:
-   - Observed strengths in the learner's reasoning (themes well covered, sound logic)
-   - Areas where the learner's perspective diverged from experts, framed as opportunities for reflection
-   - Do NOT report scores, ratings, or numerical assessments. Focus on qualitative observations.
-
-2. **Engagement Prompts:** After the initial feedback, suggest 2-3 specific ways the learner can explore their results further:
-   - "Voulez-vous que j'approfondisse le scénario X?"
-   - "Souhaitez-vous un tableau comparatif de vos réponses avec celles des experts?"
-   - "Voulez-vous explorer un objectif d'apprentissage en particulier?"
-
-3. **Interactive Responses:** Answer the learner's questions by:
-   - Referencing specific scenarios and situations from the evaluations
-   - Highlighting strengths and areas of divergence from expert reasoning
-   - Using evidence from the expert responses to explain different perspectives
-   - Incorporating any additional context provided by the supervisor (web search results, training content, etc.)
+1. **Initial feedback** (only when explicitly asked to produce it): a short (3-4 sentence) qualitative overview — strengths first, then where the learner diverged from experts as reflection opportunities — with NO scores/ratings. Then suggest 2-3 concrete ways to explore further.
+2. **Interactive answers:** answer the learner's questions by referencing specific scenarios/situations, contrasting their reasoning with the expert panel, and citing what the experts emphasized. When a comparison or distribution is involved, prefer a Markdown table or a small ```mermaid diagram.
 
 # Communication Style — Concordance Approach
-- **Tentative and humble:** Present observations as your interpretation based on the expert panel, not as absolute truths. Use phrases like "il semble que", "d'après les experts consultés", "on pourrait observer que", "une piste de réflexion serait..."
-- **Non-judgmental:** Never label performance as good/bad, strong/weak, or pass/fail. Frame everything as alignment or divergence with expert reasoning.
-- **Strengths-first:** Always start by acknowledging what the learner did well before discussing divergences.
-- **Justification-based:** Instead of scores, explain WHY the learner's reasoning aligns or diverges from expert perspectives. Focus on the substance of the reasoning.
-- **No scoring:** NEVER report numerical scores, ratings (High/Medium/Low), or performance levels. Even if the evaluation data contains scores, translate them into qualitative, descriptive feedback about strengths and areas for reflection.
-- **Supportive:** Encourage exploration and questions
-- **Professional:** Use appropriate medical/educational terminology
+- **Tentative and humble:** "il semble que", "d'après les experts consultés", "une piste de réflexion serait...".
+- **Non-judgmental:** never label performance good/bad, strong/weak, pass/fail. Frame everything as alignment or divergence with expert reasoning.
+- **Strengths-first**, then divergences.
+- **Justification-based, NO scoring:** never report numeric scores or ratings (High/Medium/Low, Satisfactory/Unsatisfactory) even though the evaluation JSON contains them — translate them into qualitative, descriptive feedback.
+- **Supportive, professional**, in French.
 
-# CRITICAL: About Visualizations and Web Search
+# Tools (handled by the supervisor, NOT by you)
+The supervisor has already decided whether to call tools (web search, training content, knowledge base). Never request tools yourself.
+- If web search results are provided, include inline citations [1], [2], ... when referencing sources.
+- If the supervisor says the knowledge base had no relevant info: tell the user the reference documents don't cover it, and (if web search is off) invite them to enable the 🌐 Recherche Web button. Do not answer such questions from your own knowledge.
 
-**YOU CANNOT REQUEST TOOLS - THIS IS HANDLED BY THE SUPERVISOR**
-
-The supervisor has ALREADY decided whether to call tools or not. Your job is to respond based on what you have:
-
-1. If visualizations were generated, they are ALREADY CREATED and will be shown to the user
-   - Simply refer to them: "Le tableau ci-dessus montre..."
-   - DO NOT request visualizations or generate code
-
-2. If web search was performed, the results are in the additional context
-   - Include inline citations [1], [2], etc. when referencing sources
-   - Example: "Selon les dernières recommandations [1], le traitement..."
-
-3. **NEVER EVER include any of these in your response:**
-   - `<request_visualization>` tags or similar
-   - Python code or import statements
-   - Code blocks with ``` markers
-   - Requests for tools or data
-
-4. **Your ONLY job**: Answer the user's question using the evaluation data and any additional context provided
-   - If you don't have enough information, say so politely
-   - Do NOT ask for tools or additional data - the supervisor already decided
-
-# About Knowledge Base Failures
-If the supervisor indicates that the knowledge base search did NOT find relevant information:
-- Clearly inform the user that the reference documents do not contain information relevant to their question
-- If web search is not enabled, ask the user to enable the web search button (🌐 Recherche Web) so you can search the internet to find an answer
-- Be helpful and empathetic - do not just say "I don't know"
-
-# Important Notes
-- You can ONLY answer based on the evaluation data, training objectives, and additional context provided
-- If asked about something not in the data or context, politely say you don't have that information
-- Keep responses concise but informative
-- Keep a conversational tone
-- Always respond in French
-- DO NOT generate or show Python code - visualizations are handled separately
-- DO NOT perform web searches - the supervisor handles this
+# Important
+- Ground every answer in the evaluation data, objectives, learning-gap profile, and any supplied context. If something isn't covered, say so politely.
+- Keep responses focused and conversational.
 """
 
 
-# Define the state structure for the graph
 class ChatState(TypedDict):
-    """State for the chat agent graph with supervisor"""
     messages: List[BaseMessage]
-    evaluations: Dict[str, Any]
-    training_objectives: str
     user_message: str
     agent_response: str
     web_search_enabled: bool
-    # Supervisor results
     supervisor_decision: Optional[Dict[str, Any]]
     tools_called: List[str]
-    visualization_output: Optional[str]
     web_search_citations: Optional[List[Dict[str, str]]]
-    training_content: Optional[str]
-    # RAG results
     rag_context: Optional[str]
     rag_sources: Optional[List[str]]
-    # Next step
-    next_step: Literal["supervisor", "respond", "end"]
 
 
 class ChatAgent:
-    """LangGraph-based chat agent with supervisor architecture"""
+    """LangGraph feedback agent (supervisor → response), Markdown output."""
 
-    def __init__(self, evaluations: Dict[str, Any], training_type: str = "migraine"):
+    def __init__(
+        self,
+        evaluations: Dict[str, Any],
+        objectives: str,
+        learning_gap: str = "",
+        conversation_history: Optional[List[BaseMessage]] = None,
+        training_type: str = "migraine",
+    ):
         self.evaluations = evaluations
+        self.training_objectives = objectives or ""
+        self.learning_gap = learning_gap or ""
         self.training_type = training_type
+        self.conversation_history: List[BaseMessage] = conversation_history or []
 
-        # Load training objectives based on training type
-        if training_type == "migraine":
-            from trainings_2_experts import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "grh_1st":
-            from trainings_grh_1stLearner import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "nursing_1st":
-            from trainings_nursing_1stLearner import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "nursing_2nd":
-            from trainings_nursing_2ndLearner import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "leadership_1st":
-            from trainings_leadership_1srLearner import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "leadership_2nd":
-            from trainings_leadership_2ndLearner import training_objectives
-            self.training_objectives = training_objectives
-        elif training_type == "leadership_3rd":
-            from trainings_leadership_3rdLearner import training_objectives
-            self.training_objectives = training_objectives
-        else:
-            self.training_objectives = ""
-
-        self.conversation_history: List[BaseMessage] = []
         self.llm = ChatAnthropic(
             model="claude-sonnet-4-6",
             temperature=0.5,
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
         self.supervisor = SupervisorAgent(evaluations, training_type)
-        self.initial_feedback_given = False
-
-        # Token usage tracking (cumulative across the session)
         self.total_tokens = 0
-
-        # Build the LangGraph
         self.graph = self._build_graph()
 
-    def _build_graph(self) -> StateGraph:
-        """Build the LangGraph with supervisor architecture"""
-
-        # Create the graph
+    # ------------------------------------------------------------------ graph
+    def _build_graph(self):
         workflow = StateGraph(ChatState)
-
-        # Add nodes
         workflow.add_node("supervisor", self._supervisor_node)
         workflow.add_node("generate_response", self._generate_response_node)
-
-        # Add edges
         workflow.set_entry_point("supervisor")
-
-        # From supervisor, always go to generate_response
         workflow.add_edge("supervisor", "generate_response")
-
-        # From generate_response, always end
         workflow.add_edge("generate_response", END)
-
         return workflow.compile()
 
     def _supervisor_node(self, state: ChatState) -> ChatState:
-        """Node 1: Supervisor decides which tools to call"""
-
-        print(f"\n{'='*70}")
-        print(f"🎯 SUPERVISOR NODE: Processing user message")
-        print(f"   User: {state['user_message'][:80]}...")
-        print(f"   Web Search: {'ON' if state.get('web_search_enabled', False) else 'OFF'}")
-        print(f"{'='*70}\n")
-
         try:
-            # Call supervisor to decide on tools
             decision = self.supervisor.decide(
                 user_message=state["user_message"],
                 conversation_history=state["messages"],
-                web_search_enabled=state.get("web_search_enabled", False)
+                web_search_enabled=state.get("web_search_enabled", False),
             )
-
             state["supervisor_decision"] = decision
             state["tools_called"] = decision.get("tools_called", [])
-
-            # Extract tool results
             tool_results = decision.get("tool_results", {})
 
-            # Process visualization results
-            if "generate_visualization" in state["tools_called"]:
-                viz_result = tool_results.get("generate_visualization", {})
-                if viz_result.get("status") == "success":
-                    state["visualization_output"] = viz_result.get("output")
-                    print(f"✅ Visualization generated successfully")
-                else:
-                    print(f"❌ Visualization failed: {viz_result.get('error')}")
-
-            # Process web search results
             if "search_web" in state["tools_called"]:
-                search_result = tool_results.get("search_web", {})
-                if search_result.get("status") == "success":
-                    state["web_search_citations"] = search_result.get("citations", [])
-                    print(f"✅ Web search completed: {len(state['web_search_citations'])} sources")
-                else:
-                    print(f"❌ Web search failed: {search_result.get('error')}")
+                sr = tool_results.get("search_web", {})
+                if sr.get("status") == "success":
+                    state["web_search_citations"] = sr.get("citations", [])
 
-            # Process training content results
-            if "get_training_content" in state["tools_called"]:
-                content_result = tool_results.get("get_training_content", {})
-                if content_result.get("status") == "success":
-                    state["training_content"] = content_result.get("content")
-                    print(f"✅ Training content retrieved: {content_result.get('module_name')}")
-                else:
-                    print(f"❌ Training content failed: {content_result.get('error')}")
-
-            # Process RAG knowledge base results
             if "search_knowledge_base" in state["tools_called"]:
-                rag_result = tool_results.get("search_knowledge_base", {})
-                if rag_result.get("status") == "success":
-                    state["rag_context"] = rag_result.get("formatted_context")
-                    state["rag_sources"] = rag_result.get("sources", [])
-                    found_relevant = rag_result.get("found_relevant", False)
-                    attempts = rag_result.get("attempts", 1)
-                    print(f"✅ Knowledge base search completed: {len(state['rag_sources'])} sources, "
-                          f"relevant={found_relevant}, attempts={attempts}")
-                elif rag_result.get("status") == "no_relevant_info":
-                    # RAG exhausted all attempts - no relevant info found
-                    state["rag_context"] = None
-                    state["rag_sources"] = []
-                    print(f"⚠️ Knowledge base: no relevant info found after {rag_result.get('attempts', 3)} attempts")
-                else:
-                    print(f"❌ Knowledge base search failed: {rag_result.get('error')}")
-
-            state["next_step"] = "respond"
-
+                rr = tool_results.get("search_knowledge_base", {})
+                if rr.get("status") == "success":
+                    state["rag_context"] = rr.get("formatted_context")
+                    state["rag_sources"] = rr.get("sources", [])
         except Exception as e:
             print(f"❌ Error in supervisor node: {e}")
-            import traceback
-            traceback.print_exc()
-            state["supervisor_decision"] = {
-                "tools_called": [],
-                "tool_results": {},
-                "ready_for_chat": True,
-                "error": str(e)
-            }
+            state["supervisor_decision"] = {"tools_called": [], "tool_results": {}, "context_additions": ""}
             state["tools_called"] = []
-            state["next_step"] = "respond"
-
         return state
 
     def _generate_response_node(self, state: ChatState) -> ChatState:
-        """Node 2: Generate text response from LLM using supervisor's context"""
+        decision = state.get("supervisor_decision", {}) or {}
+        context_summary = decision.get("context_additions", "")
+        tool_results = decision.get("tool_results", {})
 
-        print(f"\n{'='*70}")
-        print(f"💬 CHAT AGENT NODE: Generating response")
-        print(f"   Tools used: {state.get('tools_called', [])}")
-        print(f"{'='*70}\n")
+        context = f"""Objectifs d'apprentissage:
+{self.training_objectives}
 
-        # Get supervisor context summary
-        supervisor_decision = state.get("supervisor_decision", {})
-        context_summary = supervisor_decision.get("context_additions", "")
+Profil d'apprentissage (lacunes) de l'apprenant:
+{self.learning_gap or "(aucun profil de lacunes enregistré pour le moment)"}
 
-        # Prepare base context (WITHOUT supervisor summary - that goes in a separate message)
-        context = f"""
-Objectifs d'apprentissage:
-{state['training_objectives']}
-
-Évaluations:
-{json.dumps(state['evaluations'], indent=2, ensure_ascii=False)}
+Évaluation (JSON):
+{json.dumps(self.evaluations, indent=2, ensure_ascii=False)}
 """
 
-        # Add detailed tool results
-        tool_results = supervisor_decision.get("tool_results", {})
-        additional_context = []
-
-        # Add web search results if available
+        extra: List[str] = []
         if "search_web" in state.get("tools_called", []):
-            search_result = tool_results.get("search_web", {})
-            if search_result.get("status") == "success":
-                additional_context.append("\n\n=== WEB SEARCH RESULTS ===")
-                additional_context.append(search_result.get("formatted", ""))
-
-        # Add training content if available
+            sr = tool_results.get("search_web", {})
+            if sr.get("status") == "success":
+                extra.append("\n\n=== WEB SEARCH RESULTS ===")
+                extra.append(sr.get("formatted", ""))
         if "get_training_content" in state.get("tools_called", []):
-            content_result = tool_results.get("get_training_content", {})
-            if content_result.get("status") == "success":
-                additional_context.append("\n\n=== TRAINING MODULE CONTENT ===")
-                additional_context.append(f"Module: {content_result.get('module_name', '')}")
-                additional_context.append(f"Content:\n{content_result.get('content', '')}")
+            cr = tool_results.get("get_training_content", {})
+            if cr.get("status") == "success":
+                extra.append("\n\n=== TRAINING MODULE CONTENT ===")
+                extra.append(f"Module: {cr.get('module_name', '')}")
+                extra.append(f"Content:\n{cr.get('content', '')}")
+        if state.get("rag_context"):
+            extra.append("\n\n=== KNOWLEDGE BASE (reference documents) ===")
+            extra.append(f"Sources: {', '.join(state.get('rag_sources') or [])}")
+            extra.append(f"\n{state['rag_context']}")
+        if extra:
+            context += "\n".join(extra)
 
-        # Add RAG knowledge base context if available
-        if "search_knowledge_base" in state.get("tools_called", []):
-            rag_context = state.get("rag_context")
-            rag_sources = state.get("rag_sources", [])
-            if rag_context:
-                additional_context.append("\n\n=== KNOWLEDGE BASE (from reference documents) ===")
-                additional_context.append(f"Sources: {', '.join(rag_sources)}")
-                additional_context.append(f"\n{rag_context}")
-
-        # Combine all context
-        if additional_context:
-            context += "\n".join(additional_context)
-
-        # Build messages - supervisor summary goes as a SEPARATE system message
         messages = [
             SystemMessage(content=CHAT_AGENT_PROMPT),
             SystemMessage(content=f"Context:\n{context}"),
         ]
-
-        # Add supervisor instructions as a separate system message (if any tools were called)
         if context_summary:
             messages.append(SystemMessage(content=f"<internal_instruction>\n{context_summary}\n</internal_instruction>"))
-
-        # Add conversation history and user message
         messages.extend(state["messages"])
         messages.append(HumanMessage(content=state["user_message"]))
 
-        # Get response from LLM
         response = invoke_with_retry(self.llm.invoke, messages)
         response_text = response.content
 
-        # Track token usage
-        turn_tokens = supervisor_decision.get("turn_tokens", 0)
-        if hasattr(response, 'usage_metadata') and response.usage_metadata:
-            turn_tokens += response.usage_metadata.get('input_tokens', 0) + response.usage_metadata.get('output_tokens', 0)
+        turn_tokens = decision.get("turn_tokens", 0)
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            turn_tokens += response.usage_metadata.get("input_tokens", 0) + response.usage_metadata.get("output_tokens", 0)
         self.total_tokens += turn_tokens
-        print(f"📊 Tokens this turn: {turn_tokens} | Cumulative: {self.total_tokens}")
-
-        # CRITICAL: Remove any code blocks, visualization requests, or markdown tables that might have slipped through
-        import re
-
-        # Remove any <request_visualization> tags or similar XML-style tags
-        if "<request_" in response_text or "</request_" in response_text:
-            response_text = re.sub(r'<request_[^>]*>.*?</request_[^>]*>', '', response_text, flags=re.DOTALL | re.IGNORECASE)
-            response_text = re.sub(r'<[^>]*request[^>]*>', '', response_text, flags=re.IGNORECASE)
-            print("⚠️  Warning: Tool request tags detected in chat response and removed")
-
-        # Remove code blocks
-        if "```python" in response_text or "```" in response_text:
-            response_text = re.sub(r'```python.*?```', '[Visualization générée - voir ci-dessus]', response_text, flags=re.DOTALL)
-            response_text = re.sub(r'```.*?```', '[Contenu généré - voir ci-dessus]', response_text, flags=re.DOTALL)
-            print("⚠️  Warning: Code detected in chat response and removed")
-
-        # Remove markdown tables if visualization was generated
-        if "generate_visualization" in state.get("tools_called", []):
-            # Detect markdown tables (lines with | symbols)
-            lines = response_text.split('\n')
-            filtered_lines = []
-            in_table = False
-
-            for line in lines:
-                # Check if line is part of a markdown table
-                if '|' in line and line.strip().startswith('|'):
-                    in_table = True
-                    continue
-                elif line.strip().startswith('|') or (in_table and '---' in line):
-                    continue
-                else:
-                    in_table = False
-                    filtered_lines.append(line)
-
-            response_text = '\n'.join(filtered_lines)
-
-            # Remove any remaining table headers or formatting
-            response_text = re.sub(r'\n\s*\|\s*.*?\|\s*\n', '\n', response_text)
-            response_text = re.sub(r'^#.*Tableau.*$', '', response_text, flags=re.MULTILINE)
-
-            print("⚠️  Markdown table detected and removed (visualization already generated)")
 
         state["agent_response"] = response_text
-
-        # Update conversation history
         state["messages"].append(HumanMessage(content=state["user_message"]))
         state["messages"].append(AIMessage(content=response_text))
-
         return state
 
-    def chat(self, user_message: str, web_search_enabled: bool = False) -> Dict[str, Any]:
-        """Process a chat message using the supervisor-based graph"""
+    # ------------------------------------------------------------------ logging
+    def _log_turn(self, conversation_id: str, user_message: str, final_state: ChatState) -> None:
+        """Persist the user message, internal agent activity, and the response."""
+        decision = final_state.get("supervisor_decision", {}) or {}
+        tool_results = decision.get("tool_results", {})
+        tools = final_state.get("tools_called", [])
 
-        # Handle initial feedback separately
-        if not self.initial_feedback_given:
-            initial_response = self._create_initial_feedback()
-            self.conversation_history.append(HumanMessage(content=user_message))
-            self.conversation_history.append(AIMessage(content=initial_response))
-            self.initial_feedback_given = True
+        mlog.log_message(conversation_id, mlog.ROLE_USER, user_message)
 
-            return {
-                "response": initial_response,
-                "has_code": False,
-                "code": None,
-                "code_output": None,
-                "citations": [],
-                "total_tokens": self.total_tokens
-            }
+        orchestrator_note = f"Outils choisis: {tools or 'aucun'}."
+        if decision.get("context_additions"):
+            orchestrator_note += f"\n{decision['context_additions']}"
+        mlog.log_message(conversation_id, mlog.ROLE_ORCHESTRATOR, orchestrator_note,
+                         internal=True, metadata={"tools_called": tools})
 
-        # Create initial state
+        if "search_knowledge_base" in tools:
+            rr = tool_results.get("search_knowledge_base", {})
+            mlog.log_message(
+                conversation_id, mlog.ROLE_RAG,
+                (rr.get("formatted_context") or "(aucun contenu pertinent trouvé)")[:8000],
+                internal=True,
+                metadata={"sources": rr.get("sources", []), "found_relevant": rr.get("found_relevant", False)},
+            )
+        if "search_web" in tools:
+            sr = tool_results.get("search_web", {})
+            mlog.log_message(
+                conversation_id, mlog.ROLE_WEB_SEARCH,
+                (sr.get("formatted") or "")[:8000],
+                internal=True,
+                metadata={"citations": sr.get("citations", [])},
+            )
+
+        mlog.log_message(
+            conversation_id, mlog.ROLE_RESPONSE, final_state["agent_response"],
+            metadata={"citations": final_state.get("web_search_citations") or [], "tokens": self.total_tokens},
+        )
+
+    # ------------------------------------------------------------------ public
+    def chat(self, user_message: str, web_search_enabled: bool = False,
+             conversation_id: Optional[str] = None) -> Dict[str, Any]:
         initial_state: ChatState = {
             "messages": self.conversation_history.copy(),
-            "evaluations": self.evaluations,
-            "training_objectives": self.training_objectives,
             "user_message": user_message,
             "agent_response": "",
             "web_search_enabled": web_search_enabled,
             "supervisor_decision": None,
             "tools_called": [],
-            "visualization_output": None,
             "web_search_citations": None,
-            "training_content": None,
             "rag_context": None,
             "rag_sources": None,
-            "next_step": "supervisor"
         }
-
-        # Run the graph
         final_state = self.graph.invoke(initial_state)
-
-        # Update conversation history
         self.conversation_history = final_state["messages"]
 
-        # Prepare response
-        viz_output = final_state.get("visualization_output")
+        if conversation_id:
+            self._log_turn(conversation_id, user_message, final_state)
 
-        # Convert visualization output to JSON string if it's a dict
-        if viz_output and isinstance(viz_output, dict):
-            viz_output = json.dumps(viz_output, ensure_ascii=False)
-
-        result = {
+        return {
             "response": final_state["agent_response"],
-            "has_code": "generate_visualization" in final_state.get("tools_called", []),
-            "code": None,  # We don't expose the code anymore
-            "code_output": viz_output,
             "citations": final_state.get("web_search_citations") or [],
-            "total_tokens": self.total_tokens
+            "total_tokens": self.total_tokens,
+            "tools_called": final_state.get("tools_called", []),
         }
 
-        return result
-
-    def _create_initial_feedback(self) -> str:
-        """Create the initial brief feedback"""
-        context = f"""
-Objectifs d'apprentissage:
+    def create_initial_feedback(self, conversation_id: Optional[str] = None) -> str:
+        """Generate the one-time initial feedback (Markdown) for a completed training."""
+        context = f"""Objectifs d'apprentissage:
 {self.training_objectives}
 
-Évaluations:
+Profil d'apprentissage (lacunes) de l'apprenant:
+{self.learning_gap or "(aucun profil de lacunes enregistré pour le moment)"}
+
+Évaluation (JSON):
 {json.dumps(self.evaluations, indent=2, ensure_ascii=False)}
 """
-
         messages = [
             SystemMessage(content=CHAT_AGENT_PROMPT),
             SystemMessage(content=f"Context:\n{context}"),
-            HumanMessage(content="""Fournissez un bref résumé (3-4 phrases) qui met en lumière les forces observées dans le raisonnement de l'apprenant et les points où son approche diverge de celle des experts. N'utilisez aucun score ni évaluation numérique — concentrez-vous sur les justifications qualitatives (forces et pistes de réflexion).
-Puis suggérez 2-3 façons spécifiques dont l'apprenant peut explorer leurs résultats plus en profondeur.""")
+            HumanMessage(content=(
+                "Fournissez la rétroaction initiale pour cette formation complétée, en Markdown. "
+                "Commencez par un bref résumé qualitatif (3-4 phrases) mettant en lumière les forces "
+                "de l'apprenant puis les divergences avec les experts, comme pistes de réflexion. "
+                "N'utilisez AUCUN score ni évaluation numérique. Terminez par 2-3 suggestions concrètes "
+                "d'exploration. Vous pouvez utiliser un court tableau Markdown si cela clarifie la comparaison."
+            )),
         ]
-
         response = invoke_with_retry(self.llm.invoke, messages)
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            self.total_tokens += response.usage_metadata.get("input_tokens", 0) + response.usage_metadata.get("output_tokens", 0)
 
-        # Track token usage for initial feedback
-        if hasattr(response, 'usage_metadata') and response.usage_metadata:
-            turn_tokens = response.usage_metadata.get('input_tokens', 0) + response.usage_metadata.get('output_tokens', 0)
-            self.total_tokens += turn_tokens
-            print(f"📊 Initial feedback tokens: {turn_tokens} | Cumulative: {self.total_tokens}")
-
-        return response.content
-
-    def reset(self):
-        """Reset the conversation"""
-        self.conversation_history = []
-        self.initial_feedback_given = False
+        text = response.content
+        self.conversation_history.append(AIMessage(content=text))
+        if conversation_id:
+            mlog.log_message(conversation_id, mlog.ROLE_RESPONSE, text,
+                             metadata={"initial_feedback": True, "tokens": self.total_tokens})
+        return text

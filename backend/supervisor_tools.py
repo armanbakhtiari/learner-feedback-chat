@@ -4,7 +4,7 @@ Tools for the Supervisor Agent
 These tools are decorated with @tool so they can be used by LangChain's create_react_agent.
 The supervisor agent will decide when and how to call these tools based on user queries.
 
-NOTE: All heavy imports (CodeGenerationTool, WebSearchTool, RAG) are lazy-loaded
+NOTE: All heavy imports (WebSearchTool, RAG) are lazy-loaded
 to speed up application startup and pass health checks.
 """
 
@@ -15,7 +15,6 @@ import json
 
 
 # Global instances (will be initialized by supervisor)
-_code_tool_instance = None
 _web_search_tool_instance = None
 _rag_module_instance = None
 
@@ -53,15 +52,11 @@ def _get_training_data():
 
 def initialize_tools(evaluations: Dict[str, Any], training_type: str = "migraine"):
     """Initialize tool instances with evaluation data and training type"""
-    global _code_tool_instance, _web_search_tool_instance, _rag_module_instance
+    global _web_search_tool_instance, _rag_module_instance
     global _current_training_type, _training_data_cache
 
     _current_training_type = training_type
     _training_data_cache = None  # Reset cache when training type changes
-
-    # Lazy import CodeGenerationTool
-    from backend.code_tool import CodeGenerationTool
-    _code_tool_instance = CodeGenerationTool(evaluations)
 
     # Lazy import WebSearchTool
     from backend.web_search_tool import WebSearchTool
@@ -70,94 +65,6 @@ def initialize_tools(evaluations: Dict[str, Any], training_type: str = "migraine
     # Lazy import and initialize RAG module for the correct training type
     from backend.rag_tool import get_rag_module
     _rag_module_instance = get_rag_module(training_type)
-
-
-@tool
-def generate_visualization(user_request: str, conversation_history: str, data_context: str = "", include_evaluation_data: bool = False) -> str:
-    """
-    Generate a visualization (chart, table, graph) based on the user's request.
-
-    Use this tool when the user asks for:
-    - Tables ("tableau", "table")
-    - Charts or graphs ("graphique", "chart", "graph")
-    - Visual comparisons ("comparer", "comparaison")
-    - Statistics display ("statistique", "diagramme", "courbe", "histogramme")
-
-    Args:
-        user_request: The user's message requesting a visualization.
-                      IMPORTANT: Include the SPECIFIC DATA or CONTEXT that should be visualized!
-                      If the user asks to visualize data from a previous response, include that data here.
-        conversation_history: JSON string of recent conversation messages
-        data_context: Optional additional context or data to visualize (e.g., retrieved content,
-                      previous assistant responses with specific data, tables, or lists that
-                      should be visualized)
-        include_evaluation_data: Set to True ONLY if the visualization is about the learner's
-                                 performance, evaluation scores, or training results.
-                                 Set to False if visualizing other data (diagnostic criteria,
-                                 guidelines, knowledge base content, etc.)
-
-    Returns:
-        JSON string containing:
-        - "status": "success" or "error"
-        - "code": The generated Python code (if successful)
-        - "output": Base64 image and summary data (if successful)
-        - "error": Error message (if failed)
-
-    Examples:
-        1. User asks about their performance:
-           -> include_evaluation_data=True, data_context="" (evaluation data will be included)
-
-        2. User asks to visualize diagnostic criteria from knowledge base:
-           -> include_evaluation_data=False, data_context="Les critères: 1)..., 2)..."
-    """
-    if _code_tool_instance is None:
-        return json.dumps({"status": "error", "error": "Code tool not initialized"})
-
-    try:
-        # Parse conversation history
-        history = json.loads(conversation_history) if conversation_history else []
-
-        # Convert to BaseMessage objects
-        from langchain_core.messages import HumanMessage, AIMessage
-        messages = []
-        for msg in history:
-            if msg.get("type") == "human":
-                messages.append(HumanMessage(content=msg.get("content", "")))
-            elif msg.get("type") == "ai":
-                messages.append(AIMessage(content=msg.get("content", "")))
-
-        # If data_context is provided, add it as a synthetic message for context
-        if data_context:
-            messages.append(AIMessage(content=f"[Relevant Context for Visualization]:\n{data_context}"))
-
-        # Combine user request with data context for better understanding
-        full_request = user_request
-        if data_context:
-            full_request = f"{user_request}\n\n[Data to Visualize]:\n{data_context}"
-
-        # Generate visualization - pass flag for whether to include evaluation data
-        result = _code_tool_instance.generate_code(full_request, messages, include_evaluation_data)
-
-        if result:
-            output_data = result.get("output", {})
-
-            if isinstance(output_data, str):
-                try:
-                    output_data = json.loads(output_data)
-                except Exception as e:
-                    print(f"❌ Failed to parse visualization output: {e}")
-                    output_data = {"error": str(output_data)}
-
-            return json.dumps({
-                "status": "success",
-                "code": result.get("code", ""),
-                "output": output_data
-            }, ensure_ascii=False)
-        else:
-            return json.dumps({"status": "error", "error": "Failed to generate visualization"})
-
-    except Exception as e:
-        return json.dumps({"status": "error", "error": str(e)})
 
 
 @tool
@@ -370,4 +277,4 @@ def search_knowledge_base(query: str, user_message: str = "") -> str:
 
 
 # List of all tools (for easy access)
-ALL_TOOLS = [generate_visualization, search_web, get_training_content, search_knowledge_base]
+ALL_TOOLS = [search_web, get_training_content, search_knowledge_base]

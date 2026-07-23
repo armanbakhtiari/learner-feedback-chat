@@ -15,6 +15,23 @@ ENV/
 
 # Environment variables
 .env
+.env.local
+.env*.local
+frontend/.env.local
+
+# Local credentials (contains secrets — never commit)
+credentials.md
+
+# Node / Next.js frontend
+node_modules/
+.next/
+frontend/node_modules/
+frontend/.next/
+out/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
 
 # IDE
 .vscode/

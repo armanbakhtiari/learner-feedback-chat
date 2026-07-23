@@ -22,7 +22,6 @@ from langchain_anthropic import ChatAnthropic
 sys.path.append(str(Path(__file__).parent.parent))
 
 from models import SituationScenarios
-from situations import get_situations_for_training
 from create_scenario import (
     scenario_generation_system_prompt,
     scenario_generation_user_prompt,
@@ -73,44 +72,5 @@ def generate_scenarios_for_situation(
     return result
 
 
-def generate_new_scenarios(
-    training_type: str,
-    objectives: str,
-    gaps: List[Dict[str, Any]],
-    n_scenarios: int = N_SCENARIOS_PER_SITUATION,
-) -> Dict[str, Any]:
-    """Generate new scenarios for every situation of the evaluated training.
-
-    Returns ``{"status": ..., "training_type": ..., "situations": [...]}`` where each situation
-    carries its title/text and its list of generated scenarios.
-    """
-    situations = get_situations_for_training(training_type)
-    if not situations:
-        return {
-            "status": "no_situations",
-            "message": "Aucune situation n'est disponible pour cette formation.",
-            "training_type": training_type,
-            "situations": [],
-        }
-
-    out_situations = []
-    for situation in situations:
-        print(f"🧩 Generating {n_scenarios} scenario(s) for {situation['id']}...")
-        try:
-            result = generate_scenarios_for_situation(situation, objectives, gaps, n_scenarios)
-            scenarios = [s.model_dump() for s in result.scenarios]
-        except Exception as e:
-            print(f"   ❌ Scenario generation failed for {situation['id']}: {e}")
-            scenarios = []
-        out_situations.append({
-            "situation_id": situation["id"],
-            "title": situation["title"],
-            "text": situation["text"],
-            "scenarios": scenarios,
-        })
-
-    return {
-        "status": "success",
-        "training_type": training_type,
-        "situations": out_situations,
-    }
+# Note: synthetic expert panels for generated scenarios are produced by the distinct
+# `backend/expert_panel_agent.py` agent (kept separate from scenario invention).

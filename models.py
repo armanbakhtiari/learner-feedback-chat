@@ -102,3 +102,54 @@ class SituationScenarios(BaseModel):
     scenarios: List[NewScenario] = Field(
         description="The newly generated scenarios for this situation"
     )
+
+
+# ============= Answer-assist agent (structured output) =============
+
+class AssistedAnswer(BaseModel):
+    """A suggested learner answer for one scenario (Learning-by-Concordance)."""
+    likert: Literal[
+        "Fortement affaiblie", "Affaiblie", "Inchangée", "Renforcée", "Fortement renforcée"
+    ] = Field(description="The suggested concordance rating for the hypothesis given the new information")
+    justification: str = Field(
+        description="A concise French justification a learner could plausibly give (2-4 sentences)"
+    )
+
+
+# ============= Generated expert panel (for path-2 generated trainings) =============
+
+class GeneratedExpert(BaseModel):
+    """One synthetic expert-panel response for a newly generated scenario."""
+    expert_label: str = Field(description="Expert label, e.g. 'Expert 1'")
+    likert: Literal[
+        "Fortement affaiblie", "Affaiblie", "Inchangée", "Renforcée", "Fortement renforcée"
+    ]
+    justification: str = Field(description="Concise French justification for the rating")
+
+
+class GeneratedExpertPanel(BaseModel):
+    """A synthetic panel of experts for one generated scenario."""
+    experts: List[GeneratedExpert] = Field(description="3-5 expert responses with varied, reasoned positions")
+
+
+# ============= Learning-gap profile (evolving, per user) =============
+
+class GapItem(BaseModel):
+    """A single learning gap under a learning objective."""
+    summary: str = Field(description="One concise sentence naming the gap (French)")
+    detail: str = Field(description="Evidence-based context: what experts emphasized that the learner missed (French)")
+
+
+class ObjectiveGapGroup(BaseModel):
+    """Gaps grouped under one learning objective."""
+    learning_objective: str = Field(description="The learning objective verbatim (French)")
+    gaps: List[GapItem] = Field(default_factory=list, description="Current open gaps for this objective (empty if resolved)")
+
+
+class LearningGapProfile(BaseModel):
+    """The learner's evolving learning-gap profile, grouped by learning objective."""
+    overall_summary: str = Field(description="A short French summary of the learner's current gaps and progress")
+    objectives: List[ObjectiveGapGroup] = Field(
+        default_factory=list,
+        description="One entry per learning objective the learner has encountered, with its current open gaps"
+    )
