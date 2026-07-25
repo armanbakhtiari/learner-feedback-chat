@@ -24,6 +24,7 @@ interface AppCtx {
   setDrawerOpen: (b: boolean) => void;
   activeConversationId: string | null;
   openConversation: (id: string) => void;
+  closeConversation: () => void;
   toast: (msg: string) => void;
   toastMsg: string | null;
 }
@@ -59,10 +60,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const openTraining = useCallback((id: string | null) => setSelectedTrainingId(id), []);
 
+  // Opening a conversation shows it full-screen (and closes the list drawer).
   const openConversation = useCallback((id: string) => {
     setActiveConversationId(id);
-    setDrawerOpen(true);
+    setDrawerOpen(false);
   }, []);
+
+  const closeConversation = useCallback(() => setActiveConversationId(null), []);
 
   const refreshNotifications = useCallback(async () => {
     try {
@@ -146,6 +150,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDrawerOpen,
     activeConversationId,
     openConversation,
+    closeConversation,
     toast,
     toastMsg,
   };

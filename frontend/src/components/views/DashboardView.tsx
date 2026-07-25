@@ -25,8 +25,8 @@ export default function DashboardView() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-slate-800">Tableau de bord</h1>
-      <p className="mb-5 text-sm text-slate-500">Vos formations à compléter.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tableau de bord</h1>
+      <p className="mb-6 mt-1 text-sm text-slate-500">Vos formations à compléter.</p>
 
       {trainings.length === 0 ? (
         <p className="text-slate-500">Aucune formation en attente. Consultez l&apos;onglet Suggestions.</p>

@@ -280,11 +280,11 @@ Profil d'apprentissage (lacunes) de l'apprenant:
             SystemMessage(content=CHAT_AGENT_PROMPT),
             SystemMessage(content=f"Context:\n{context}"),
             HumanMessage(content=(
-                "Fournissez la rétroaction initiale pour cette formation complétée, en Markdown. "
-                "Commencez par un bref résumé qualitatif (3-4 phrases) mettant en lumière les forces "
-                "de l'apprenant puis les divergences avec les experts, comme pistes de réflexion. "
-                "N'utilisez AUCUN score ni évaluation numérique. Terminez par 2-3 suggestions concrètes "
-                "d'exploration. Vous pouvez utiliser un court tableau Markdown si cela clarifie la comparaison."
+                "Provide the initial feedback for this completed training, in Markdown, WRITTEN IN FRENCH. "
+                "Start with a brief qualitative summary (3-4 sentences) highlighting the learner's strengths "
+                "then the divergences from the experts, framed as reflection prompts. Do NOT use any score or "
+                "numeric rating. End with 2-3 concrete exploration suggestions. You may use a short Markdown "
+                "table if it clarifies the comparison."
             )),
         ]
         response = invoke_with_retry(self.llm.invoke, messages)

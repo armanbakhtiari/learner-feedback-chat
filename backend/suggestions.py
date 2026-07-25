@@ -44,25 +44,25 @@ def _llm(temp: float = 0.3) -> ChatAnthropic:
                          anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
-QUERY_PROMPT = """Tu es un agent de requête pour un système de recommandation pédagogique.
-On te donne le PROFIL DE LACUNES d'un apprenant. Produis UNE requête concise (en français)
-qui capte les thèmes/compétences sous-jacents de ces lacunes, afin qu'une recherche
-sémantique trouve des SITUATIONS d'entraînement pertinentes. Concentre-toi sur les
-compétences transférables, pas sur un nom de patient précis."""
+QUERY_PROMPT = """You are a query agent for an educational recommendation system.
+You are given a learner's LEARNING-GAP PROFILE. Produce ONE concise retrieval query
+(written in French) capturing the underlying themes/skills of these gaps, so a semantic
+search can find relevant practice SITUATIONS. Focus on transferable skills, not on a specific
+patient name."""
 
-SUGGESTION_PROMPT = """Tu es un agent de recommandation pédagogique.
-On te donne : (1) le PROFIL DE LACUNES de l'apprenant, (2) des FORMATIONS candidates
-récupérées de la banque (chacune avec un training_id, un titre, ses objectifs et son contenu).
-Choisis 1 à 3 formations qui aideraient le mieux l'apprenant à combler ses lacunes, la plus
-pertinente d'abord. Utilise UNIQUEMENT les training_id fournis (jamais inventés). Pour chaque
-choix, écris un `rationale` en français reliant explicitement la formation aux lacunes."""
+SUGGESTION_PROMPT = """You are an educational recommendation agent.
+You are given: (1) the learner's LEARNING-GAP PROFILE, (2) candidate TRAININGS retrieved from
+the bank (each with a training_id, title, objectives, and content).
+Choose 1 to 3 trainings that would best help the learner close their gaps, most relevant first.
+Use ONLY the provided training_ids (never invent one). For each choice, write a `rationale`
+**in French** explicitly linking the training to the learner's gaps."""
 
 
 def _generate_query(gap_content: str) -> str:
     structured = _llm(0.3).with_structured_output(_GapQuery)
     result: _GapQuery = invoke_with_retry(
         structured.invoke,
-        [SystemMessage(content=QUERY_PROMPT), HumanMessage(content=f"PROFIL DE LACUNES:\n{gap_content}")],
+        [SystemMessage(content=QUERY_PROMPT), HumanMessage(content=f"LEARNING-GAP PROFILE:\n{gap_content}")],
     )
     return result.query
 
@@ -104,7 +104,7 @@ def suggest_bank_trainings(user_id: str, gap_content: str) -> Dict[str, Any]:
     result: _SuggestionResult = invoke_with_retry(
         structured.invoke,
         [SystemMessage(content=SUGGESTION_PROMPT),
-         HumanMessage(content=f"PROFIL DE LACUNES:\n{gap_content or '(vide)'}\n\nFORMATIONS candidates:\n{candidates_text}\n\nChoisis 1 à 3 formations.")],
+         HumanMessage(content=f"LEARNING-GAP PROFILE:\n{gap_content or '(empty)'}\n\nCANDIDATE TRAININGS:\n{candidates_text}\n\nChoose 1 to 3 trainings.")],
     )
 
     suggestions = []

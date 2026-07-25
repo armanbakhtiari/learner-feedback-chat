@@ -25,8 +25,8 @@ export default function LearningView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-1 text-2xl font-bold text-slate-800">Mon apprentissage</h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Mon apprentissage</h1>
+      <p className="mb-6 mt-1 text-sm text-slate-500">
         Votre profil de lacunes, mis à jour après chaque évaluation.
       </p>
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

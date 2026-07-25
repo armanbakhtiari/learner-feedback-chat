@@ -20,31 +20,40 @@ from langchain_anthropic import ChatAnthropic
 from backend.llm_retry import invoke_with_retry
 
 
-EVAL_TABLE_PROMPT = """# Rôle
-Tu génères un TABLEAU HTML récapitulatif d'une évaluation « Learning by Concordance »,
-en FRANÇAIS, destiné à être affiché dans une application web.
+EVAL_TABLE_PROMPT = """# Role
+You generate a summary HTML TABLE for a "Learning by Concordance" evaluation, to be
+displayed in a web application.
 
-# Entrée
-Un JSON d'évaluation : des situations, chacune contenant des scénarios ; chaque scénario a
-- expert_key_elements (concepts clés des experts)
-- coverage (score_assessment High/Medium/Low + justification)
+**LANGUAGE: all visible text in the table MUST be in FRENCH** (headers and content).
+
+# Input
+An evaluation JSON: situations, each containing scenarios; each scenario has:
+- expert_key_elements (the experts' key concepts)
+- coverage (score_assessment High/Medium/Low + a justification whose line 1 lists the key
+  themes the learner successfully addressed and line 2 lists the critical expert themes the
+  learner missed)
 - logical_reasoning (rating Satisfactory/Unsatisfactory + assessment)
 - communication (rating + assessment)
-- skills_assessment : par objectif d'apprentissage (present_in_scenario, learner_assessment, justification)
+- skills_assessment: per learning objective (ignore this for the table)
 
-# Sortie
-Un fragment HTML AUTONOME (commençant par <div ...> et se terminant par </div>), avec des
-styles INLINE uniquement (pas de <style>, pas de <script>, pas de balises <html>/<body>).
-- Un tableau clair par situation ; lignes = scénarios ; colonnes utiles : Scénario (hypothèse),
-  Éléments clés des experts, Couverture, Raisonnement, Communication, Objectifs démontrés.
-- Résume qualitativement. NE PAS afficher de score chiffré, NI d'étiquette réussite/échec,
-  NI de couleurs rouge/vert de type feu de circulation. Utilise un style sobre et neutre
-  (gris/bleu doux), lisible en thème clair.
-- Le HTML doit être valide et se suffire à lui-même (largeur 100%, `overflow-x:auto` sur un
-  conteneur pour les tableaux larges).
+# Output
+A SELF-CONTAINED HTML fragment (start with <div ...>, end with </div>), INLINE styles only
+(no <style>, no <script>, no <html>/<body> tags).
+- One clear table per situation; rows = scenarios. Use these columns, with French headers:
+  1. « Scénario » (the hypothesis)
+  2. « Éléments clés des experts » (from expert_key_elements)
+  3. « Thèmes clés abordés par l'apprenant » (derive from coverage justification line 1)
+  4. « Thèmes clés manqués par l'apprenant » (derive from coverage justification line 2)
+  5. « Raisonnement » (from logical_reasoning.assessment)
+  6. « Communication » (from communication.assessment)
+- Summarize qualitatively. Do NOT show numeric scores, pass/fail labels, or red/green
+  traffic-light colors (Learning-by-Concordance stays non-judgmental). Use a sober, neutral
+  style (soft grey/blue), readable on a light theme.
+- The HTML must be valid and stand alone (width 100%, wrap wide tables in a container with
+  `overflow-x:auto`).
 
-# Contrainte
-Réponds UNIQUEMENT avec le fragment HTML. Aucun texte avant ou après, pas de balise Markdown ```.
+# Constraint
+Respond with ONLY the HTML fragment. No text before or after, no Markdown ``` fences.
 """
 
 
@@ -66,9 +75,9 @@ def _strip_code_fences(text: str) -> str:
 def generate_evaluation_html(evaluation_json: Dict[str, Any]) -> str:
     """Return a self-contained HTML fragment summarizing the evaluation."""
     human = (
-        "Évaluation (JSON):\n"
+        "Evaluation (JSON):\n"
         + json.dumps(evaluation_json, ensure_ascii=False, indent=2)
-        + "\n\nGénère le fragment HTML du tableau récapitulatif, en français."
+        + "\n\nGenerate the summary table HTML fragment. All visible text must be in French."
     )
     response = invoke_with_retry(
         _llm().invoke,

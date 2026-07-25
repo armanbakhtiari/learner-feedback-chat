@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../AppContext";
 import EvalTableHtml from "../EvalTableHtml";
+import { IconChat } from "../Icons";
 import type { Conversation, UserTraining } from "@/lib/types";
 
 export default function CompletedView() {
@@ -30,8 +31,8 @@ export default function CompletedView() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-slate-800">Formations complétées</h1>
-      <p className="mb-5 text-sm text-slate-500">Votre évaluation et votre rétroaction pour chaque formation.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Formations complétées</h1>
+      <p className="mb-6 mt-1 text-sm text-slate-500">Votre évaluation et votre rétroaction pour chaque formation.</p>
 
       {trainings.length === 0 ? (
         <p className="text-slate-500">Aucune formation complétée pour le moment.</p>
@@ -51,9 +52,10 @@ export default function CompletedView() {
                     {conv && (
                       <button
                         onClick={() => openConversation(conv.id)}
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        💬 Ouvrir la rétroaction
+                        <IconChat width={16} height={16} />
+                        Ouvrir la rétroaction
                       </button>
                     )}
                     <button

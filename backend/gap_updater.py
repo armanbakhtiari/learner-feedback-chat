@@ -22,33 +22,34 @@ from models import LearningGapProfile
 from backend.llm_retry import invoke_with_retry
 
 
-GAP_UPDATER_PROMPT = """# Rôle
-Tu es un diagnosticien pédagogique pour des formations « Learning by Concordance ».
-SORTIE OBLIGATOIREMENT EN FRANÇAIS.
+GAP_UPDATER_PROMPT = """# Role
+You are an educational diagnostician for "Learning by Concordance" trainings.
 
-# Entrées
-1. Le PROFIL D'APPRENTISSAGE ACTUEL de l'apprenant (peut être vide s'il s'agit de sa
-   première formation), structuré par objectif d'apprentissage.
-2. Les OBJECTIFS D'APPRENTISSAGE de la formation qui vient d'être évaluée.
-3. L'ÉVALUATION (JSON) des réponses de l'apprenant pour cette formation — chaque scénario
-   contient une évaluation de couverture, de raisonnement logique, de communication, et
-   une évaluation par objectif (Satisfactory / Unsatisfactory).
+**LANGUAGE: all text you produce (summaries and gap descriptions) MUST be in FRENCH.**
 
-# Tâche : METTRE À JOUR le profil (ne pas le réécrire de zéro)
-- **Ajouter** les nouvelles lacunes observées dans cette évaluation, sous l'objectif
-  correspondant. Une lacune est indiquée par : évaluation « Unsatisfactory » pour un objectif,
-  et/ou couverture « Low »/« Medium », et/ou raisonnement « Unsatisfactory ».
-- **Retirer** une lacune existante si la nouvelle évaluation montre que l'apprenant a
-  maintenant une bonne performance sur ce point (alignement avec les experts).
-- **Affiner** une lacune existante si la nouvelle évaluation apporte des précisions.
-- Conserver les lacunes toujours pertinentes des formations précédentes.
-- Regrouper par objectif d'apprentissage. Si un objectif n'a plus de lacune, garde-le avec
-  une liste de lacunes vide (cela montre le progrès).
+# Inputs
+1. The learner's CURRENT LEARNING PROFILE (may be empty if this is their first training),
+   structured by learning objective.
+2. The LEARNING OBJECTIVES of the training that was just evaluated.
+3. The EVALUATION (JSON) of the learner's responses for this training — each scenario contains
+   a coverage assessment, a logical-reasoning rating, a communication rating, and a
+   per-objective assessment (Satisfactory / Unsatisfactory).
 
-# Format de sortie
-Retourne un profil structuré :
-- overall_summary : court résumé (2-3 phrases) de l'état actuel et des progrès.
-- objectives : un élément par objectif rencontré, avec ses lacunes ouvertes (summary + detail).
+# Task: UPDATE the profile (do NOT rewrite it from scratch)
+- **Add** the new gaps observed in this evaluation, under the corresponding objective. A gap is
+  indicated by: "Unsatisfactory" assessment for an objective, and/or "Low"/"Medium" coverage,
+  and/or "Unsatisfactory" reasoning.
+- **Remove** an existing gap if the new evaluation shows the learner now performs well on it
+  (alignment with the experts).
+- **Refine** an existing gap if the new evaluation adds precision.
+- Keep the still-relevant gaps from previous trainings.
+- Group by learning objective. If an objective no longer has any gap, keep it with an empty gap
+  list (this shows progress).
+
+# Output format
+Return a structured profile:
+- overall_summary: a short summary (2-3 sentences) of the current state and progress (in French).
+- objectives: one item per objective encountered, with its open gaps (summary + detail, in French).
 """
 
 
@@ -94,16 +95,16 @@ def update_learning_gap(
     structured = _llm().with_structured_output(LearningGapProfile)
     current_repr = json.dumps(current_structured, ensure_ascii=False, indent=2) if current_structured else "(profil vide)"
 
-    human = f"""PROFIL D'APPRENTISSAGE ACTUEL (structuré):
+    human = f"""CURRENT LEARNING PROFILE (structured):
 {current_repr}
 
-OBJECTIFS D'APPRENTISSAGE de la formation évaluée:
+LEARNING OBJECTIVES of the evaluated training:
 {chr(10).join('- ' + o for o in objectives)}
 
-ÉVALUATION (JSON) de cette formation:
+EVALUATION (JSON) of this training:
 {json.dumps(evaluation_json, ensure_ascii=False, indent=2)}
 
-Mets à jour le profil (ajout / retrait / affinage des lacunes) et retourne le profil complet."""
+Update the profile (add / remove / refine gaps) and return the complete profile. Write all text in French."""
 
     result: LearningGapProfile = invoke_with_retry(
         structured.invoke,

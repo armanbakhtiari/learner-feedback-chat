@@ -21,12 +21,12 @@ from models import GeneratedExpertPanel
 from backend.llm_retry import invoke_with_retry
 
 
-EXPERT_PANEL_PROMPT = """Tu es un agent qui génère un PANEL D'EXPERTS synthétique pour un
-scénario de « Learning by Concordance » nouvellement créé (aucun vrai expert ne l'a encore
-évalué). Produis 5 réponses d'experts plausibles et NUANCÉES (labels « Expert 1 » .. « Expert 5 »),
-chacune avec un niveau de concordance (Fortement affaiblie / Affaiblie / Inchangée / Renforcée /
-Fortement renforcée) et une justification courte. Les experts doivent raisonner de façon crédible
-et peuvent diverger entre eux, comme un vrai panel. SORTIE EN FRANÇAIS."""
+EXPERT_PANEL_PROMPT = """You generate a synthetic EXPERT PANEL for a newly created
+"Learning by Concordance" scenario (no real expert has evaluated it yet). Produce 5 plausible,
+NUANCED expert responses (labels "Expert 1" .. "Expert 5"), each with a concordance level
+(Fortement affaiblie / Affaiblie / Inchangée / Renforcée / Fortement renforcée) and a short
+justification. The experts should reason credibly and may diverge from one another, like a real
+panel. **Write all justifications in FRENCH.**"""
 
 
 def _llm() -> ChatAnthropic:
@@ -43,11 +43,11 @@ def generate_expert_panel(situation_text: str, hypothesis: str, new_information:
     human = f"""SITUATION:
 {situation_text}
 
-SCÉNARIO:
+SCENARIO:
 Si vous pensiez ... {hypothesis}
 Et qu'alors ... {new_information}
 
-Génère un panel de 5 experts (label, niveau de concordance, justification)."""
+Generate a panel of 5 experts (label, concordance level, justification). Write justifications in French."""
     result: GeneratedExpertPanel = invoke_with_retry(
         structured.invoke,
         [SystemMessage(content=EXPERT_PANEL_PROMPT), HumanMessage(content=human)],

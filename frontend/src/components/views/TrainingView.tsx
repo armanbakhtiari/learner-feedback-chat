@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../AppContext";
+import { IconArrowLeft, IconSparkle } from "../Icons";
 import { LIKERT_VALUES, type Likert, type Training, type UserTraining } from "@/lib/types";
 
 type Answer = { likert: Likert | null; justification: string };
@@ -109,10 +110,14 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
 
   return (
     <div className="mx-auto max-w-3xl">
-      <button onClick={() => openTraining(null)} className="mb-3 text-sm text-slate-500 hover:text-slate-700">
-        ← Retour
+      <button
+        onClick={() => openTraining(null)}
+        className="mb-3 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-700"
+      >
+        <IconArrowLeft />
+        Retour
       </button>
-      <h1 className="mb-1 text-2xl font-bold text-slate-800">{training.title}</h1>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">{training.title}</h1>
       <div className="mb-5 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
         <p className="mb-1 font-semibold text-slate-700">Objectifs d&apos;apprentissage</p>
         <ul className="list-disc pl-5">
@@ -169,9 +174,10 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
                     onClick={() => runAssist(sc.id)}
                     disabled={assisting === sc.id}
                     title="Générer une réponse avec l'assistant IA"
-                    className="absolute right-2 top-2 rounded-md px-1.5 py-1 text-lg hover:bg-slate-100 disabled:opacity-50"
+                    className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-brand disabled:opacity-50"
                   >
-                    {assisting === sc.id ? "⏳" : "🤖"}
+                    <IconSparkle />
+                    {assisting === sc.id ? "…" : "Assistant"}
                   </button>
                 </div>
               </div>
@@ -186,7 +192,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
           disabled={saving || evaluating}
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
-          {saving ? "Enregistrement…" : "💾 Enregistrer le brouillon"}
+          {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
         </button>
         <button
           onClick={evaluate}
@@ -194,7 +200,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
           className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
           title={allAnswered ? "" : "Répondez à tous les scénarios (niveau + justification)"}
         >
-          {evaluating ? "Lancement…" : "✅ Évaluer"}
+          {evaluating ? "Lancement…" : "Évaluer"}
         </button>
         {!allAnswered && (
           <span className="text-xs text-slate-400">Répondez à tous les scénarios pour évaluer.</span>

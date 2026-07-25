@@ -243,15 +243,31 @@ async def read_notification(notification_id: str, user: Dict[str, Any] = Depends
 
 
 # ------------------------------------------------------------------ suggestions
+@app.get("/completed-list")
+async def completed_list(user: Dict[str, Any] = Depends(get_current_user)):
+    """Lightweight list of completed trainings (for the suggestions page; no LLM)."""
+    return {
+        "completed": [
+            {"user_training_id": c["id"], "title": (c.get("training") or {}).get("title", "")}
+            for c in repo.list_completed(user["id"])
+        ]
+    }
+
+
 @app.get("/suggestions")
 async def suggestions(user: Dict[str, Any] = Depends(get_current_user)):
-    gap = repo.get_learning_gap(user["id"]).get("content", "")
-    from backend.suggestions import suggest_bank_trainings
-    result = suggest_bank_trainings(user["id"], gap)
-    result["completed"] = [
+    completed = [
         {"user_training_id": c["id"], "title": (c.get("training") or {}).get("title", "")}
         for c in repo.list_completed(user["id"])
     ]
+    # No suggestions until at least one training is completed (nothing to base them on).
+    if not completed:
+        return {"status": "no_completed", "suggestions": [], "completed": []}
+
+    gap = repo.get_learning_gap(user["id"]).get("content", "")
+    from backend.suggestions import suggest_bank_trainings
+    result = suggest_bank_trainings(user["id"], gap)
+    result["completed"] = completed
     return result
 
 

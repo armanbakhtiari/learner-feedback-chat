@@ -2,11 +2,11 @@
 
 import { useApp } from "../AppContext";
 
-const ICONS: Record<string, string> = {
-  evaluation_ready: "📊",
-  feedback_ready: "💬",
-  suggestions_ready: "🎯",
-  pipeline_error: "⚠️",
+const DOT: Record<string, string> = {
+  evaluation_ready: "bg-blue-500",
+  feedback_ready: "bg-emerald-500",
+  suggestions_ready: "bg-violet-500",
+  pipeline_error: "bg-red-500",
 };
 
 export default function NotificationsView() {
@@ -14,8 +14,8 @@ export default function NotificationsView() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-1 text-2xl font-bold text-slate-800">Notifications</h1>
-      <p className="mb-5 text-sm text-slate-500">Vos évaluations et rétroactions.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Notifications</h1>
+      <p className="mb-6 mt-1 text-sm text-slate-500">Vos évaluations et rétroactions.</p>
 
       {notifications.length === 0 ? (
         <p className="text-slate-500">Aucune notification.</p>
@@ -35,8 +35,8 @@ export default function NotificationsView() {
                 n.read ? "border-slate-200 bg-white" : "border-brand/40 bg-blue-50"
               }`}
             >
-              <div className="flex items-start gap-2">
-                <span className="text-lg">{ICONS[n.type] || "🔔"}</span>
+              <div className="flex items-start gap-3">
+                <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${DOT[n.type] || "bg-slate-400"}`} />
                 <div className="min-w-0">
                   <p className="font-medium text-slate-800">{n.title}</p>
                   {n.body && <p className="text-sm text-slate-600">{n.body}</p>}
