@@ -6,11 +6,12 @@ sends a Clerk JWT; the backend verifies it, is the only writer to Supabase, and 
 the completion pipeline in the background. See GCP.md / DEPLOYMENT.md.
 """
 
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -151,9 +152,8 @@ async def assist(user_training_id: str, body: AssistRequest,
     return generate_assisted_answer(situation_text, scenario["hypothesis"], scenario["new_information"])
 
 
-@app.post("/trainings/{user_training_id}/evaluate", status_code=202)
-async def evaluate(user_training_id: str, background: BackgroundTasks,
-                   user: Dict[str, Any] = Depends(get_current_user)):
+@app.post("/trainings/{user_training_id}/evaluate")
+async def evaluate(user_training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
     ut = _own_user_training(user, user_training_id)
     if ut["status"] == "completed":
         raise HTTPException(status_code=400, detail="Training already completed")
@@ -173,8 +173,8 @@ async def evaluate(user_training_id: str, background: BackgroundTasks,
     repo.set_status(user_training_id, "completed", completed=True)
 
     from backend.pipeline import run_completion_pipeline
-    background.add_task(run_completion_pipeline, user, user_training_id)
-    return {"status": "processing", "user_training_id": user_training_id}
+    await asyncio.to_thread(run_completion_pipeline, user, user_training_id)
+    return {"status": "completed", "user_training_id": user_training_id}
 
 
 # ------------------------------------------------------------------ conversations / chat

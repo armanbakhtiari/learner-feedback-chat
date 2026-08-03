@@ -7,6 +7,13 @@ import { LIKERT_VALUES, type Likert, type Training, type UserTraining } from "@/
 
 type Answer = { likert: Likert | null; justification: string };
 
+const EVAL_PROGRESS_MESSAGES = [
+  "Analyse de vos réponses…",
+  "Génération du tableau d'évaluation…",
+  "Mise à jour de votre profil d'apprentissage…",
+  "Rédaction du retour initial…",
+];
+
 export default function TrainingView({ userTrainingId }: { userTrainingId: string }) {
   const { api, openTraining, setTab, toast, bump } = useApp();
   const [training, setTraining] = useState<Training | null>(null);
@@ -15,7 +22,19 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
   const [assisting, setAssisting] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
+  const [evalProgress, setEvalProgress] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!evaluating) {
+      setEvalProgress(0);
+      return;
+    }
+    const id = setInterval(() => {
+      setEvalProgress((i) => Math.min(i + 1, EVAL_PROGRESS_MESSAGES.length - 1));
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [evaluating]);
 
   useEffect(() => {
     let active = true;
@@ -94,7 +113,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
     try {
       await api.put(`/trainings/${userTrainingId}/responses`, { responses: payload() });
       await api.post(`/trainings/${userTrainingId}/evaluate`);
-      toast("Évaluation lancée — vous serez notifié dès qu'elle est prête.");
+      toast("Évaluation terminée.");
       bump();
       openTraining(null);
       setTab("completed");
@@ -200,7 +219,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
           className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
           title={allAnswered ? "" : "Répondez à tous les scénarios (niveau + justification)"}
         >
-          {evaluating ? "Lancement…" : "Évaluer"}
+          {evaluating ? EVAL_PROGRESS_MESSAGES[evalProgress] : "Évaluer"}
         </button>
         {!allAnswered && (
           <span className="text-xs text-slate-400">Répondez à tous les scénarios pour évaluer.</span>
