@@ -323,6 +323,15 @@ def save_evaluation(user_training_id: str, evaluation_json: Dict[str, Any]) -> D
     return sb.table("evaluations").upsert(payload, on_conflict="user_training_id").execute().data[0]
 
 
+def list_evaluations_missing_table() -> List[Dict[str, Any]]:
+    """Evaluations from before the structured table existed (see scripts/backfill_eval_tables.py)."""
+    sb = get_supabase()
+    return (
+        sb.table("evaluations").select("user_training_id,evaluation_json")
+        .is_("eval_table_json", "null").execute().data
+    )
+
+
 def update_eval_table(user_training_id: str, eval_table_json: Dict[str, Any]) -> None:
     """Store the structured (scenario-linked) evaluation table for the completed tab."""
     sb = get_supabase()

@@ -58,7 +58,7 @@ def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None
             mlog.log_message(conv_id, mlog.ROLE_EVAL_TABLE, "Tableau d'évaluation généré.", internal=True)
         except Exception as e:
             print(f"⚠️  eval-table failed: {e}")
-        repo.add_notification(user, "evaluation_ready", "Votre évaluation est prête",
+        repo.add_notification(user, "evaluation_ready", "Évaluation !",
                               body=f"L'évaluation de « {training['title']} » est disponible.",
                               user_training_id=user_training_id)
 
@@ -81,7 +81,7 @@ def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None
             agent.create_initial_feedback(conversation_id=conv_id)
         except Exception as e:
             print(f"⚠️  initial feedback failed: {e}")
-        repo.add_notification(user, "feedback_ready", "Votre rétroaction est prête",
+        repo.add_notification(user, "feedback_ready", "Agent de rétroaction !",
                               body=f"La rétroaction pour « {training['title']} » est disponible.",
                               user_training_id=user_training_id)
 
