@@ -79,7 +79,9 @@ The `^@@^` prefix sets `@@` as the delimiter (values are comma-free but this is 
 Required (agents): `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `CHROMA_API_KEY`, `CHROMA_TENANT`,
 `CHROMA_DATABASE`.
 Required (data + auth): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (backend only — bypasses RLS),
-`CLERK_ISSUER` (JWKS derived from it, or set `CLERK_JWKS_URL`).
+`CLERK_ISSUER` (JWKS derived from it, or set `CLERK_JWKS_URL`), `CLERK_SECRET_KEY` (used by
+`backend/auth.py` to resolve a new user's email from the Clerk Backend API — Clerk's session
+token carries no `email` claim unless you add one; without this key `users.email` stays null).
 Optional: `SUPABASE_ANON_KEY` (not needed by the backend; the frontend uses it for realtime),
 `CORS_ORIGINS` (comma-separated allowlist; defaults to localhost:3000 + the Vercel origin),
 `LANGCHAIN_API_KEY` (LangSmith tracing), `TAVILY_API_KEY` (web search; has a fallback).
@@ -146,4 +148,13 @@ gcloud run services update-traffic feedback-chatbot --region northamerica-northe
 
 # Re-ingest the vector DB after changing PDFs / bank (run locally with .env populated)
 python scripts/ingest.py
+
+# Apply new Supabase migrations (run locally; needs SUPABASE_DB_PASSWORD, see credentials.md)
+supabase db push          # or paste the .sql from supabase/migrations/ into the SQL editor
+
+# Backfill users.email for rows created before the Clerk email fallback existed
+python scripts/backfill_user_emails.py
 ```
+
+> Migrations are **not** applied by the Cloud Run deploy. Push the schema change first,
+> then deploy the backend — the new revision expects the new columns/tables.

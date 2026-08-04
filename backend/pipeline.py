@@ -5,7 +5,8 @@ Steps (each logged role-labeled to the training's conversation; notifications pu
 via Supabase Realtime as milestones complete):
   1. Evaluator      — build evaluator input from DB content + the learner's typed answers,
                       produce the structured evaluation JSON.
-  2. Eval-table     — LLM renders the evaluation JSON to an HTML table.  → notify evaluation_ready
+  2. Eval-table     — deterministic build of the scenario-linked evaluation table.
+                      → notify evaluation_ready
   3. Gap updater    — merge the evaluation into the learner's evolving learning-gap profile.
   4. Initial feedback — create the conversation and generate the first (Markdown) feedback.
                       → notify feedback_ready
@@ -17,7 +18,7 @@ from backend.db import repo
 from backend import message_logger as mlog
 from backend.training_parser import build_evaluation_input
 from backend.evaluator import evaluate_training
-from backend.eval_table_agent import generate_evaluation_html
+from backend.eval_table_agent import build_eval_table
 from backend.gap_updater import update_learning_gap
 from backend.chat_agent import ChatAgent
 
@@ -46,15 +47,15 @@ def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None
         # 1) Evaluate ---------------------------------------------------------
         content = build_evaluation_input(training["title"], objectives, situations, responses)
         evaluation_json = evaluate_training(content, training["title"])
-        repo.save_evaluation(user_training_id, evaluation_json, None)
+        repo.save_evaluation(user_training_id, evaluation_json)
         mlog.log_message(conv_id, mlog.ROLE_EVALUATOR, "Évaluation structurée générée.",
                          internal=True, metadata={"evaluation": evaluation_json})
 
-        # 2) Evaluation HTML table -------------------------------------------
+        # 2) Evaluation table (structured, scenario-linked) -------------------
         try:
-            html = generate_evaluation_html(evaluation_json)
-            repo.update_evaluation_html(user_training_id, html)
-            mlog.log_message(conv_id, mlog.ROLE_EVAL_TABLE, "Tableau HTML d'évaluation généré.", internal=True)
+            table = build_eval_table(evaluation_json, training, responses)
+            repo.update_eval_table(user_training_id, table)
+            mlog.log_message(conv_id, mlog.ROLE_EVAL_TABLE, "Tableau d'évaluation généré.", internal=True)
         except Exception as e:
             print(f"⚠️  eval-table failed: {e}")
         repo.add_notification(user, "evaluation_ready", "Votre évaluation est prête",

@@ -38,14 +38,43 @@ export interface Training {
   situations?: Situation[];
 }
 
+export interface EvalTableRow {
+  scenario_id: string;
+  hypothesis: string;
+  new_information: string;
+  response: { likert: Likert | null; justification: string | null } | null;
+  expert_key_elements: string[];
+  themes_addressed: string;
+  themes_missed: string;
+  reasoning: string;
+  communication: string;
+}
+
+export interface EvalTableSituation {
+  title: string;
+  description: string;
+  scenarios: EvalTableRow[];
+}
+
+export interface EvalTable {
+  situations: EvalTableSituation[];
+}
+
 export interface UserTraining {
   id: string;
   training_id: string;
   status: "not_started" | "in_progress" | "completed";
   training?: Training;
   situation_titles?: string[];
-  evaluation_html?: string | null;
+  eval_table?: EvalTable | null;
   completed_at?: string | null;
+}
+
+export interface LearningGapVersion {
+  id: string;
+  content: string;
+  structured: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface Conversation {

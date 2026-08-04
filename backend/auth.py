@@ -7,8 +7,12 @@ upsert the user, and (on first sign-in) bootstrap their mandatory training +
 empty learning-gap doc.
 
 Config (env):
-  CLERK_ISSUER    e.g. https://<slug>.clerk.accounts.dev  (or your prod domain)
-  CLERK_JWKS_URL  optional; defaults to <CLERK_ISSUER>/.well-known/jwks.json
+  CLERK_ISSUER      e.g. https://<slug>.clerk.accounts.dev  (or your prod domain)
+  CLERK_JWKS_URL    optional; defaults to <CLERK_ISSUER>/.well-known/jwks.json
+  CLERK_SECRET_KEY  optional but recommended; used to look up a user's email via the
+                    Clerk Backend API when the session token carries no `email` claim
+                    (Clerk omits it unless you add it under Sessions → customize the
+                    session token in the dashboard).
 """
 
 import os
@@ -18,6 +22,7 @@ from typing import Any, Dict, Optional
 
 import certifi
 import jwt
+import requests
 from fastapi import Depends, Header, HTTPException
 from jwt import PyJWKClient
 
@@ -67,6 +72,48 @@ def _display_name(claims: Dict[str, Any]) -> Optional[str]:
     return full or None
 
 
+# Successful Clerk Backend API lookups only (a transient failure must not be cached
+# as "this user has no email"), so a user costs at most one API call per instance.
+_email_cache: Dict[str, str] = {}
+
+
+def fetch_clerk_email(clerk_user_id: str) -> Optional[str]:
+    """
+    Primary email from the Clerk Backend API. Returns None (never raises) when
+    CLERK_SECRET_KEY is unset or the call fails — sign-in must never depend on this.
+    """
+    if clerk_user_id in _email_cache:
+        return _email_cache[clerk_user_id]
+    secret = os.environ.get("CLERK_SECRET_KEY")
+    if not secret:
+        return None
+    try:
+        resp = requests.get(
+            f"https://api.clerk.com/v1/users/{clerk_user_id}",
+            headers={"Authorization": f"Bearer {secret}"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        addresses = data.get("email_addresses") or []
+        primary_id = data.get("primary_email_address_id")
+        email = next(
+            (a.get("email_address") for a in addresses if a.get("id") == primary_id),
+            None,
+        ) or next((a.get("email_address") for a in addresses), None)
+        if email:
+            _email_cache[clerk_user_id] = email
+        return email
+    except Exception as e:
+        print(f"⚠️  Clerk email lookup failed for {clerk_user_id}: {e}")
+        return None
+
+
+def _resolve_email(claims: Dict[str, Any], clerk_user_id: str) -> Optional[str]:
+    """Prefer the session-token claim (free); fall back to the Clerk Backend API."""
+    return claims.get("email") or fetch_clerk_email(clerk_user_id)
+
+
 async def get_current_user(authorization: Optional[str] = Header(default=None)) -> Dict[str, Any]:
     """FastAPI dependency → the Supabase `users` row for the authenticated Clerk user."""
     if not authorization or not authorization.lower().startswith("bearer "):
@@ -82,10 +129,16 @@ async def get_current_user(authorization: Optional[str] = Header(default=None)) 
     if user is None:
         user = repo.create_user(
             clerk_user_id,
-            email=claims.get("email"),
+            email=_resolve_email(claims, clerk_user_id),
             full_name=_display_name(claims),
         )
         repo.ensure_bootstrap(user)
+    elif not user.get("email"):
+        # Rows created before the email fallback existed: fill them in on next sign-in.
+        email = _resolve_email(claims, clerk_user_id)
+        if email:
+            user = repo.update_user_profile(user["id"], email=email,
+                                            full_name=user.get("full_name") or _display_name(claims))
     return user
 
 

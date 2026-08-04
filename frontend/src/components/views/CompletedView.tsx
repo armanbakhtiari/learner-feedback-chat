@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useApp } from "../AppContext";
-import EvalTableHtml from "../EvalTableHtml";
+import EvalTable from "../EvalTable";
 import { IconChat } from "../Icons";
 import type { Conversation, UserTraining } from "@/lib/types";
 
@@ -69,8 +69,8 @@ export default function CompletedView() {
 
                 {open && (
                   <div className="mt-4 border-t border-slate-100 pt-4">
-                    {ut.evaluation_html ? (
-                      <EvalTableHtml html={ut.evaluation_html} />
+                    {ut.eval_table?.situations?.length ? (
+                      <EvalTable table={ut.eval_table} />
                     ) : (
                       <p className="text-sm text-slate-500">
                         L&apos;évaluation est en cours de génération… vous serez notifié dès qu&apos;elle est prête.

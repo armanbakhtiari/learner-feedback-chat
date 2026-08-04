@@ -6,10 +6,10 @@ import { AppProvider, useApp, type Tab } from "./AppContext";
 import DashboardView from "./views/DashboardView";
 import CompletedView from "./views/CompletedView";
 import SuggestionsView from "./views/SuggestionsView";
+import FeedbackView from "./views/FeedbackView";
 import LearningView from "./views/LearningView";
 import NotificationsView from "./views/NotificationsView";
 import TrainingView from "./views/TrainingView";
-import FeedbackDrawer from "./FeedbackDrawer";
 import ConversationScreen from "./ConversationScreen";
 import {
   IconBell,
@@ -24,6 +24,7 @@ const TABS: { key: Tab; label: string; Icon: typeof IconDashboard }[] = [
   { key: "dashboard", label: "Tableau de bord", Icon: IconDashboard },
   { key: "completed", label: "Complétées", Icon: IconCompleted },
   { key: "suggestions", label: "Suggestions", Icon: IconSuggestions },
+  { key: "feedback", label: "Agent de rétroaction", Icon: IconChat },
   { key: "learning", label: "Mon apprentissage", Icon: IconLearning },
   { key: "notifications", label: "Notifications", Icon: IconBell },
 ];
@@ -34,7 +35,6 @@ function Shell() {
     setTab,
     selectedTrainingId,
     unread,
-    setDrawerOpen,
     toastMsg,
     openTraining,
     activeConversationId,
@@ -50,13 +50,6 @@ function Shell() {
           <div className="-mt-0.5 text-[11px] text-slate-400">Rétroaction par concordance</div>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            <IconChat width={16} height={16} />
-            Rétroactions
-          </button>
           <button
             onClick={() => setTab("notifications")}
             className="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
@@ -116,6 +109,8 @@ function Shell() {
             <CompletedView />
           ) : tab === "suggestions" ? (
             <SuggestionsView />
+          ) : tab === "feedback" ? (
+            <FeedbackView />
           ) : tab === "learning" ? (
             <LearningView />
           ) : (
@@ -124,7 +119,6 @@ function Shell() {
         </main>
       </div>
 
-      <FeedbackDrawer />
       {activeConversationId && <ConversationScreen conversationId={activeConversationId} />}
 
       {toastMsg && (

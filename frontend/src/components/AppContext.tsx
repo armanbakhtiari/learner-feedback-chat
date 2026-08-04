@@ -6,7 +6,13 @@ import { useApi } from "@/lib/api";
 import { makeSupabase } from "@/lib/supabase";
 import type { Conversation, NotificationRow } from "@/lib/types";
 
-export type Tab = "dashboard" | "completed" | "suggestions" | "learning" | "notifications";
+export type Tab =
+  | "dashboard"
+  | "completed"
+  | "suggestions"
+  | "feedback"
+  | "learning"
+  | "notifications";
 
 interface AppCtx {
   api: ReturnType<typeof useApi>;
@@ -20,8 +26,6 @@ interface AppCtx {
   unread: number;
   markRead: (id: string) => void;
   conversations: Conversation[];
-  drawerOpen: boolean;
-  setDrawerOpen: (b: boolean) => void;
   activeConversationId: string | null;
   openConversation: (id: string) => void;
   closeConversation: () => void;
@@ -45,7 +49,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,11 +63,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const openTraining = useCallback((id: string | null) => setSelectedTrainingId(id), []);
 
-  // Opening a conversation shows it full-screen (and closes the list drawer).
-  const openConversation = useCallback((id: string) => {
-    setActiveConversationId(id);
-    setDrawerOpen(false);
-  }, []);
+  // Opening a conversation shows it full-screen, over the current tab.
+  const openConversation = useCallback((id: string) => setActiveConversationId(id), []);
 
   const closeConversation = useCallback(() => setActiveConversationId(null), []);
 
@@ -146,8 +146,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     unread,
     markRead,
     conversations,
-    drawerOpen,
-    setDrawerOpen,
     activeConversationId,
     openConversation,
     closeConversation,

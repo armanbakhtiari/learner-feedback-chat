@@ -1,86 +1,84 @@
 """
-Evaluation-table agent (HTML).
+Evaluation-table builder (structured, deterministic — no LLM).
 
-Replaces the old matplotlib PNG generator. Given the structured evaluation JSON,
-an LLM produces a self-contained, French, Learning-by-Concordance-neutral HTML
-table (a `<div>` fragment with inline styles) to display in the completed-training
-tab. No numeric scores, no pass/fail labels, no red/green semaphore colors — LbC
-stays non-judgmental; it summarizes coverage and reasoning qualitatively per
-scenario and per learning objective.
+Turns the evaluator's structured JSON into the table shown in the "Complétées" tab.
+This used to be an LLM that authored a freeform HTML fragment; it now zips the
+evaluation with the training content so every row carries its real `scenario_id`,
+the scenario text, and the learner's own answer — which is what lets the UI offer a
+"Voir" button per row. Rendering moved to React (`frontend/src/components/EvalTable.tsx`).
+
+The evaluator's keys ("situation 1", "scenario 2", ...) are positional and follow the
+exact order `training_parser.build_evaluation_input` fed it: situations by
+`situation_index`, scenarios by `scenario_index` — which is also the order
+`repo.get_training_content()` returns. So the zip below is a faithful mapping, not a guess.
+
+Learning-by-Concordance stays non-judgmental: qualitative summaries only, no numeric
+scores, no pass/fail labels.
 """
 
-import json
-import os
-import re
-from typing import Any, Dict
-
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_anthropic import ChatAnthropic
-
-from backend.llm_retry import invoke_with_retry
+from typing import Any, Dict, List, Optional
 
 
-EVAL_TABLE_PROMPT = """# Role
-You generate a summary HTML TABLE for a "Learning by Concordance" evaluation, to be
-displayed in a web application.
-
-**LANGUAGE: all visible text in the table MUST be in FRENCH** (headers and content).
-
-# Input
-An evaluation JSON: situations, each containing scenarios; each scenario has:
-- expert_key_elements (the experts' key concepts)
-- coverage (score_assessment High/Medium/Low + a justification whose line 1 lists the key
-  themes the learner successfully addressed and line 2 lists the critical expert themes the
-  learner missed)
-- logical_reasoning (rating Satisfactory/Unsatisfactory + assessment)
-- communication (rating + assessment)
-- skills_assessment: per learning objective (ignore this for the table)
-
-# Output
-A SELF-CONTAINED HTML fragment (start with <div ...>, end with </div>), INLINE styles only
-(no <style>, no <script>, no <html>/<body> tags).
-- One clear table per situation; rows = scenarios. Use these columns, with French headers:
-  1. « Scénario » (the hypothesis)
-  2. « Éléments clés des experts » (from expert_key_elements)
-  3. « Thèmes clés abordés par l'apprenant » (derive from coverage justification line 1)
-  4. « Thèmes clés manqués par l'apprenant » (derive from coverage justification line 2)
-  5. « Raisonnement » (from logical_reasoning.assessment)
-  6. « Communication » (from communication.assessment)
-- Summarize qualitatively. Do NOT show numeric scores, pass/fail labels, or red/green
-  traffic-light colors (Learning-by-Concordance stays non-judgmental). Use a sober, neutral
-  style (soft grey/blue), readable on a light theme.
-- The HTML must be valid and stand alone (width 100%, wrap wide tables in a container with
-  `overflow-x:auto`).
-
-# Constraint
-Respond with ONLY the HTML fragment. No text before or after, no Markdown ``` fences.
-"""
+def _split_coverage(justification: str) -> tuple[str, str]:
+    """
+    The evaluator writes coverage.justification as two lines: line 1 = themes the
+    learner addressed, line 2 = critical expert themes they missed. Fall back to
+    treating the whole text as "addressed" when the model didn't split it.
+    """
+    text = (justification or "").strip()
+    if not text:
+        return "", ""
+    parts = [p.strip() for p in text.split("\n", 1)]
+    if len(parts) == 2 and parts[1]:
+        return parts[0], parts[1]
+    return parts[0], ""
 
 
-def _llm() -> ChatAnthropic:
-    return ChatAnthropic(
-        model="claude-sonnet-4-6",
-        temperature=0.2,
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
-    )
+def build_eval_table(
+    evaluation_json: Dict[str, Any],
+    training_content: Dict[str, Any],
+    responses: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Build the structured evaluation table.
 
+    ``training_content`` is ``repo.get_training_content(training_id)`` (situations ->
+    scenarios, ordered); ``responses`` maps scenario id -> {likert, justification}.
+    """
+    ev_situations = (evaluation_json or {}).get("situations", {}) or {}
+    out: List[Dict[str, Any]] = []
 
-def _strip_code_fences(text: str) -> str:
-    text = text.strip()
-    text = re.sub(r"^```(?:html)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
-    return text.strip()
+    for s_i, sit in enumerate(training_content.get("situations", []), start=1):
+        ev_sit = ev_situations.get(f"situation {s_i}") or {}
+        ev_scenarios = ev_sit.get("scenarios", {}) or {}
 
+        rows: List[Dict[str, Any]] = []
+        for c_i, sc in enumerate(sit.get("scenarios", []), start=1):
+            ev_sc = ev_scenarios.get(f"scenario {c_i}")
+            if not ev_sc:
+                continue  # evaluator skipped it; nothing qualitative to show
+            addressed, missed = _split_coverage((ev_sc.get("coverage") or {}).get("justification", ""))
+            resp = responses.get(sc["id"]) or {}
+            rows.append({
+                "scenario_id": sc["id"],
+                "hypothesis": sc.get("hypothesis", ""),
+                "new_information": sc.get("new_information", ""),
+                "response": {
+                    "likert": resp.get("likert"),
+                    "justification": resp.get("justification"),
+                },
+                "expert_key_elements": ev_sc.get("expert_key_elements") or [],
+                "themes_addressed": addressed,
+                "themes_missed": missed,
+                "reasoning": (ev_sc.get("logical_reasoning") or {}).get("assessment", ""),
+                "communication": (ev_sc.get("communication") or {}).get("assessment", ""),
+            })
 
-def generate_evaluation_html(evaluation_json: Dict[str, Any]) -> str:
-    """Return a self-contained HTML fragment summarizing the evaluation."""
-    human = (
-        "Evaluation (JSON):\n"
-        + json.dumps(evaluation_json, ensure_ascii=False, indent=2)
-        + "\n\nGenerate the summary table HTML fragment. All visible text must be in French."
-    )
-    response = invoke_with_retry(
-        _llm().invoke,
-        [SystemMessage(content=EVAL_TABLE_PROMPT), HumanMessage(content=human)],
-    )
-    return _strip_code_fences(response.content)
+        if rows:
+            out.append({
+                "title": sit.get("title") or f"Situation {s_i}",
+                "description": ev_sit.get("description", ""),
+                "scenarios": rows,
+            })
+
+    return {"situations": out}

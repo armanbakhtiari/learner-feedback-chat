@@ -230,6 +230,12 @@ async def learning_gaps(user: Dict[str, Any] = Depends(get_current_user)):
             "updated_at": gap.get("updated_at")}
 
 
+@app.get("/learning-gaps/history")
+async def learning_gaps_history(user: Dict[str, Any] = Depends(get_current_user)):
+    """Previous versions of the learner's profile, newest first (one per evaluation)."""
+    return {"history": repo.list_learning_gap_history(user["id"])}
+
+
 # ------------------------------------------------------------------ notifications
 @app.get("/notifications")
 async def notifications(unread_only: bool = False, user: Dict[str, Any] = Depends(get_current_user)):

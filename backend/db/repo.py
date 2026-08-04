@@ -43,6 +43,22 @@ def create_user(clerk_user_id: str, email: Optional[str], full_name: Optional[st
     ).data[0]
 
 
+def update_user_profile(user_id: str, email: Optional[str] = None,
+                        full_name: Optional[str] = None) -> Dict[str, Any]:
+    """Fill in profile fields we couldn't capture at sign-up (e.g. email)."""
+    patch = {k: v for k, v in {"email": email, "full_name": full_name}.items() if v}
+    if not patch:
+        return get_supabase().table("users").select("*").eq("id", user_id).execute().data[0]
+    return (
+        get_supabase().table("users").update(patch).eq("id", user_id).execute()
+    ).data[0]
+
+
+def list_users_missing_email() -> List[Dict[str, Any]]:
+    sb = get_supabase()
+    return sb.table("users").select("id,clerk_user_id").is_("email", "null").execute().data
+
+
 def upsert_user(clerk_user_id: str, email: Optional[str], full_name: Optional[str]) -> Dict[str, Any]:
     existing = get_user_by_clerk_id(clerk_user_id)
     if existing:
@@ -250,7 +266,7 @@ def list_completed(user_id: str) -> List[Dict[str, Any]]:
     rows = _decorate_with_training(rows)
     for ut in rows:
         ev = get_evaluation(ut["id"])
-        ut["evaluation_html"] = ev.get("evaluation_html") if ev else None
+        ut["eval_table"] = ev.get("eval_table_json") if ev else None
     return rows
 
 
@@ -297,19 +313,20 @@ def get_evaluation(user_training_id: str) -> Optional[Dict[str, Any]]:
     return rows[0] if rows else None
 
 
-def save_evaluation(user_training_id: str, evaluation_json: Dict[str, Any], evaluation_html: Optional[str]) -> Dict[str, Any]:
+def save_evaluation(user_training_id: str, evaluation_json: Dict[str, Any]) -> Dict[str, Any]:
+    """The display table is written separately by `update_eval_table` once built."""
     sb = get_supabase()
     payload = {
         "user_training_id": user_training_id,
         "evaluation_json": evaluation_json,
-        "evaluation_html": evaluation_html,
     }
     return sb.table("evaluations").upsert(payload, on_conflict="user_training_id").execute().data[0]
 
 
-def update_evaluation_html(user_training_id: str, evaluation_html: str) -> None:
+def update_eval_table(user_training_id: str, eval_table_json: Dict[str, Any]) -> None:
+    """Store the structured (scenario-linked) evaluation table for the completed tab."""
     sb = get_supabase()
-    sb.table("evaluations").update({"evaluation_html": evaluation_html}).eq(
+    sb.table("evaluations").update({"eval_table_json": eval_table_json}).eq(
         "user_training_id", user_training_id).execute()
 
 
@@ -374,7 +391,17 @@ def get_learning_gap(user_id: str) -> Dict[str, Any]:
 
 
 def upsert_learning_gap(user_id: str, content: str, structured: Dict[str, Any]) -> Dict[str, Any]:
+    """Replace the user's current profile, keeping the new version in the history log."""
     sb = get_supabase()
+    # Append-only snapshot first: `learning_gaps` only ever holds the latest version,
+    # so this is what lets "Mon apprentissage" show previous profiles by date.
+    try:
+        sb.table("learning_gap_history").insert(
+            {"user_id": user_id, "content": content, "structured": structured}
+        ).execute()
+    except Exception as e:  # history is nice-to-have; never block the profile update
+        print(f"⚠️  learning-gap history insert failed: {e}")
+
     existing = sb.table("learning_gaps").select("id").eq("user_id", user_id).limit(1).execute().data
     if existing:
         return (
@@ -387,6 +414,15 @@ def upsert_learning_gap(user_id: str, content: str, structured: Dict[str, Any]) 
         .insert({"user_id": user_id, "content": content, "structured": structured})
         .execute()
     ).data[0]
+
+
+def list_learning_gap_history(user_id: str) -> List[Dict[str, Any]]:
+    """Every past version of the user's profile, newest first."""
+    sb = get_supabase()
+    return (
+        sb.table("learning_gap_history").select("id,content,structured,created_at")
+        .eq("user_id", user_id).order("created_at", desc=True).limit(100).execute().data
+    )
 
 
 # ============================== notifications ================================

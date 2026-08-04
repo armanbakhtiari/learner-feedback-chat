@@ -1,36 +1,51 @@
 # Deployment
 
-Backend → **Google Cloud Run** (Docker). Frontend → **Vercel** (static).
-Vector DB → **Chroma Cloud** (persistent). The deployed backend only *queries* Chroma;
-embeddings are built offline by `scripts/ingest.py`.
+Backend → **Google Cloud Run** (Docker). Frontend → **Vercel** (Next.js).
+Data → **Supabase** (Postgres). Auth → **Clerk**. Vector DB → **Chroma Cloud**.
+The deployed backend only *queries* Chroma; embeddings are built offline by
+`scripts/ingest.py`.
 
 ## Architecture
 
 ```
-Browser ──> Vercel (static frontend only: HTML/CSS/JS)
+Browser ──> Vercel (Next.js app, Clerk auth)
    │
-   │ direct fetch (CORS) to the Cloud Run URL in frontend/app.js (PROD_BACKEND_URL)
+   │ direct fetch (CORS) to NEXT_PUBLIC_API_BASE_URL, Clerk session JWT as Bearer token
    ▼
 Cloud Run (FastAPI backend, single instance)
-   │ queries
-   ▼
-Chroma Cloud (knowledge_base_*, bank_situations)
+   │ service_role writes            │ queries
+   ▼                                ▼
+Supabase Postgres            Chroma Cloud (knowledge_base_*, bank_situations)
 ```
 
 > **Why direct CORS instead of Vercel rewrites?** `/evaluate` runs for ~2 minutes
 > (many LLM calls), which exceeds Vercel's gateway timeout for proxied requests. So the
-> browser calls Cloud Run directly. The backend already sets permissive CORS
-> (`allow_origins=["*"]`), and `frontend/app.js` holds the Cloud Run URL in
-> `PROD_BACKEND_URL`. No `vercel.json` rewrites are used.
+> browser calls Cloud Run directly, using the URL in `NEXT_PUBLIC_API_BASE_URL`.
+> No `vercel.json` rewrites are used.
 
 ## Environment variables
 
-See [.env.example](.env.example). Required: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and
-the Chroma Cloud trio `CHROMA_API_KEY` / `CHROMA_TENANT` / `CHROMA_DATABASE`.
-Optional: `LANGCHAIN_API_KEY`, `TAVILY_API_KEY`.
+See [.env.example](.env.example). Backend required: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+the Chroma trio `CHROMA_API_KEY` / `CHROMA_TENANT` / `CHROMA_DATABASE`, `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `CLERK_ISSUER`, and `CLERK_SECRET_KEY` (used to resolve a new
+user's email — see [CLAUDE.md](CLAUDE.md#auth)).
+Optional: `LANGCHAIN_API_KEY`, `TAVILY_API_KEY`, `CORS_ORIGINS`.
+
+Frontend (Vercel project settings): `NEXT_PUBLIC_API_BASE_URL`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 When `CHROMA_API_KEY` is unset the app falls back to a local `.chroma_db` store, so local
 dev needs no Chroma Cloud account.
+
+## 0. Apply pending database migrations (before deploying the backend)
+
+```bash
+supabase db push     # needs SUPABASE_DB_PASSWORD; or paste the .sql into the Supabase SQL editor
+```
+
+Migrations live in `supabase/migrations/` and are **not** applied by the Cloud Run deploy.
+Push the schema first — a new backend revision expects the new columns/tables.
 
 ## 1. Ingest documents into Chroma Cloud (run once, locally)
 
@@ -57,7 +72,7 @@ gcloud run deploy feedback-chatbot \
   --min-instances 1 --max-instances 1 \
   --no-cpu-throttling \
   --allow-unauthenticated \
-  --set-env-vars CHROMA_API_KEY=...,CHROMA_TENANT=...,CHROMA_DATABASE=...,ANTHROPIC_API_KEY=...,OPENAI_API_KEY=...,TAVILY_API_KEY=...,LANGCHAIN_API_KEY=...
+  --set-env-vars CHROMA_API_KEY=...,CHROMA_TENANT=...,CHROMA_DATABASE=...,ANTHROPIC_API_KEY=...,OPENAI_API_KEY=...,TAVILY_API_KEY=...,LANGCHAIN_API_KEY=...,SUPABASE_URL=...,SUPABASE_SERVICE_ROLE_KEY=...,CLERK_ISSUER=...,CLERK_SECRET_KEY=...
 ```
 
 `--source .` builds the [Dockerfile](Dockerfile). `--min/max-instances 1` +
@@ -68,17 +83,20 @@ Prefer Secret Manager over `--set-env-vars` for secrets:
 
 Note the service URL it prints (e.g. `https://feedback-chatbot-xxxx.run.app`).
 
-Smoke test: `curl https://<SERVICE_URL>/health` → `{"status":"ok"}`.
+Smoke test: `curl https://<SERVICE_URL>/health` → `{"status":"healthy"}`.
 
 ## 3. Deploy the frontend to Vercel
 
-1. Set the backend URL in [frontend/app.js](frontend/app.js): `PROD_BACKEND_URL` must be
-   the full Cloud Run service URL (with `https://`, no trailing slash).
-2. Deploy the **`frontend/`** directory as the project root (plain static files, no build):
+1. Set `NEXT_PUBLIC_API_BASE_URL` on the Vercel project to the full Cloud Run service URL
+   (with `https://`, no trailing slash), alongside the Clerk/Supabase vars listed above.
+   Update them with `vercel env` or in the project dashboard.
+2. Deploy the **`frontend/`** directory as the project root:
    ```bash
    cd frontend && vercel deploy --prod --yes --scope <your-scope>
    ```
-   Or connect the GitHub repo with **Root Directory = `frontend`**, framework **Other**.
+   Or connect the GitHub repo with **Root Directory = `frontend`**. `frontend/vercel.json`
+   pins `"framework": "nextjs"` — the project predates the Next.js rewrite and its stale
+   preset 404s every route without it. Don't remove it.
 3. **Disable Deployment Protection** so the site is public. New Vercel projects enable
    "Vercel Authentication" by default, which gates the whole site behind SSO login. Turn
    it off in Project → Settings → Deployment Protection (or via the API:
@@ -87,11 +105,19 @@ Smoke test: `curl https://<SERVICE_URL>/health` → `{"status":"ok"}`.
 
 The browser fetches the Cloud Run URL directly (CORS); nothing is proxied through Vercel.
 
-## Local development (unchanged)
+## Local development
 
-`python run.py` serves the backend on `:8000` and the static frontend on `:3000`.
-With no `CHROMA_API_KEY` set it uses the local `.chroma_db`; run `python scripts/ingest.py`
-once to populate it.
+```bash
+uvicorn backend.app:app --reload --port 8000     # backend
+cd frontend && npm run dev                        # frontend on :3000
+```
+
+With no `CHROMA_API_KEY` set the backend uses the local `.chroma_db`; run
+`python scripts/ingest.py` once to populate it. The frontend reads its config from
+`frontend/.env.local` (same `NEXT_PUBLIC_*` vars as Vercel, pointing at `localhost:8000`).
+
+> `run.py` is the legacy single-user launcher for the old static frontend; it does not
+> start the Next.js app.
 
 ## Security
 

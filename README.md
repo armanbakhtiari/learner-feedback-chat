@@ -1,216 +1,110 @@
-# AI-Powered Learner Feedback Chat System
+# SENSAI — Feedback Agent
 
-An interactive chatbot that provides personalized, constructive feedback on "Learning by Concordance" medical training assessments. Built with LangGraph and Claude Sonnet 4.5.
+A multi-user, French-language **Learning by Concordance** (LbC) training platform. Learners
+answer clinical scenarios (Likert rating + written justification); their reasoning is
+evaluated against a panel of experts, and an LLM agent delivers non-judgmental feedback
+while maintaining an evolving profile of the learner's gaps.
 
-## 🚀 Quick Start
+> **LbC principle:** no numeric scores, no pass/fail, no red/green semaphores. All
+> user-facing output is qualitative and in French.
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 15 (App Router) + Tailwind, deployed on Vercel |
+| Auth | Clerk (session JWT verified backend-side against JWKS) |
+| Backend | FastAPI on Google Cloud Run |
+| Database | Supabase Postgres (backend-mediated: `service_role`, RLS on everywhere) |
+| Agents | LangGraph + LangChain, Claude Sonnet |
+| Retrieval | Chroma Cloud (indexed offline) + Tavily web search |
+| Observability | LangSmith (optional) |
+
+## Quick start
 
 ```bash
-# 1. Install dependencies
+# Backend
 pip install -r requirements.txt
+cp .env.example .env                       # fill in the keys
+uvicorn backend.app:app --reload --port 8000
 
-# 2. Create .env file with your API keys
-ANTHROPIC_API_KEY=your_key_here
-LANGCHAIN_API_KEY=your_key_here
-TAVILY_API_KEY=your_key_here  # Optional: for web search
-
-# 3. Start the application
-python3 run.py
+# Frontend (separate terminal)
+cd frontend && npm install && npm run dev  # http://localhost:3000
 ```
 
-The application will automatically:
-- Start the backend server on http://localhost:8000
-- Start the frontend server on http://localhost:3000
-- Open your browser to the application
+`frontend/.env.local` needs `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000` plus the
+Clerk and Supabase `NEXT_PUBLIC_*` keys. With `CHROMA_API_KEY` unset the backend uses a
+local `.chroma_db` — run `python scripts/ingest.py` once to populate it, and
+`python scripts/seed_supabase.py` to seed the training catalogue.
 
-## 🏗️ Architecture
+## How it works
 
-### Supervisor-Based Agent System
+1. A learner is assigned the mandatory training on first sign-in and answers each
+   scenario (Likert + justification), with an optional AI answer-assist.
+2. `POST /trainings/{id}/evaluate` runs the completion pipeline (~2 min, synchronous):
+   evaluate against the expert panel → build the evaluation table → update the learner's
+   gap profile → generate the first feedback message. Progress arrives as Supabase
+   Realtime notifications.
+3. The learner reviews the evaluation table per scenario (drilling into the original
+   scenario and their own answer), chats with the feedback agent, sees their profile and
+   its previous versions, and picks or generates follow-up trainings targeting their gaps.
 
-The chat agent uses a **Supervisor Agent** that intelligently routes user queries:
+## Application tabs
 
-```
-User Query → Supervisor (analyzes & decides) → Tools (if needed) → Chat Agent (responds) → User
-```
+| Tab | What it shows |
+|---|---|
+| Tableau de bord | Assigned trainings not yet completed |
+| Complétées | Completed trainings + the per-scenario evaluation table |
+| Suggestions | Bank trainings matched to the learner's gaps, or newly generated ones |
+| Agent de rétroaction | Feedback conversations, one per completed training |
+| Mon apprentissage | Current gap profile + previous versions by date |
+| Notifications | Pipeline milestones |
 
-**Supervisor Decision Logic:**
-- Conservative approach: Only calls tools when explicitly needed
-- Can invoke multiple tools in one turn
-- Passes tool results to chat agent for final response
+## API
 
-**Available Tools:**
-1. `generate_visualization` - Creates charts/tables using matplotlib
-2. `search_web` - Tavily web search for current medical information
-3. `get_training_content` - Retrieves detailed training module content
-
-### LangGraph Flow
-
-```
-START
-  ↓
-supervisor (decide which tools to call)
-  ↓
-generate_response (generate French response using tool results)
-  ↓
-END
-```
-
-## 📁 Project Structure
-
-```
-Implementation/
-├── backend/
-│   ├── app.py                    # FastAPI server & endpoints
-│   ├── chat_agent.py             # LangGraph chat agent
-│   ├── supervisor_agent.py       # Supervisor with tool binding
-│   ├── supervisor_tools.py       # Tool definitions (@tool decorated)
-│   ├── code_tool.py              # Visualization code generator
-│   ├── web_search_tool.py        # Tavily search integration
-│   └── evaluator.py              # Training evaluation logic
-├── frontend/
-│   ├── index.html                # Landing page
-│   ├── chat.html                 # Chat interface
-│   ├── styles.css                # Styling
-│   └── app.js                    # Shared utilities
-├── trainings_2_experts.py        # Training modules & expert data
-├── requirements.txt              # Python dependencies
-├── run.py                        # Application launcher
-└── .env                          # API keys (not in repo)
-```
-
-## 💡 Features
-
-### ✅ Implemented
-- **Intelligent Routing**: Supervisor decides when to call visualization, web search, or retrieve training content
-- **Interactive Feedback**: Chat in French about training performance
-- **Data Visualization**: Automatic chart/table generation with matplotlib
-- **Web Search**: Optional toggle for current medical guidelines/research
-- **LangSmith Tracing**: Full observability of agent decisions and tool calls
-- **Non-judgmental Tone**: Constructive, supportive feedback
-- **Bilingual Support**: Understands English queries, responds in French
-
-### 🎯 Use Cases
-- "Create a table showing my performance overview"
-- "In which scenarios did I struggle?"
-- "What are the latest migraine treatment guidelines?" (with web search enabled)
-- "Show me expert responses for scenario 2 in module 1"
-
-## 🔧 API Endpoints
+All endpoints require a Clerk bearer token and are scoped to the authenticated user.
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Health check |
-| GET | `/trainings` | List training modules |
-| POST | `/evaluate` | Run evaluation (creates session) |
-| POST | `/chat` | Chat with agent |
-| POST | `/chat/reset/{session_id}` | Reset conversation |
+|---|---|---|
+| GET | `/health` | Health check |
+| GET | `/me` | Current user; bootstraps on first call |
+| GET | `/dashboard` | Assigned, not-yet-completed trainings |
+| GET | `/completed` | Completed trainings + structured evaluation tables |
+| GET | `/trainings/{id}` | Full training content + the learner's saved answers |
+| PUT | `/trainings/{id}/responses` | Save answers (draftable) |
+| POST | `/trainings/{id}/assist` | AI-suggested answer for one scenario |
+| POST | `/trainings/{id}/evaluate` | Run the completion pipeline |
+| GET | `/conversations` | Feedback conversations |
+| GET | `/conversations/{id}/messages` | Messages in a conversation |
+| POST | `/conversations/{id}/chat` | Chat with the feedback agent |
+| GET | `/learning-gaps` | Current learner profile |
+| GET | `/learning-gaps/history` | Previous profile versions, newest first |
+| GET | `/notifications`, POST `/notifications/{id}/read` | Notifications |
+| GET | `/suggestions`, POST `/suggestions/pick`, POST `/suggestions/generate` | Suggested trainings |
 
-## 📊 LangSmith Tracing
+## Project structure
 
-View complete traces at https://smith.langchain.com/
-
-**What you'll see:**
-- Supervisor reasoning and tool selection
-- Tool invocation inputs/outputs
-- Chat agent response generation
-- Token usage and latency
-- Full conversation context
-
-**Project name:** `Feedback_Chat_Agent`
-
-## 🛠️ Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| Backend Framework | FastAPI |
-| Agent Framework | LangGraph + LangChain |
-| LLM | Claude Sonnet 4.5 (Anthropic) |
-| Visualization | Matplotlib + Pandas |
-| Web Search | Tavily API |
-| Observability | LangSmith |
-| Frontend | Vanilla HTML/CSS/JS |
-
-## 📝 Configuration
-
-### Environment Variables (.env)
-
-```bash
-# Required
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Optional but recommended
-LANGCHAIN_API_KEY=lsv2_pt_...  # For LangSmith tracing
-TAVILY_API_KEY=tvly-...        # For web search feature
+```
+backend/
+  app.py               FastAPI endpoints
+  auth.py              Clerk JWT verification → Supabase user
+  db/repo.py           All Supabase access
+  pipeline.py          Post-evaluation pipeline
+  evaluator.py         Expert-concordance evaluation (LLM)
+  eval_table_agent.py  Deterministic evaluation-table builder
+  gap_updater.py       Evolving learner-gap profile (LLM)
+  chat_agent.py        LangGraph feedback agent
+  rag_tool.py          Chroma retrieval (lazy-imported)
+frontend/src/
+  components/          AppShell (nav), AppContext (state), views/ (one per tab)
+  lib/                 api client, Supabase client, shared types
+supabase/migrations/   Schema (documented inline)
+scripts/               ingest.py, seed_supabase.py, backfill_user_emails.py
+models.py, prompts.py  Structured-output schemas + agent prompts
 ```
 
-### Creating a .env file
+## Documentation
 
-```bash
-# Copy the template
-cat > .env << EOF
-ANTHROPIC_API_KEY=your_anthropic_key_here
-LANGCHAIN_API_KEY=your_langchain_key_here
-TAVILY_API_KEY=your_tavily_key_here
-EOF
-```
-
-## 🐛 Troubleshooting
-
-**Port already in use:**
-```bash
-# Kill existing processes
-lsof -ti:8000 | xargs kill -9  # Backend
-lsof -ti:3000 | xargs kill -9  # Frontend
-```
-
-**Missing dependencies:**
-```bash
-pip install -r requirements.txt
-```
-
-**Backend not starting:**
-- Check that .env file exists with ANTHROPIC_API_KEY
-- Verify Python 3.8+ is installed
-
-**Visualizations showing code instead of images:**
-- Already fixed! If you see this, restart the server
-- Make sure matplotlib is installed: `pip install matplotlib`
-
-**No LangSmith traces:**
-- Add LANGCHAIN_API_KEY to .env
-- Get key from https://smith.langchain.com/ → Settings → API Keys
-
-## 🚦 Development
-
-### Running Tests
-```bash
-# Test backend API
-curl http://localhost:8000/
-
-# Test frontend
-open http://localhost:3000/test.html
-```
-
-### Debugging
-- Backend logs appear in the terminal running `run.py`
-- Frontend logs in browser console (F12)
-- Full traces in LangSmith dashboard
-
-## 📄 License
-
-[Your License Here]
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📧 Contact
-
-[Your Contact Information]
-
----
-
-
+- [CLAUDE.md](CLAUDE.md) — architecture, key files, conventions (start here)
+- [GCP.md](GCP.md) — Cloud Run operations, env vars, gotchas
+- [DEPLOYMENT.md](DEPLOYMENT.md) — step-by-step deployment
