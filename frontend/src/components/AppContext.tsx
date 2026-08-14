@@ -52,6 +52,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Notification ids already accounted for. null until the first successful fetch, so a
+  // page load with existing notifications isn't mistaken for a burst of new ones.
+  const seenNotificationIds = useRef<Set<string> | null>(null);
 
   const bump = useCallback(() => setRefreshTick((t) => t + 1), []);
 
@@ -72,10 +75,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const r = await api.get<{ notifications: NotificationRow[] }>("/notifications");
       setNotifications(r.notifications);
+
+      // A notification means a pipeline finished, so the conversations/dashboard/completed
+      // data is now stale. Realtime calls bump() for us, but it is not guaranteed to be
+      // connected — without this the poll would surface "votre rétroaction est prête"
+      // while the Rétroaction tab kept showing the pre-completion list until a manual reload.
+      const seen = seenNotificationIds.current;
+      seenNotificationIds.current = new Set(r.notifications.map((n) => n.id));
+      // The first successful load only records what already exists; anything appearing
+      // after that arrived while the page was open. Re-running this after a bump finds
+      // nothing new, so it settles instead of looping.
+      if (seen && r.notifications.some((n) => !seen.has(n.id))) bump();
     } catch {
       /* transient; the 20s poll below retries */
     }
-  }, [api]);
+  }, [api, bump]);
 
   // Unlike notifications there is no poll behind this one, so a failed first load used to
   // leave "Agent de rétroaction" empty until the user refreshed the page by hand.
@@ -127,6 +141,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         (payload) => {
           const n = payload.new as NotificationRow;
           setNotifications((ns) => [n, ...ns]);
+          // Record it here too, so the next poll doesn't treat a pushed notification as
+          // newly discovered and bump a second time for the same event.
+          seenNotificationIds.current?.add(n.id);
           toast(n.title);
           bump(); // refresh dashboard/completed/conversations
         },
