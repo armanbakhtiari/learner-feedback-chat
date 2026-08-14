@@ -35,18 +35,27 @@ from backend.training_parser import (
 MODULE_VARS = ["training_1", "training_2", "training_3"]
 
 
+DOMAIN = "migraine"
+
+
 def _delete_existing_seed(sb) -> None:
-    """Remove previously seeded trainings (cascades to situations/scenarios/experts)."""
+    """
+    Remove previously seeded migraine trainings (cascades to situations/scenarios/experts).
+
+    Scoped to this script's own domain: other content sets are seeded separately
+    (scripts/seed_gastro.py), and an unscoped delete here would wipe theirs.
+    """
     existing = (
         sb.table("trainings")
         .select("id")
+        .eq("domain", DOMAIN)
         .in_("origin", ["seed_mandatory", "seed_bank"])
         .execute()
     )
     ids = [row["id"] for row in existing.data]
     if ids:
         sb.table("trainings").delete().in_("id", ids).execute()
-        print(f"  removed {len(ids)} existing seed trainings")
+        print(f"  removed {len(ids)} existing {DOMAIN} seed trainings")
 
 
 def seed() -> None:
@@ -71,7 +80,7 @@ def seed() -> None:
                 sb.table("trainings")
                 .insert({
                     "title": title,
-                    "domain": "migraine",
+                    "domain": DOMAIN,
                     "origin": origin,
                     "learning_objectives": objectives,
                 })

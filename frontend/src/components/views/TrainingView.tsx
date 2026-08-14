@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../AppContext";
 import { IconArrowLeft, IconSparkle } from "../Icons";
-import { LIKERT_VALUES, type Likert, type Training, type UserTraining } from "@/lib/types";
+import { likertValues, type Likert, type Training, type UserTraining } from "@/lib/types";
 
 type Answer = { likert: Likert | null; justification: string };
 
@@ -64,6 +64,8 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
     () => (training?.situations || []).flatMap((s) => s.scenarios),
     [training],
   );
+  // The response scale is a property of the training, not a global constant.
+  const scaleValues = useMemo(() => likertValues(training?.likert_scale), [training]);
   const allAnswered = scenarios.every(
     (sc) => answers[sc.id]?.likert && (answers[sc.id]?.justification || "").trim(),
   );
@@ -166,7 +168,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
                 </p>
 
                 <div className="mb-3 flex flex-wrap gap-1.5">
-                  {LIKERT_VALUES.map((lv) => (
+                  {scaleValues.map((lv) => (
                     <button
                       key={lv}
                       onClick={() => setAnswer(sc.id, { likert: lv })}

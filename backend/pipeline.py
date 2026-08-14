@@ -28,6 +28,24 @@ def _objectives_list(training: Dict[str, Any]) -> List[str]:
     return objs if isinstance(objs, list) else [str(objs)]
 
 
+def _educational_synthesis(training: Dict[str, Any]) -> str:
+    """
+    The expert reference material shipped with the training's situations, if any.
+
+    This is authored ground truth (messages clés + compléments d'apprentissage) that the
+    learner never sees directly. It is handed to the feedback agent so the initial
+    feedback is grounded in what the experts actually wanted taught, rather than only in
+    the evaluator's read of the answers.
+    """
+    blocks = []
+    for sit in training.get("situations", []):
+        synthesis = (sit.get("educational_synthesis") or "").strip()
+        if synthesis:
+            title = sit.get("title") or f"Situation {sit.get('situation_index', '')}".strip()
+            blocks.append(f"## {title}\n{synthesis}")
+    return "\n\n".join(blocks)
+
+
 def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None:
     """Full pipeline for one completed training. Best-effort per step; never raises."""
     try:
@@ -77,8 +95,15 @@ def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None
 
         # 4) Initial feedback (Markdown) --------------------------------------
         try:
-            agent = ChatAgent(evaluation_json, objectives_str, learning_gap=md)
-            agent.create_initial_feedback(conversation_id=conv_id)
+            # training_type drives which PDF knowledge base the agent may search; it is
+            # the training's own domain, so a gastro learner is never answered from the
+            # migraine guidelines (a domain with no docs degrades to "not covered").
+            agent = ChatAgent(evaluation_json, objectives_str, learning_gap=md,
+                              training_type=training.get("domain") or "migraine")
+            agent.create_initial_feedback(
+                conversation_id=conv_id,
+                educational_synthesis=_educational_synthesis(training),
+            )
         except Exception as e:
             print(f"⚠️  initial feedback failed: {e}")
         repo.add_notification(user, "feedback_ready", "Agent de rétroaction !",

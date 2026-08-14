@@ -36,16 +36,12 @@ evaluator input text from the DB (see ``build_evaluation_input``).
 
 import re
 import unicodedata
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-# Canonical Learning-by-Concordance Likert values (must match the DB enum).
-LIKERT_VALUES = [
-    "Fortement affaiblie",
-    "Affaiblie",
-    "Inchangée",
-    "Renforcée",
-    "Fortement renforcée",
-]
+from backend.likert import DEFAULT_SCALE, values_for
+
+# The scale this parser's source format uses (must match the DB enum).
+LIKERT_VALUES = values_for(DEFAULT_SCALE)
 
 
 def _norm(s: str) -> str:
@@ -55,18 +51,16 @@ def _norm(s: str) -> str:
     return s.lower().strip()
 
 
-_LIKERT_LOOKUP = {_norm(v): v for v in LIKERT_VALUES}
-
-
-def normalize_likert(raw: str) -> str:
-    """Map a raw 'Reponse: ...' value to a canonical Likert value."""
+def normalize_likert(raw: str, scale: Optional[str] = DEFAULT_SCALE) -> str:
+    """Map a raw 'Reponse: ...' value to a canonical Likert value of ``scale``."""
+    lookup = {_norm(v): v for v in values_for(scale)}
     key = _norm(raw)
     # Trim trailing punctuation / stray words.
     key = re.sub(r"[^a-z ]", "", key).strip()
-    if key in _LIKERT_LOOKUP:
-        return _LIKERT_LOOKUP[key]
+    if key in lookup:
+        return lookup[key]
     # Fall back to longest canonical value contained in the string.
-    for norm_key, canonical in sorted(_LIKERT_LOOKUP.items(), key=lambda kv: -len(kv[0])):
+    for norm_key, canonical in sorted(lookup.items(), key=lambda kv: -len(kv[0])):
         if norm_key in key:
             return canonical
     raise ValueError(f"Unrecognized Likert value: {raw!r}")

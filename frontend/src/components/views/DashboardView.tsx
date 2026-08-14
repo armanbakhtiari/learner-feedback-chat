@@ -23,10 +23,23 @@ export default function DashboardView() {
 
   if (loading) return <p className="text-slate-500">Chargement…</p>;
 
+  // The entry-point trainings are a choice, not a checklist — completing any one of them
+  // is what unlocks the rétroaction and the suggestions.
+  const mandatoryCount = trainings.filter((ut) => ut.training?.origin === "seed_mandatory").length;
+
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tableau de bord</h1>
-      <p className="mb-6 mt-1 text-sm text-slate-500">Vos formations à compléter.</p>
+      <p className="mb-6 mt-1 text-sm text-slate-500">
+        Vos formations à compléter.
+        {mandatoryCount > 1 && (
+          <>
+            {" "}
+            Plusieurs formations d&apos;entrée vous sont proposées : complétez celle de votre choix
+            pour accéder à la rétroaction et aux suggestions.
+          </>
+        )}
+      </p>
 
       {trainings.length === 0 ? (
         <p className="text-slate-500">Aucune formation en attente. Consultez l&apos;onglet Suggestions.</p>
@@ -43,7 +56,7 @@ export default function DashboardView() {
                 <div className="mb-2 flex items-center gap-2">
                   {mandatory && (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                      Formation obligatoire
+                      Formation obligatoire — au choix
                     </span>
                   )}
                   <span

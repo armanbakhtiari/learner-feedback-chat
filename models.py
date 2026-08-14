@@ -108,9 +108,9 @@ class SituationScenarios(BaseModel):
 
 class AssistedAnswer(BaseModel):
     """A suggested learner answer for one scenario (Learning-by-Concordance)."""
-    likert: Literal[
-        "Fortement affaiblie", "Affaiblie", "Inchangée", "Renforcée", "Fortement renforcée"
-    ] = Field(description="The suggested concordance rating for the hypothesis given the new information")
+    # Not a Literal: the permitted values depend on the training's response scale
+    # (see backend/likert.py). The prompt lists them and `likert.coerce` enforces them.
+    likert: str = Field(description="The suggested rating, verbatim from the scale given in the prompt")
     justification: str = Field(
         description="A concise French justification a learner could plausibly give (2-4 sentences)"
     )
@@ -121,9 +121,8 @@ class AssistedAnswer(BaseModel):
 class GeneratedExpert(BaseModel):
     """One synthetic expert-panel response for a newly generated scenario."""
     expert_label: str = Field(description="Expert label, e.g. 'Expert 1'")
-    likert: Literal[
-        "Fortement affaiblie", "Affaiblie", "Inchangée", "Renforcée", "Fortement renforcée"
-    ]
+    # See AssistedAnswer.likert — the scale is per-training, so not a Literal.
+    likert: str = Field(description="The rating, verbatim from the scale given in the prompt")
     justification: str = Field(description="Concise French justification for the rating")
 
 

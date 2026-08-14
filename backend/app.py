@@ -115,11 +115,25 @@ async def completed(user: Dict[str, Any] = Depends(get_current_user)):
 
 
 # ------------------------------------------------------------------ training page
+def _strip_expert_material(training: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Remove everything only the evaluator/feedback agent may see before a client payload.
+
+    `include_experts=False` already omits expert_responses; the situations' educational
+    synthesis is the same kind of authored reference material and must not leak either.
+    """
+    for sit in training.get("situations", []):
+        sit.pop("educational_synthesis", None)
+    return training
+
+
 @app.get("/trainings/{user_training_id}")
 async def get_training(user_training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
     ut = _own_user_training(user, user_training_id)
-    # Client view: NO expert responses.
-    training = repo.get_training_content(ut["training_id"], include_experts=False)
+    # Client view: NO expert responses, NO educational synthesis.
+    training = _strip_expert_material(
+        repo.get_training_content(ut["training_id"], include_experts=False)
+    )
     responses = {r["scenario_id"]: r for r in repo.get_responses(user_training_id)}
     for sit in training.get("situations", []):
         for sc in sit.get("scenarios", []):
@@ -143,13 +157,15 @@ async def save_responses(user_training_id: str, body: SaveResponses,
 @app.post("/trainings/{user_training_id}/assist")
 async def assist(user_training_id: str, body: AssistRequest,
                  user: Dict[str, Any] = Depends(get_current_user)):
-    _own_user_training(user, user_training_id)
+    ut = _own_user_training(user, user_training_id)
     scenario = repo.get_scenario_with_situation(body.scenario_id)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
     from backend.answer_assist import generate_assisted_answer
     situation_text = (scenario.get("situation") or {}).get("text", "")
-    return generate_assisted_answer(situation_text, scenario["hypothesis"], scenario["new_information"])
+    training = repo.get_training(ut["training_id"]) or {}
+    return generate_assisted_answer(situation_text, scenario["hypothesis"], scenario["new_information"],
+                                    scale=training.get("likert_scale"))
 
 
 @app.post("/trainings/{user_training_id}/evaluate")
@@ -215,8 +231,11 @@ async def conversation_chat(conversation_id: str, body: ChatRequest,
             history.append(AIMessage(content=m["content"]))
 
     from backend.chat_agent import ChatAgent
+    # Same as the pipeline: the training's domain selects the knowledge base, so follow-up
+    # questions are never answered from another domain's reference PDFs.
     agent = ChatAgent(evaluation["evaluation_json"], objectives_str, learning_gap=gap,
-                      conversation_history=history)
+                      conversation_history=history,
+                      training_type=training.get("domain") or "migraine")
     result = agent.chat(body.message, web_search_enabled=body.web_search_enabled,
                         conversation_id=conversation_id)
     return result
@@ -260,8 +279,41 @@ async def completed_list(user: Dict[str, Any] = Depends(get_current_user)):
     }
 
 
+@app.get("/bank-trainings/{training_id}")
+async def bank_training_preview(training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Read-only preview of a shared training, so a learner can see what a suggestion
+    actually contains before adding it to their dashboard.
+
+    Limited to shared catalogue trainings — a user's own generated trainings are not
+    enumerable through here. Carries no expert responses and no educational synthesis.
+    """
+    training = repo.get_training(training_id)
+    if not training or training.get("origin") not in ("seed_bank", "suggested_bank", "seed_mandatory"):
+        raise HTTPException(status_code=404, detail="Training not found")
+
+    content = _strip_expert_material(repo.get_training_content(training_id, include_experts=False))
+    return {
+        "id": content["id"],
+        "title": content["title"],
+        "learning_objectives": content.get("learning_objectives") or [],
+        "situations": [
+            {
+                "title": sit.get("title"),
+                "text": sit.get("text", ""),
+                "scenarios": [
+                    {"hypothesis": sc.get("hypothesis", ""), "new_information": sc.get("new_information", "")}
+                    for sc in sit.get("scenarios", [])
+                ],
+            }
+            for sit in content.get("situations", [])
+        ],
+    }
+
+
 @app.get("/suggestions")
-async def suggestions(user: Dict[str, Any] = Depends(get_current_user)):
+async def suggestions(preference: str = "", user: Dict[str, Any] = Depends(get_current_user)):
+    """`preference` is the learner's optional free-text wish; empty = gap-profile only."""
     completed = [
         {"user_training_id": c["id"], "title": (c.get("training") or {}).get("title", "")}
         for c in repo.list_completed(user["id"])
@@ -272,7 +324,7 @@ async def suggestions(user: Dict[str, Any] = Depends(get_current_user)):
 
     gap = repo.get_learning_gap(user["id"]).get("content", "")
     from backend.suggestions import suggest_bank_trainings
-    result = suggest_bank_trainings(user["id"], gap)
+    result = suggest_bank_trainings(user["id"], gap, preference=preference[:300])
     result["completed"] = completed
     return result
 
@@ -302,6 +354,7 @@ async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depe
     from backend.scenario_generator import generate_scenarios_for_situation
     from backend.expert_panel_agent import generate_expert_panel
 
+    scale = source.get("likert_scale") or "concordance"
     new_training = repo.create_training(
         title=f"{source['title']} — nouveaux scénarios",
         domain=source.get("domain", "migraine"),
@@ -309,9 +362,11 @@ async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depe
         objectives=objectives,
         created_by=user["id"],
         source_training_id=source["id"],
+        likert_scale=scale,
     )
     for s_i, sit in enumerate(source.get("situations", []), start=1):
-        new_sit = repo.add_situation(new_training["id"], s_i, sit.get("title"), sit["text"])
+        new_sit = repo.add_situation(new_training["id"], s_i, sit.get("title"), sit["text"],
+                                     educational_synthesis=sit.get("educational_synthesis"))
         try:
             generated = generate_scenarios_for_situation(sit, objectives_str, gaps).scenarios
         except Exception as e:
@@ -320,7 +375,7 @@ async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depe
         for c_i, sc in enumerate(generated, start=1):
             scenario = repo.add_scenario(new_sit["id"], c_i, sc.hypothesis, sc.new_information)
             try:
-                panel = generate_expert_panel(sit["text"], sc.hypothesis, sc.new_information)
+                panel = generate_expert_panel(sit["text"], sc.hypothesis, sc.new_information, scale=scale)
                 repo.add_expert_responses(scenario["id"], panel)
             except Exception as e:
                 print(f"⚠️  expert panel failed: {e}")

@@ -265,8 +265,16 @@ Profil d'apprentissage (lacunes) de l'apprenant:
             "tools_called": final_state.get("tools_called", []),
         }
 
-    def create_initial_feedback(self, conversation_id: Optional[str] = None) -> str:
-        """Generate the one-time initial feedback (Markdown) for a completed training."""
+    def create_initial_feedback(self, conversation_id: Optional[str] = None,
+                                educational_synthesis: str = "") -> str:
+        """
+        Generate the one-time initial feedback (Markdown) for a completed training.
+
+        ``educational_synthesis`` is the expert reference material authored with the
+        training (messages clés + compléments d'apprentissage). It is supplied here only —
+        deliberately not in the interactive ``chat()`` context — so the first feedback is
+        grounded in what the experts wanted taught. The learner never sees it verbatim.
+        """
         context = f"""Objectifs d'apprentissage:
 {self.training_objectives}
 
@@ -276,6 +284,16 @@ Profil d'apprentissage (lacunes) de l'apprenant:
 Évaluation (JSON):
 {json.dumps(self.evaluations, indent=2, ensure_ascii=False)}
 """
+        if educational_synthesis.strip():
+            context += (
+                "\n=== SYNTHÈSE ÉDUCATIVE (référence experte de cette formation) ===\n"
+                "Ce sont les messages clés et compléments d'apprentissage rédigés par les experts "
+                "pour cette formation. Appuyez-vous dessus pour situer le raisonnement de "
+                "l'apprenant. Ne les recopiez pas tels quels et ne les présentez jamais comme un "
+                "corrigé : intégrez-les à une rétroaction qualitative.\n"
+                f"{educational_synthesis}\n"
+            )
+
         messages = [
             SystemMessage(content=CHAT_AGENT_PROMPT),
             SystemMessage(content=f"Context:\n{context}"),

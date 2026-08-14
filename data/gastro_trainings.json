@@ -1,0 +1,746 @@
+{
+  "activity_title": "Analyse et gestion des symptômes digestifs",
+  "domain": "gastro",
+  "likert_scale": "pertinence",
+  "objectives": [
+    "Caractériser systématiquement la douleur abdominale: mode de début, localisation, irradiation, type, intensité, facteurs aggravants ou soulageants, signes associés",
+    "Générer un diagnostic différentiel de douleur abdominale en s’appuyant sur des repères anatomiques et physiopathologiques pertinents et savoir le rehiérarchiser dès qu’un changement survient dans l’évolution de la douleur.",
+    "Reconnaître les symptômes d’alarme dans un contexte de douleur abdominale, de diarrhée et d'hémorragie digestive",
+    "Interpréter des données biologiques clés pour ajuster rapidement la probabilité des grandes étiologies responsables de douleur abdominale",
+    "Adapter la prise en charge de la douleur abdominale, de la diarrhée et d'une hémorragie digestive en fonction des données cliniques et des comorbidités du patient",
+    "Utiliser le contexte épidémiologique (voyage, épidémie, immunosuppression) pour calibrer la suspicion infectieuse d'une diarrhée",
+    "Différencier la diarrhée infectieuse et bactérienne en fonction de la présentation clinique et de l’évolution temporelle",
+    "Reconnaître les diarrhées osmotiques d'origine alimentaire (intolérance au lactose, intolérance au gluten, etc.)",
+    "Effectuer l’évaluation initiale et explorer la démarche clinique en diarrhée aiguë et chronique chez l’adulte.",
+    "Qualifier le saignement pour estimer si l’hémorragie digestive est haute ou basse: hématémèse, méléna, hématochézie",
+    "Lister les étiologies majeures d'hémorragies digestives et leurs critères discriminants",
+    "Reconnaître les indices de varices.",
+    "Mettre en place la prophylaxie secondaire adaptée, notamment pour les les varices œsophagiennes.",
+    "Connaître le traitement à initier en cas d'hémorragie digestive."
+  ],
+  "situations": [
+    {
+      "title": "Douleur abdominale 1",
+      "text": "Un patient de 65 ans, sous anticoagulants pour une fibrillation auriculaire, consulte pour une douleur abdominale intense, survenue brutalement il y a 6 heures. Il est légèrement pâle mais n’a pas de sensibilité ni de rigidité abdominale à l'examen physique. La douleur est centrée dans l’épigastre et est évaluée à 7/10. Pas de vomissements ni de signes associés. Le patient ne présente pas de signes d'instabilité hémodynamique (TA 120/75 mm Hg, FC 95/min) et les résultats du bilan hépatique sont dans les normes.",
+      "educational_synthesis": "Messages clé des experts\nUne ischémie mésentérique aiguë doit rester au premier plan devant une douleur abdominale brutale et intense, disproportionnée par rapport à un examen abdominal peu contributif, particulièrement chez un patient atteint de fibrillation auriculaire. Un lactate normal n’exclut pas un diagnostic d'ischémie mésentérique, surtout au début de l’évolution. Une perte de poids récente n’est pas typique d’une colite ischémique et doit faire envisager parallèlement une cause chronique, notamment néoplasique ou inflammatoire. Le traitement doit être adapté à l’état du patient : en l’absence d’instabilité, l’administration systématique de liquides est injustifiée chez une personne à risque de surcharge. Un angioscan récent sans athéromatose rend une angine mésentérique chronique beaucoup moins probable.\nCompléments d’apprentissage\nL’ischémie mésentérique aiguë peut être causée par une embolie artérielle, notamment dans un contexte de fibrillation auriculaire, une thrombose artérielle, une thrombose veineuse ou une hypoperfusion non occlusive. Le signe clinique classique est une douleur intense disproportionnée par rapport aux constatations initiales à l’examen physique. L’apparition plus tardive d’une défense ou d’un péritonisme peut traduire une nécrose intestinale avancée. Aucun marqueur biologique isolé ne permet d’écarter précocement une ischémie. Lorsque la suspicion clinique est importante, l’examen de choix est généralement l’angioscan abdominopelvien, sans attendre une élévation des lactates. La présentation aiguë doit être distinguée de l’angine mésentérique chronique, qui se manifeste plutôt par des douleurs post-prandiales récurrentes, une réduction des apports et une perte pondérale, habituellement sur fond d’athérosclérose mésentérique. La colite ischémique touche plutôt le côlon et se manifeste souvent par une douleur abdominale suivie de rectorragies. Les zones coliques les plus vulnérables sont les territoires moins bien vascularisés, notamment l’angle splénique et la jonction rectosigmoïdienne. Enfin, la prise en charge initiale doit être individualisée. Les liquides intraveineux sont indiqués en présence d’hypovolémie ou d’instabilité, mais doivent être administrés prudemment chez les patients à risque d’œdème pulmonaire. L’évaluation clinique et son évolution doivent toujours primer sur un résultat biologique ou radiologique isolé.",
+      "scenarios": [
+        {
+          "title": "Ischémie intestinale",
+          "hypothesis": "Envisager une ischémie intestinale comme cause principale",
+          "new_information": "Les lactates sont à un taux normal à 1,0 mmol/L",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": ""
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Chez un patient présentant une douleur abdominale aiguë intense sous anticoagulants, l'ischémie intestinale reste un diagnostic critique à envisager, même si les lactates sont normaux. Les lactates peuvent en effet rester normaux en phase précoce d'une ischémie, ce qui limite leur valeur d'exclusion."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Un taux de lactates normal ne permet pas d'écarter une ischémie intestinale, surtout en phase précoce où les anomalies métaboliques peuvent être absentes. En tant que gastro-entérologue, je reste vigilante face à une douleur abdominale aiguë intense chez un patient sous anticoagulant, car la clinique prime sur un marqueur isolé. L'évolution rapide et le contexte clinique imposent de maintenir l'hypothèse ischémique, tout en poursuivant la surveillance et la répétition des examens si nécessaire. Il serait prématuré de reléguer ce diagnostic sur la seule base d'un lactate normal initial."
+            }
+          ]
+        },
+        {
+          "title": "Perte de poids récente",
+          "hypothesis": "Envisager une colite ischémique",
+          "new_information": "Le patient mentionne avoir récemment perdu du poids de manière significative sans raison apparente au cours des 3 derniers mois.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La perte de poids ne précède pas la colite ischémique, les 2 infos ne sont pas reliées mais la perte de poids doit faire évoquer d'autres diagnostic. Cependant la clinique de la colite ischémique est très typique alors il faut maintenir ce diagnostic"
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La perte de poids récente n’est pas un signe classique de colite ischémique, qui se manifeste surtout par des douleurs aiguës et des troubles du transit. Ce symptôme doit plutôt orienter vers des diagnostics alternatifs, comme une pathologie tumorale ou inflammatoire chronique. Néanmoins, il ne permet pas d'exclure formellement la colite ischémique si la clinique reste évocatrice. La présence de ce lien est intermédiaire."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La perte de poids non expliquée n’est pas caractéristique d’une colite ischémique, qui se manifeste plutôt par des douleurs aiguës et du sang dans les selles. Cette donnée doit inciter à explorer d’autres étiologies comme une néoplasie, mais ne fait pas disparaître le diagnostic de colite ischémique si le contexte clinique est évocateur. Il s'agit donc d'un élément à considérer en parallèle, sans lien direct de causalité. La pertinence de cette observation dans le raisonnement est intermédiaire."
+            }
+          ]
+        },
+        {
+          "title": "Administration de fluides",
+          "hypothesis": "Administrer des fluides intraveineux pour stabiliser le patient.",
+          "new_information": "Le patient a des antécédents de surcharge liquidienne et d'œdème pulmonaire.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Le patient est a risque de surcharge. Comme rien n'indique qu'il a besoin de perfusion, je m'abstiendrai: primum non nocere."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Chez un patient ayant des antécédents de surcharge liquidienne et d'œdème pulmonaire, l'administration de fluides expose à des risques de décompensation sans bénéfice évident ici. L'absence de signes d'instabilité hémodynamique rend cette stratégie injustifiée. Il est crucial de privilégier la sécurité du patient et d'éviter toute intervention potentiellement nocive. Ainsi, cette option est très peu pertinente dans ce contexte clinique."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Chez un patient aux antécédents de surcharge et d'œdème pulmonaire, administrer des fluides sans nécessité absolue comporte un risque non négligeable. L'absence de signes d'instabilité hémodynamique ne justifie pas cette intervention. La prudence prime pour éviter toute décompensation cardiorespiratoire. Cette option est donc très peu pertinente dans ce contexte clinique."
+            }
+          ]
+        },
+        {
+          "title": "Amélioration du patient",
+          "hypothesis": "Un ulcère gastroduodénal perforé",
+          "new_information": "La radiographie thoraco-abdominale debout ne révèle aucun pneumopéritoine, mais le patient signale que la douleur se calme légèrement après la prise d’un antiacide",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "L'efficacité des antiacides est en faveur d'une pathologie peptique, tel qu'un ulcère. Cependant rien oriente vers son caractère perforé (un ulcère perforé n'est pas plus douloureux qu'un ulcère non perforé)."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "L'absence de pneumopéritoine à la radiographie et un soulagement partiel après un antiacide diminuent la probabilité d'un ulcère perforé, sans toutefois l'exclure. Une perforation peut être présente malgré une radiographie normale et nécessiter une investigation plus sensible, comme une TDM."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "L'amélioration partielle sous antiacides oriente vers un mécanisme peptique, mais la radiographie normale et l'absence de péritonite rendent une perforation peu probable. Il est essentiel de ne pas surestimer la spécificité de la réponse aux antiacides dans ce contexte aigu. La sévérité initiale de la douleur aurait pu évoquer une perforation, mais l'évolution clinique et les examens complémentaires ne la confirment pas. Cela reste donc un élément assez pertinent, sans être déterminant."
+            }
+          ]
+        },
+        {
+          "title": "Résultats de TDM",
+          "hypothesis": "Une angine mésentérique",
+          "new_information": "Le patient a bénéficié d'un angioscan abdominal il y a 3 mois ne démontrant aucune athéromatose des vaisseaux mésentériques.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L'angor mésentérique nécessite de l'athérome sur au moins 2 des 3 gros troncs. S'ils étaient normaux il y a 3 mois, l'angor est peut probable. Même raisonnement qu'avec le coeur, pas de vaisseaux bouchés = pas d'angor."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Un angioscan abdominal récent qui ne montre aucune athéromatose mésentérique rend l'angine mésentérique très improbable, car cette pathologie repose sur la présence de lésions athéromateuses significatives."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Un angioscan récent sans athéromatose mésentérique rend très improbable une angine mésentérique, car la physiopathologie repose sur l'occlusion ou la sténose chronique de plusieurs axes vasculaires. En l'absence de lésions visibles il y a seulement trois mois, il serait peu cohérent de retenir ce diagnostic en première intention."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Diarrhée 1",
+      "text": "Un patient de 35 ans, de retour depuis 2 semaines d’un voyage en Asie du Sud-Est, consulte pour une diarrhée aiguë survenue depuis 24 heures. Il a présenté 6 selles liquides accompagnées de crampes abdominales, sans fièvre ni vomissements. Les résultats montrent une légère élévation de la CRP, mais les coprocultures initiales sont négatives.",
+      "educational_synthesis": "Message clé des experts\nLes experts s'entendent pour dire que le contexte clinique global doit guider le raisonnement. Chez un patient revenant de voyage, une diarrhée aiguë demeure avant tout d'origine infectieuse. L'apparition d'une diarrhée sanglante renforce la suspicion d'une infection bactérienne invasive. Une consommation de produits laitiers chez un patient intolérant au lactose peut expliquer certains symptômes sans remettre en cause le diagnostic principal.\nCompléments d'apprentissage\nLa majorité des diarrhées aiguës du voyageur sont d'origine infectieuse et sont le plus souvent causées par des bactéries telles que Campylobacter, Salmonella, Shigella ou Escherichia coli entérotoxinogène (ETEC). La présence de sang dans les selles suggère une atteinte inflammatoire ou invasive et justifie une évaluation plus approfondie. À l'inverse, une intolérance au lactose provoque généralement une diarrhée osmotique accompagnée de ballonnements et de douleurs abdominales après l'ingestion de produits laitiers. Bien qu'elle puisse expliquer ou aggraver certains symptômes, elle ne suffit pas à expliquer un contexte de voyage récent ou une diarrhée sanglante. Cette situation illustre également l'importance d'éviter le biais d'ancrage : une nouvelle information ne doit pas faire abandonner prématurément l'hypothèse diagnostique la plus probable si elle n'explique pas l'ensemble du tableau clinique.",
+      "scenarios": [
+        {
+          "title": "Diarrhée sanglante",
+          "hypothesis": "Une infection bactérienne (ex : Salmonella, Campylobacter, Shigella)",
+          "new_information": "Le patient rapporte avoir eu un épisode de diarrhée sanglante légère 48 heures avant l’apparition de la douleur abdominale",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "Les diarrhées infectieuses avec germes entéro-invasifs se traduisent par des diarrhées avec du sang. Le contexte est donc très en faveur d'une diarrhée bactérienne."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Très pertinente",
+              "justification": "Un épisode de diarrhée sanglante, même léger, survenant peu de temps avant la symptomatologie actuelle oriente fortement vers une infection bactérienne entéro-invasive, surtout dans un contexte de retour de zone à risque. Ce signe augmente la pertinence de ce diagnostic, car il témoigne d'une atteinte muqueuse typique de germes comme Shigella ou Campylobacter. Toutefois, il reste important de confronter ce tableau à l'absence de fièvre ou d'autres signes de gravité, pour nuancer la suspicion."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "L’apparition d’une diarrhée sanglante, même modérée, oriente nettement vers une infection bactérienne invasive dans ce contexte post-voyage, car ce symptôme reflète une atteinte muqueuse caractéristique de certains pathogènes. Cette donnée clinique renforce la pertinence du diagnostic, mais il faut toujours intégrer l’ensemble des éléments (absence de fièvre, évolution rapide) pour éviter un excès de confiance."
+            }
+          ]
+        },
+        {
+          "title": "Produits laitiers",
+          "hypothesis": "Une diarrhée aiguë d'étiologie infectieuse",
+          "new_information": "Le patient indique avoir consommé des produits laitiers locaux, malgré son intolérance au lactose, et se plaint de nausées et de légers ballonnements après chaque repas.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'hypothèse de l'infection est basée sur la sémiologie et le voyage (et CRP ). La consommation de produit laitier ne change pas l'hypothèse. Cela n'aide pas la diarrhée c'est vrai, mais penser que la consommation de lactose explique tout c'est voir l'arbre qui cache la forêt."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Même si l’intolérance au lactose et la consommation de produits laitiers peuvent expliquer certains symptômes, le contexte de retour de voyage et l’élévation de la CRP orientent prioritairement vers une origine infectieuse. Il ne faut donc pas négliger le risque d’une pathologie digestive importée, même si la symptomatologie suggère aussi un facteur alimentaire."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le lien entre consommation de produits laitiers chez un patient intolérant au lactose et la survenue de symptômes digestifs est crédible, mais dans ce contexte de retour de voyage avec élévation de la CRP, l’étiologie infectieuse reste prioritaire. L’intolérance au lactose peut aggraver les symptômes, mais elle n’explique pas à elle seule l’ensemble du tableau clinique. Il est donc pertinent d’en tenir compte pour l’ajustement diététique, tout en gardant une vigilance sur une cause infectieuse importée. Ce raisonnement illustre la nécessité de pondérer chaque facteur sans écarter le diagnostic principal."
+            }
+          ]
+        },
+        {
+          "title": "Choix de traitement empirique",
+          "hypothesis": "Commencer un traitement empirique antibiotique en raison de l’origine suspecte infectieuse.",
+          "new_information": "Le patient ne présente aucune amélioration après 24 heures de traitement antibiotique empirique, et rapporte toujours des crampes abdominales persistantes, mais les résultats de coproculture sont négatifs.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L'origine infectieuse a justifié la prise d'antibiotiques (cependant, à mon avis on aurait pu attendre avant d'en prendre, car aucun signe de gravité n'était présent). L'absence d'amélioration apres 24h ne change rien, il faut un peu plus de temps tout de même !"
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'absence d'amélioration après seulement 24 heures et des coprocultures négatives diminuent la probabilité d'une infection bactérienne sensible à l'antibiothérapie, sans toutefois l'exclure. Une diarrhée du voyageur peut être causée par des agents non détectés par les coprocultures ou nécessiter plus de temps avant une amélioration clinique."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Après 24 heures d'antibiothérapie empirique sans amélioration et avec des coprocultures négatives, il devient pertinent de réévaluer la stratégie diagnostique et thérapeutique. Bien que le délai soit encore court et que les coprocultures n'excluent pas une origine infectieuse, l'absence d'amélioration invite à considérer d'autres possibilités, comme une infection parasitaire, une résistance aux antibiotiques ou une cause non infectieuse."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Hémorragie digestive 1",
+      "text": "Monsieur Richard, 65 ans, se présente pour des selles noires et luisantes apparues depuis le matin. Il affirme « se sentir plutôt bien », malgré une impression de fatigue. À l’accueil, sa tension artérielle est de 90/60 mmHg et sa fréquence cardiaque de 110 bpm. Il est pâle, les extrémités sont fraîches, mais l’examen abdominal est souple et indolore. Ses antécédents se résument à une hypertension bien contrôlée. Il mentionne avoir déjà eu des épisodes similaires qui « s’étaient calmés tout seuls ».",
+      "educational_synthesis": "Messages clé des experts\nLa gravité clinique doit guider la prise en charge d'une hémorragie digestive. Une détérioration hémodynamique ou des signes d'hypoperfusion imposent une réanimation rapide et une réévaluation continue du diagnostic. Les facteurs de risque et l'évolution clinique permettent d'affiner les hypothèses diagnostiques : l'absence de signes d'hypertension portale rend une hémorragie variqueuse moins probable, tandis qu'un saignement important et persistant est peu compatible avec un syndrome de Mallory-Weiss isolé.\nCompléments d'apprentissage\nLa prise en charge initiale d'une hémorragie digestive repose sur l'évaluation de la stabilité hémodynamique et la mise en route rapide des mesures de réanimation (accès veineux, remplissage vasculaire, transfusion au besoin). Des signes comme une hypotension, une tachycardie, des marbrures ou un temps de remplissage capillaire prolongé témoignent d'une hypoperfusion et doivent être reconnus précocement. L'identification de la cause est tout aussi importante. Une hémorragie variqueuse est généralement associée à une hypertension portale et nécessite un traitement précoce par octréotide et antibiothérapie, suivi d'une ligature endoscopique, qui constitue le traitement définitif. De son côté, le syndrome de Mallory-Weiss survient habituellement après des vomissements répétés et provoque le plus souvent un saignement autolimité. L'évolution clinique demeure donc un élément essentiel pour réévaluer les hypothèses diagnostiques.",
+      "scenarios": [
+        {
+          "title": "Marbrures périphériques",
+          "hypothesis": "Initier une perfusion de cristalloïdes et perfuser lentement en attendant les résultats de laboratoire avant d’escalader.",
+          "new_information": "Les jambes deviennent marbrées, et le temps de remplissage capillaire dépasse trois secondes.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Très pertinente",
+              "justification": "le patient doit être rempli, il saigne et cela s'empire, il va bientôt être en choc"
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Très pertinente",
+              "justification": "L'apparition de marbrures et d'un temps de remplissage capillaire prolongé indique une hypoperfusion périphérique majeure, typique d'un état de choc hémorragique. Dans cette situation, temporiser le remplissage en attendant des bilans biologiques retarde une prise en charge vitale et augmente le risque de défaillance multiviscérale. L'escalade rapide du traitement est donc essentielle devant ces signes d'alarme. Retarder l'intensification du soutien hémodynamique est très inadapté ici."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Très pertinente",
+              "justification": "L'apparition de marbrures et d'un temps de remplissage capillaire allongé traduit une défaillance circulatoire aiguë, signe de choc hypovolémique imminent. Dans ce contexte, attendre les résultats de laboratoire avant d'intensifier la prise en charge expose le patient à un risque vital. La perfusion lente de cristalloïdes devient rapidement insuffisante et inadaptée face à l'aggravation clinique. Il est donc impératif d'escalader sans délai le traitement de réanimation."
+            }
+          ]
+        },
+        {
+          "title": "Hémorragie variqueuse",
+          "hypothesis": "Une probable hémorragie variqueuse.",
+          "new_information": "On apprend que le patient n’a jamais bu d’alcool de façon excessive et l’examen ne révèle ni ascite, ni angiomes stellaires, ni splénomégalie.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Peu pertinente",
+              "justification": "Une hémorragie variqueuse survient dans un contexte d'hypertension portale. Bien que la consommation excessive d'alcool en soit une cause fréquente, elle n'est pas la seule. Toutefois, chez ce patient, l'absence de signes cliniques de cirrhose, d'hypertension portale (ascite, splénomégalie) ou d'insuffisance hépatique rend ce diagnostic moins probable. Il est donc préférable d'envisager d'autres causes d'hémorragie digestive avant une hémorragie variqueuse."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'absence de consommation excessive d'alcool et de signes cliniques d'hypertension portale (ascite, angiomes stellaires, splénomégalie) rend une hémorragie variqueuse moins probable. Toutefois, ces éléments ne permettent pas d'exclure une hypertension portale ou des varices œsophagiennes. Certaines étiologies de cirrhose sont non alcooliques (p. ex. MASLD/NASH, hépatites virales), et des varices peuvent être présentes avant l'apparition de signes cliniques évidents de décompensation. Cette réflexion guide le choix vers une pertinence faible mais non nulle."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'absence de signes cliniques d'hypertension portale et d'antécédents d'alcoolisme rend l'hypothèse d'une hémorragie variqueuse nettement moins probable. Toutefois, il reste prudent de ne pas totalement exclure ce diagnostic en urgence, même si une autre étiologie doit être priorisée. La démarche clinique impose de hiérarchiser les causes en fonction du contexte et des signes associés. Cette réflexion guide le choix vers une pertinence faible mais non nulle."
+            }
+          ]
+        },
+        {
+          "title": "Syndrome de Mallory-Weiss",
+          "hypothesis": "Attribuer le méléna à une déchirure de Mallory-Weiss",
+          "new_information": "Le patient rapporte avoir vomi à la maison, mais n’avoir eu aucun nouvel effort de vomissement depuis son arrivée à l’hôpital. Par contre, sa pression artérielle chute à chaque passage aux toilettes.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Peu pertinente",
+              "justification": "Le syndrome de Mallory-Weiss est rarement associé à une hémorragie grave. L'évolution vers un état de choc suggère un saignement digestif actif important, ce qui rend le diagnostic de Mallory-Weiss moins probable malgré l'antécédent de vomissements."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "Un syndrome de Mallory-Weiss survient typiquement après des efforts répétés de vomissements ou de haut-le-cœur et entraîne généralement un saignement autolimité. Dans ce scénario, l'absence de nouveaux épisodes de vomissements depuis l'arrivée à l'hôpital diminue la probabilité d'une déchirure active. De plus, la chute tensionnelle persistante à chaque passage aux toilettes suggère un saignement digestif toujours en cours, ce qui est moins compatible avec un syndrome de Mallory-Weiss isolé et oriente vers une autre cause d'hémorragie digestive haute."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "Le syndrome de Mallory-Weiss peut expliquer un méléna, mais il est rarement responsable d'une hémorragie aussi sévère avec instabilité hémodynamique. La présence d'une chute tensionnelle répétée suggère une perte sanguine importante, ce qui oriente vers une cause plus grave. En l'absence de vomissements répétés ou de facteurs de risque typiques, cette hypothèse reste possible mais peu convaincante dans ce contexte. Il convient donc de la considérer comme peu pertinente ici."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Diarrhée 2",
+      "text": "Un étudiant de 24 ans, qui vit en résidence universitaire, consulte pour une diarrhée aiguë. Depuis quarante-huit heures, il présente au moins huit selles par jour, accompagnées de crampes abdominales modérées et d’une sensation fébrile, bien que sa température n’ait pas encore été prise. Malgré un avis municipal d’ébullition, il continue de boire l’eau du robinet qu’il filtre lui-même. À l’examen, sa tension artérielle est de 110/70 mmHg et sa fréquence cardiaque de 102 bpm. Ses muqueuses restent humides et son abdomen est souple, sans défense ni douleur provoquée.",
+      "educational_synthesis": "Messages clé des experts\nLes experts s'entendent pour dire que les nouvelles données doivent être interprétées dans leur contexte clinique. Des signes de colite au scanner sont non spécifiques et ne permettent ni de confirmer ni d'exclure une diarrhée virale. L'apparition d'une déshydratation avec diminution de la diurèse et élévation de la créatinine justifie une escalade vers une réhydratation intraveineuse. Chez un patient immunosupprimé, le traitement symptomatique par lopéramide doit être utilisé avec prudence, car une cause infectieuse potentiellement grave doit d'abord être exclue.\nCompléments d'apprentissage\nLa prise en charge d'une diarrhée aiguë repose d'abord sur une évaluation de la gravité, notamment de l'état d'hydratation. Une baisse de la diurèse, une tachycardie ou une élévation de la créatinine suggèrent une déshydratation importante nécessitant souvent une réhydratation intraveineuse plutôt qu'orale. Les examens complémentaires doivent toujours être interprétés en fonction de la clinique. Par exemple, une colite au scanner correspond à une inflammation du côlon, mais ne permet pas de distinguer à elle seule une étiologie virale, bactérienne ou inflammatoire. Chez un patient immunosupprimé, la diarrhée justifie une investigation plus approfondie avant de prescrire des ralentisseurs du transit, en raison du risque accru d'infections sévères ou opportunistes, notamment Clostridioides difficile.",
+      "scenarios": [
+        {
+          "title": "Diarrhée virale",
+          "hypothesis": "Une diarrhée virale à norovirus",
+          "new_information": "Le scanner abdominal effectué à l’urgence démontre une colite",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "Une colite au scanner n'est que de l'oedème du colon. Cela est donc compatible avec pas mal de chose, dont une diarrhée aiguë virale."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Un scanner montrant une colite peut être observé lors d'une diarrhée aiguë virale, car l'inflammation du côlon n'est pas spécifique et peut résulter d'une infection virale bénigne. Toutefois, ce signe radiologique n'exclut pas d'autres causes, notamment bactériennes ou inflammatoires, et doit être interprété dans le contexte clinique. L'absence de signes de gravité ou de syndrome inflammatoire marqué appuie la plausibilité d'une origine virale. Ainsi, la concordance entre ces éléments demeure pertinente, sans être totalement déterminante."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "La découverte d'une colite au scanner n'exclut pas une diarrhée virale aiguë, car l'inflammation colique peut être modérée et non spécifique dans ce contexte. Cependant, la colite radiologique doit toujours faire évoquer d'autres diagnostics, notamment bactérien ou inflammatoire, surtout si des signes de gravité apparaissent. Dans ce cas, l'argument pour une origine virale reste pertinent mais ne doit pas être considéré comme exclusif."
+            }
+          ]
+        },
+        {
+          "title": "Prise en charge",
+          "hypothesis": "Une hydratation orale",
+          "new_information": "À son arrivée à l'urgence, sa diurèse est environ à 0,3 mL/kg/h (normal = 0,5-1,0 mL/kg/h) et sa créatinine à 135 µmol/L (normale = 60-110 µmol/L)",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Très pertinente",
+              "justification": "Il faut l'hydrater, car il est deshydraté. Le mode oral ou IV va dépendre de sa tolérance. En général, une fois à l'hôpital on va choisir quelques heures d'IV (en plus de PO)."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "Face à une diurèse abaissée et une élévation de la créatinine, l’hydratation orale seule devient insuffisante, car ces signes témoignent d’une déshydratation significative et d’un début d’atteinte rénale fonctionnelle. Il est donc impératif d’escalader vers une réhydratation intraveineuse pour assurer une correction rapide des pertes. L’hydratation orale reste pertinente en prévention ou en cas de formes légères, mais ici, elle n’est pas suffisante."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "La diminution de la diurèse et l'élévation de la créatinine témoignent d'une déshydratation significative avec atteinte rénale débutante. Dans ce contexte, une hydratation orale seule devient insuffisante et une réanimation liquidienne intraveineuse est indiquée afin de corriger rapidement le déficit hydrique et prévenir l'aggravation de l'insuffisance rénale."
+            }
+          ]
+        },
+        {
+          "title": "Immunosuppression",
+          "hypothesis": "Prescrire du lopéramide (antipéristaltique) afin de traiter la diarrhée et permettre un retour à domicile",
+          "new_information": "Vous découvrez que le patient est sous adalimumab (anti-TNF), donc immunosupprimé.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le lopéramide est un médicament de confort dans cette situation. Le patient n'en a pas besoin. L'adalimumab est un anti TNF, cela ne change pas grand chose a la situation. Il faut recherche le C difficile par exemple !!"
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "L'immunosuppression augmente le risque d'infections graves ou opportunistes et justifie une évaluation plus approfondie avant de traiter uniquement de façon symptomatique. Le lopéramide ne devrait pas être privilégié sans avoir exclu une étiologie infectieuse invasive."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "Chez un patient immunosupprimé par anti-TNF, l'utilisation du lopéramide est à manier avec beaucoup de précaution, car il existe un risque de complications infectieuses sévères, notamment colite à C. difficile. La priorité doit être l'identification de la cause et la surveillance rapprochée. Dans ce contexte, la pertinence du lopéramide est nettement réduite, car la sécurité prime sur le confort symptomatique."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Douleur abdominale 2",
+      "text": "Un homme de 52 ans, consommateur d’alcool modéré, se présente à 1 h du matin pour une douleur épigastrique brutale « en barre », cotée 8/10, irradiant dans le dos et survenue après un repas riche en graisses. Il a eu plusieurs vomissements bilieux. Sa tension artérielle est stable à 130/92, et sa fréquence cardiaque est à 115 bpm. L’abdomen est souple et ne montre pas de défense.",
+      "educational_synthesis": "Messages clé des experts\nLes experts rappellent qu'une lipase normale n'exclut pas une pancréatite aiguë, particulièrement lorsque le dosage est réalisé précocement. Le diagnostic doit toujours reposer sur l'ensemble du tableau clinique et, au besoin, être confirmé par une imagerie. Ils soulignent également qu'une douleur biliaire accompagnée de frissons et d'ictère évoque une cholangite plutôt qu'une colique biliaire simple. Une détérioration hémodynamique brutale doit faire maintenir la suspicion d'une urgence vasculaire, comme un anévrisme de l'aorte abdominale, même si les premiers examens sont rassurants.\nCompléments d’apprentissage\nLa pancréatite aiguë se manifeste classiquement par une douleur épigastrique intense irradiant dans le dos, souvent accompagnée de nausées et de vomissements. La lipase peut être normale au tout début des symptômes; son interprétation dépend donc du délai depuis le début de la douleur. Une valeur normale persistante à distance rend toutefois le diagnostic moins probable. Une colique biliaire simple correspond à une obstruction transitoire du canal cystique. Elle provoque une douleur, mais ne devrait pas s’accompagner de fièvre, de frissons ni d’ictère. L’association douleur biliaire, fièvre ou frissons et ictère évoque plutôt une cholangite, qui nécessite une prise en charge urgente, incluant antibiothérapie et drainage biliaire selon la gravité. Devant une détérioration brutale avec hypotension, il faut élargir rapidement le diagnostic différentiel aux urgences vasculaires et hémorragiques. L’échographie est utile, mais demeure opérateur-dépendante et peut être limitée. Chez un patient suffisamment stable, la tomodensitométrie permet une évaluation plus complète. Cette situation illustre l’importance de caractériser la douleur selon sa localisation, son irradiation, son évolution et ses facteurs déclencheurs, éléments essentiels du diagnostic différentiel.",
+      "scenarios": [
+        {
+          "title": "Pancréatite aiguë",
+          "hypothesis": "Une pancréatite aiguë",
+          "new_information": "La lipase reste dans la norme malgré une douleur persistante.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La clinique prime. La lipase s'élève parfois tardivement. Il faudrait donc la doser à nouveau plus tard. Je remettrais mon diagnostic en cause si elle était toujours négative 6-8h plus tard."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Même si la lipase normale peut faire douter du diagnostic de pancréatite aiguë, l’expérience clinique enseigne que l’élévation enzymatique peut être retardée, surtout en tout début d’évolution. Il convient donc de ne pas écarter trop rapidement ce diagnostic en présence d’un tableau clinique typique. Un nouveau dosage à distance s’impose avant de reconsidérer l’hypothèse. La pertinence du raisonnement est donc intermédiaire."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le diagnostic de pancréatite aiguë repose sur la présence d'au moins deux des trois critères suivants : une douleur abdominale typique, une élévation de la lipase (ou de l'amylase) e 3 fois la limite supérieure de la normale, ou des anomalies caractéristiques à l'imagerie. Une lipase normale diminue la probabilité d'une pancréatite aiguë, sans toutefois l'exclure complètement. La sensibilité de la lipase dépend du délai depuis le début des symptômes : un dosage réalisé très précocement peut être faussement normal. En présence d'une douleur hautement évocatrice, une réévaluation diagnostique et, au besoin, une imagerie demeurent indiquées."
+            }
+          ]
+        },
+        {
+          "title": "Colique biliaire simple",
+          "hypothesis": "Une colique biliaire simple",
+          "new_information": "La douleur cède complètement après l'administration de morphine IV puis revient, cette fois accompagnée de frissons et d’ictère.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L'apparition de fièvre et d'ictère exclu le caractère simple de la colique, il s'agit d'une cholangite par définition."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L'apparition de frissons et d'un ictère transforme le tableau clinique en une atteinte biliaire compliquée, évoquant une obstruction de la voie biliaire principale, possiblement compliquée d'une cholangite aiguë. Une colique biliaire simple ne s'accompagne pas de signes inflammatoires ou de cholestase. Ces nouvelles données rendent ce diagnostic peu probable et imposent une réévaluation diagnostique ainsi qu'une prise en charge urgente."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L’apparition de frissons et d’ictère après une douleur biliaire initiale modifie radicalement l’orientation diagnostique, car elle suggère une complication infectieuse comme une cholangite. Maintenir l’hypothèse d’une colique biliaire simple n’est alors plus cohérent avec l’évolution clinique. En pratique, reconnaître cette bascule rapide est essentiel pour initier sans délai une prise en charge spécifique."
+            }
+          ]
+        },
+        {
+          "title": "Anévrisme de l’aorte abdominale",
+          "hypothesis": "Un anévrisme de l’aorte abdominale fissuré",
+          "new_information": "L’échographie ciblée ne montre pas de dilatation significative de l'aorte, mais le patient devient soudainement froid, pâle et hypotendu.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "Le patient est en choc. Ce choc est soit septique ou hypovolémique (on exclue ici le choc cardiogénique). Puisque chaque échographie est échographiste dépendant, il est possible de manquer un anévrisme. Si un anévrisme de l'aorte est considéré, il ne peut pas être totalement exclu après une échographie. Un scan est nécessaire pour remettre en cause l'hypothèse de l'échographie. (L'écho c'est bien, mais un scan c'est mieux!)"
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "Bien que l'échographie ne montre pas de dilatation significative de l'aorte, l'apparition soudaine d'une pâleur, d'une hypotension et de signes de choc augmente fortement la probabilité d'une urgence vasculaire. Une échographie ciblée ne permet pas toujours d'exclure un anévrisme fissuré, notamment si l'examen est limité ou si la rupture est contenue. Cette détérioration clinique justifie donc de maintenir un haut niveau de suspicion et de poursuivre rapidement les investigations"
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "L'absence de dilatation à l'échographie n'élimine pas totalement un anévrisme fissuré, surtout si le patient présente soudainement des signes de choc. L'échographie étant opérateur-dépendante, un scanner est souvent nécessaire pour trancher en urgence. Maintenir ce diagnostic parmi les hypothèses est pertinent tant que l'instabilité persiste. Cela illustre la priorité donnée à la surveillance clinique sur l'interprétation isolée des examens."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Diarrhée 3",
+      "text": "Une femme de 46 ans se présente avec des selles molles trois à quatre fois par jour depuis huit mois, sans traces de sang ni épisodes fébriles. Elle rapporte une perte pondérale de six kilogrammes au cours des cinq derniers mois. Ses antécédents médicaux se résument à une hypothyroïdie correctement traitée et à un trouble anxieux.",
+      "educational_synthesis": "Messages clé des experts\nLes experts rappellent que devant une diarrhée chronique accompagnée d'une perte de poids, il faut prioritairement rechercher une cause organique. Une sérologie cœliaque négative chez une patiente suivant déjà un régime sans gluten ne permet pas d'exclure une maladie cœliaque, puisque ce régime peut normaliser les tests sérologiques. La présence d'une diarrhée nocturne et d'une perte pondérale rend un syndrome de l'intestin irritable beaucoup moins probable. Même en l'absence d'antécédents de maladie inflammatoire intestinale (MII) ou de manifestations extra-intestinales, une MII ne peut être exclue. La calprotectine fécale demeure un examen pertinent pour orienter les investigations.\nCompléments d'apprentissage\nL'évaluation d'une diarrhée chronique repose avant tout sur la recherche de signes d'alarme, comme une perte de poids, une diarrhée nocturne, une anémie ou un début tardif des symptômes. Ces éléments orientent davantage vers une pathologie organique que fonctionnelle et justifient un bilan complémentaire. Chez un patient ayant déjà réduit ou éliminé le gluten de son alimentation, une sérologie cœliaque négative doit être interprétée avec prudence, puisqu'elle peut être faussement rassurante. Si la suspicion clinique demeure élevée, d'autres investigations peuvent être nécessaires. La calprotectine fécale constitue un examen non invasif utile pour distinguer une diarrhée inflammatoire d'une diarrhée fonctionnelle. Bien qu'elle ne confirme pas à elle seule une MII, elle aide à sélectionner les patients qui bénéficieront d'une exploration endoscopique, notamment lorsqu'une diarrhée chronique s'accompagne de signes d'alarme.",
+      "scenarios": [
+        {
+          "title": "Maladie cœliaque",
+          "hypothesis": "Une maladie cœliaque non diagnostiquée",
+          "new_information": "Sa sérologie cœliaque est négative, mais elle révèle qu’elle suit « un régime sans gluten approximatif » depuis 1 an.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La sérologie est un test très sensible pour la maladie coeliaque, mais sous régime sans gluten elle peut se négativer. Donc l'info de la diète ne change pas notre hypothèse de départ."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La négativité de la sérologie sous régime sans gluten, même approximatif, diminue la sensibilité du test pour la maladie cœliaque, ce qui complique l'interprétation. Ce contexte ne permet pas d'exclure formellement le diagnostic, mais il le rend moins probable et nécessite d'élargir le raisonnement différentiel. Il reste donc raisonnable de conserver cette hypothèse parmi d'autres mais avec une pondération intermédiaire. Cette approche reflète un raisonnement pragmatique face à l'incertitude diagnostique."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La sérologie cœliaque peut se négativer sous régime sans gluten, même s'il est approximatif, ce qui limite la valeur d’un résultat négatif. Cependant, l’absence de gluten strict rend l’interprétation plus délicate et pourrait masquer une maladie cœliaque. Il reste donc pertinent de garder cette hypothèse, mais avec une pondération moindre, car d’autres causes doivent aussi être envisagées."
+            }
+          ]
+        },
+        {
+          "title": "Syndrome de l’intestin irritable",
+          "hypothesis": "Un syndrome de l’intestin irritable",
+          "new_information": "Elle documente des épisodes de diarrhée nocturne qui la réveillent et un antécédent familial de diabète de type 1",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Peu pertinente",
+              "justification": "Le SII débute rarement a 46 ans, mais le fait d'avoir une diarrhée nocturne évoque davantage une cause organique (et non fonctionnelle comme le SII). Tout comme la perte de poids. Avec cette diarrhée nocturne cela fait beaucoup d'argument pour réorienter notre diagnostic vers une cause organique et non fonctionnelle. Le SII est une hypothèse peu plausible et un bilan doit être entrepris."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "La présence de diarrhée nocturne et la perte de poids orientent clairement vers une cause organique plutôt que fonctionnelle. Le syndrome de l’intestin irritable, généralement sans signes d’alarme, devient donc une hypothèse peu plausible dans ce contexte. Chez une patiente de 46 ans, ces symptômes imposent d’écarter d’abord une pathologie sous-jacente sérieuse. Il serait risqué de privilégier le SII en première intention ici."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Peu pertinente",
+              "justification": ""
+            }
+          ]
+        },
+        {
+          "title": "Hyperthyroïdie",
+          "hypothesis": "Une hyperthyroïdie iatrogénique",
+          "new_information": "Sa glycémie est élevée et la patiente rapporte des paresthésies distales.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Très pertinente",
+              "justification": "La dysthyroidie peut évoluer et une hyperthyroidie peut être apparue, il faut donc y penser rapidement d'autant qu'il y a une perte de poids. Le diabète nouveau peut témoigner de trouble endocrinien ou auto-immun et témoigne qu'il se passe quelque chose de nouveau qui peut impliquer le diabète et la dysthyroidie."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "L'hyperthyroïdie iatrogène est une cause classique de diarrhée chronique et de perte de poids, surtout chez une patiente ayant des antécédents thyroïdiens. L'association avec une hyperglycémie et des paresthésies peut témoigner d'une atteinte endocrinienne plus large, ce qui doit alerter le clinicien sur une possible évolution du tableau. Il reste pertinent de hiérarchiser cette hypothèse, car elle est cohérente avec le tableau clinique global et pourrait orienter vers des examens ciblés rapidement. Toutefois, d'autres diagnostics restent possibles, d'où une pondération élevée mais non exclusive."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "L'apparition d'une hyperthyroïdie iatrogène peut expliquer une diarrhée chronique et une perte de poids, surtout chez une patiente avec antécédent thyroïdien. L'association d'une hyperglycémie et de paresthésies suggère un trouble endocrinien plus large, qui doit alerter sur une possible évolution de la maladie. Il est donc crucial d'intégrer rapidement cette hypothèse dans le raisonnement clinique pour éviter de passer à côté d'une cause traitable. Cette démarche est cohérente avec une approche pragmatique et axée sur la sécurité du patient."
+            }
+          ]
+        },
+        {
+          "title": "Maladie inflammatoire intestinale",
+          "hypothesis": "Demander une calprotectine fécale pour dépister une maladie inflammatoire intestinale",
+          "new_information": "La patiente n’a pas d’antécédents de colopathie inflammatoire et n’a pas de symptômes extra-intestinaux (arthralgies, éruptions cutanées)",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le tableau clinique initial n'est pas typique d'une maladie inflammatoire de l'intestin (MII), notamment en raison de l'absence de rectorragie et de douleurs abdominales. Toutefois, ce diagnostic reste possible en raison de l'évolution chronique de la diarrhée. La calprotectine fécale peut être utile pour appuyer ou écarter l'hypothèse d'une MII. L'absence de manifestations extra-intestinales ou d'antécédents personnels de MII n'est pas en faveur du diagnostic de MII, mais ne permet pas non plus de l'exclure. Les nouvelles informations présentées ne modifient pas suffisamment le raisonnement clinique pour remettre en question la demande de calprotectine. Ceci dit, ici, une colposcopie serait bien plus intéressante, mais la calprotectine demeure un examen facile à faire."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'absence d'antécédents de MII et de symptômes extra-intestinaux diminue la probabilité d'une maladie inflammatoire, mais n'en fait pas une hypothèse à exclure d'emblée. La calprotectine fécale reste utile pour orienter le bilan, car la chronicité et la perte de poids sont préoccupantes. Ce test a l’avantage d’être non invasif et peut aider à prioriser la réalisation d’une coloscopie. Sa pertinence est donc intermédiaire dans ce contexte, ni évidente, ni à écarter."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L’absence d’antécédents de maladie inflammatoire intestinale et de symptômes extra-digestifs rend moins probable une MII, mais ne permet pas de l’exclure formellement, surtout face à une diarrhée chronique avec perte de poids. La calprotectine fécale reste un examen simple, non invasif, utile pour trier les patients nécessitant une exploration endoscopique. Ces éléments cliniques atténuent la probabilité de MII mais ne la rendent ni très improbable ni très probable. Il est donc raisonnable de considérer la demande de calprotectine comme d’importance intermédiaire ici."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Douleur abdominale 3",
+      "text": "Une femme de 29 ans consulte pour des douleurs péri-ombilicales qui, depuis 18 heures, ont migré vers la fosse iliaque droite. Elle présente une fièvre modérée, a vomi une fois et se dit incapable de tolérer les apports per os. À l’examen, l’abdomen est souple et le signe de McBurney est légèrement positif.",
+      "educational_synthesis": "Messages clé des experts\nUne douleur de la fosse iliaque droite ne correspond pas toujours à une appendicite. Bien que ce diagnostic demeure fréquent, l'absence d'amélioration clinique ou des résultats d'imagerie discordants doivent amener à réévaluer le diagnostic différentiel. Une diverticulite cæcale devient moins probable lorsque les marqueurs inflammatoires sont peu élevés et que l'imagerie suggère plutôt une atteinte du grêle. La localisation et l'irradiation de la douleur demeurent des éléments essentiels pour orienter le diagnostic.\nCompléments d'apprentissage\nL'appendicite est le diagnostic le plus fréquent devant une douleur migratrice vers la fosse iliaque droite, mais plusieurs pathologies peuvent présenter un tableau similaire, notamment une diverticulite cæcale, une iléite, une maladie inflammatoire de l'intestin ou une atteinte gynécologique. L'évolution clinique et les examens complémentaires permettent d'affiner progressivement le diagnostic. La diverticulite cæcale, bien que moins fréquente que la diverticulite sigmoïdienne, peut imiter une appendicite. En revanche, une inflammation peu marquée ou une imagerie montrant principalement une atteinte des anses grêles orientent vers d'autres étiologies. Cette situation rappelle qu'il faut éviter le biais de fermeture prématurée : lorsqu'un patient n'évolue pas comme prévu ou que de nouvelles données apparaissent, le diagnostic initial doit être réévalué plutôt que maintenu malgré des éléments contradictoires.",
+      "scenarios": [
+        {
+          "title": "Appendicite aiguë",
+          "hypothesis": "Une appendicite aiguë",
+          "new_information": "L’échographie demeure indécise, mais la patiente développe soudainement un rebond généralisé.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Très pertinente",
+              "justification": "L'écho est souvent indécise. La clinique se précise, donc l'hypothèse est encore plus pertinente."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Très pertinente",
+              "justification": "Un rebond généralisé qui apparaît chez une patiente suspecte d’appendicite aiguë est un signe d’alerte majeur, évoquant une complication comme la péritonite. Même si l’échographie reste indécise, la clinique prend le dessus et rend l’appendicite particulièrement pertinente. L’évolution clinique prime ici sur l’imagerie."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Très pertinente",
+              "justification": "Le développement d’un rebond généralisé chez une patiente avec suspicion d’appendicite aiguë est un signe d’aggravation suggérant une complication, telle qu’une péritonite. Même si l’échographie reste indécise, la clinique prime et rend ce diagnostic encore plus pertinent."
+            }
+          ]
+        },
+        {
+          "title": "Diverticulite cæcale",
+          "hypothesis": "Une diverticulite cæcale",
+          "new_information": "Les marqueurs inflammatoires restent bas (CRP à 11 mg/L)et l’imagerie montre plutôt des anses grêles dilatées.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Peu pertinente",
+              "justification": "La dilatation des anses grêle évoque une obstruction, donc peut être une iléite. Cela n'exclu pas une appendicite. Les marqueurs peuvent être pris a défaut. Cliniquement une diverticulite caecale et une appendicite c'est la même chose."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Peu pertinente",
+              "justification": "Une CRP peu élevée et la présence d'anses grêles dilatées sont peu compatibles avec une diverticulite cæcale aiguë. La diverticule aiguë est habituellement associée à un syndrome inflammatoire plus marqué (CRP élevée), et la présence d'anses grêles dilatées oriente davantage vers d'autre étiologies, comme une occlusion intestinale débutante ou une iléite."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "La présentation d’anses grêles dilatées et de marqueurs inflammatoires peu élevés s’éloigne du tableau classique d’une diverticulite cæcale. Cette hypothèse perd donc en pertinence face à d'autres diagnostics, notamment une pathologie obstructive ou inflammatoire de l’iléon terminal. Il reste néanmoins important de ne pas l’exclure trop précocement, mais la concordance clinique et paraclinique est limitée."
+            }
+          ]
+        },
+        {
+          "title": "Prise en charge",
+          "hypothesis": "Observer sous analgésie et réévaluer dans 6 h",
+          "new_information": "La révision du dossier antérieur évoque un syndrome du colon irritable.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le tableau n'est pas celui d'un colon irritable. La patiente peut avoir ce diagnostic en plus, mais cela ne doit pas teinter notre approche actuelle."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": ""
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Même si un syndrome du côlon irritable figure dans les antécédents, le contexte aigu avec migration de la douleur, fièvre et intolérance alimentaire évoque plutôt une pathologie chirurgicale comme l’appendicite. L’observation sous analgésie et réévaluation peut s’envisager, mais il serait risqué de se laisser rassurer par l’histoire de côlon irritable et de négliger l’évolution potentiellement grave d’une appendicite. La prudence impose de réévaluer rapidement, sans se laisser influencer excessivement par les diagnostics antérieurs. Ce raisonnement permet de ne pas minimiser un tableau aigu chez une patiente jeune."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Hémorragie digestive 3",
+      "text": "Une femme de 73 ans, suivie pour hypertension et prenant des AINS de façon chronique, se présente pour une rectorragie abondante rouge vif, survenue brutalement alors qu’elle était assise. L’épisode n’est accompagné d’aucune douleur abdominale. À l’examen, elle apparaît pâle, affiche une tachycardie compensatoire et présente une tension artérielle légèrement basse.",
+      "educational_synthesis": "Messages clé des experts\nUne rectorragie abondante, brutale et indolore chez une personne âgée évoque surtout une hémorragie diverticulaire, particulièrement en présence d’un épisode similaire antérieur. Un cancer colorectal demeure possible, mais son saignement est habituellement plus chronique ou intermittent. À l’inverse, une colite ulcéreuse active devient très improbable en l’absence de douleur, d’antécédents digestifs et de marqueurs inflammatoires élevés.\nCompléments d’apprentissage\nL’hémorragie diverticulaire est une cause fréquente de saignement digestif bas aigu. Elle se présente classiquement par une rectorragie soudaine, abondante et sans douleur, souvent chez une personne âgée. La prise d’AINS peut augmenter le risque de saignement et doit être recherchée. Un cancer colorectal peut aussi provoquer une rectorragie, mais il s’accompagne plus souvent d’un saignement récurrent, d’une anémie, d’un changement des habitudes intestinales ou d’une perte de poids. Une colite inflammatoire est généralement associée à des douleurs, à une diarrhée et à des marqueurs inflammatoires élevés, ce qui la rend moins compatible avec ce tableau.",
+      "scenarios": [
+        {
+          "title": "Cancer colorectal",
+          "hypothesis": "Un cancer colorectal hémorragique",
+          "new_information": "Le saignement a débuté spontanément il y a 30 minutes",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "Les cancers peuvent saigner sans douleur. Le contexte peut évoquer un cancer."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le début brutal d'une rectorragie abondante oriente davantage vers une cause vasculaire ou diverticulaire qu'un cancer colorectal. Bien qu'un cancer puisse être responsable d'un saignement digestif, celui-ci est habituellement chronique ou intermittent plutôt que massif et d'apparition soudaine."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Un cancer colorectal peut effectivement provoquer un saignement sans douleur, surtout chez un sujet âgé. Cependant, la survenue brutale, le caractère abondant et l'absence de signes d'accompagnement rendent l'hypothèse diverticulaire un peu plus probable, bien que la malignité ne puisse être totalement écartée. Le contexte impose de garder ce diagnostic à l'esprit, mais il apparaît moins typique dans cette situation aiguë. L'évaluation doit rester large, mais la pertinence est intermédiaire ici."
+            }
+          ]
+        },
+        {
+          "title": "Colite ulcéreuse",
+          "hypothesis": "Une colite ulcéreuse en poussée hémorragique",
+          "new_information": "Les premières analyses montrent une CRP normale, calprotectine très basse, et aucun antécédent digestif.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Les colites ulcéreuses sont accompagnées de douleur, de CRP ou de calprotectine élevés. Rien ici n'est en faveur de cette hypothèse."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "L'absence totale de douleur, la normalité de la CRP et de la calprotectine, ainsi que l'absence d'antécédents digestifs excluent pratiquement une colite ulcéreuse active. Chez une patiente âgée sous AINS, d'autres étiologies, notamment diverticulaire ou vasculaire, sont bien plus probables. Une colite ulcéreuse sévère aurait très probablement entraîné des signes inflammatoires et des symptômes digestifs antérieurs. Ce diagnostic est donc extrêmement improbable dans ce contexte aigu."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Une poussée hémorragique de colite ulcéreuse s’accompagne presque toujours de douleurs abdominales et d’anomalies biologiques inflammatoires, ce qui n’est pas le cas ici. L’absence d’antécédents digestifs et la normalité de la CRP et de la calprotectine rendent ce diagnostic hautement improbable."
+            }
+          ]
+        },
+        {
+          "title": "Hémorragie diverticulaire",
+          "hypothesis": "Une hémorragie diverticulaire colique",
+          "new_information": "Elle rapporte un épisode similaire il y a 1 an et demi qui avait nécessité une coloscopie",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Très pertinente",
+              "justification": "Les saignements diverticulaires sont indolores, brutaux et abondants. L'épisode de l'an dernier rend l'hypothèse encore plus pertinente en éliminant la possibilité d'un cancer."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Très pertinente",
+              "justification": "Chez une patiente âgée, sous AINS, avec rectorragie abondante, brutale et indolore, l’hémorragie diverticulaire est très évocatrice, surtout avec un antécédent similaire ayant nécessité une coloscopie. Cette récurrence renforce la probabilité d’un saignement d’origine diverticulaire, qui est connu pour sa présentation aiguë et sans douleur."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Très pertinente",
+              "justification": "Le tableau clinique – rectorragie abondante, début brutal, absence de douleur, terrain AINS – évoque fortement une hémorragie diverticulaire, d'autant plus qu'un antécédent similaire accentue la probabilité de récidive."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Hémorragie digestive 2",
+      "text": "Un homme de 58 ans, dont l’histoire comporte un alcoolisme intermittent, se présente aux urgences à deux heures du matin. Il rapporte avoir vomi un liquide noir, puis avoir évacué à deux reprises des selles \"noires et gluantes\". Il se sent étourdi, transpire abondamment et son teint est pâle. À l’accueil, on note une tachycardie. Aucun examen endoscopique ne pourra être réalisé d'ici les six prochaines heures.",
+      "educational_synthesis": "Messages clé des experts\nLa stabilisation hémodynamique demeure la priorité initiale chez un patient présentant une hémorragie digestive haute. Toutefois, une aggravation clinique rapide, comme l'apparition d'une hématémèse abondante avec altération de l'état de conscience, impose une repriorisation immédiate de la prise en charge et ne justifie pas de retarder l'endoscopie pour des raisons organisationnelles. La persistance d'une instabilité malgré l'administration d'octréotide n'exclut pas une hémorragie variqueuse, puisque le traitement médical seul est souvent insuffisant pour obtenir l'hémostase.\nCompléments d'apprentissage\nChez un patient présentant une suspicion d'hémorragie variqueuse, le traitement doit être instauré rapidement avec octréotide, antibiothérapie et mesures de réanimation, sans attendre la confirmation endoscopique. L'endoscopie thérapeutique avec ligature des varices constitue toutefois le traitement définitif et doit être réalisée dès que l'état du patient le permet. Une absence de réponse clinique au traitement médical initial ne remet donc pas en question le diagnostic, mais traduit plutôt la sévérité du saignement et la nécessité d'une prise en charge urgente.",
+      "scenarios": [
+        {
+          "title": "Ulcère gastroduodénal",
+          "hypothesis": "Un ulcère gastroduodénal saignant",
+          "new_information": "Le patient raconte qu’il a eu une série de vomissements secs “forcés” après un repas copieux, juste avant le jet hématique.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "L'ulcère est une cause très fréquente. Ici les vomissement veulent orienter vers un syndrome de Mallory-Weiss, certes possible mais les vomissements ne sont pas suffisants pour éliminer votre hypothèse d'ulcère."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "Devant des vomissements forcés suivis d’une hématémèse, il faut effectivement évoquer un syndrome de Mallory-Weiss, mais l’ulcère gastroduodénal reste un diagnostic fréquent et pertinent dans ce contexte. La présence de méléna et l’importance du saignement n’excluent pas l’ulcère, même si la chronologie des vomissements peut orienter vers une autre cause. Il est donc pertinent de garder cette hypothèse dans le raisonnement différentiel."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "Dans ce contexte, l’ulcère gastroduodénal saignant reste une hypothèse pertinente malgré la séquence de vomissements forcés, qui pourrait aussi évoquer un syndrome de Mallory-Weiss. La présence de méléna et l’importance de l’hémorragie orientent toutefois vers une cause potentiellement plus sévère qu’une simple lésion muqueuse superficielle. Il est donc raisonnable de maintenir l’ulcère dans le diagnostic différentiel jusqu’à preuve du contraire. La prudence s’impose tant que l’endoscopie n’a pas été réalisée."
+            }
+          ]
+        },
+        {
+          "title": "Reporter l'endoscopie",
+          "hypothesis": "Reporter l’endoscopie à l'arrivée de l'équipe de jour parce que le patient semble se stabiliser sous réplétion volumique",
+          "new_information": "Dix minutes plus tard, il présente une hématémèse rouge vif avec chute de la conscience.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "On savait qu'il saignait, quand on a du méléna on saigne. L'hématémèse ne nous dit rien d'autre. Il faut stabiliser le patient et faire l'endoscopie rapidement. Il faut d'abord le stabiliser, car il est en choc."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Reporter l’endoscopie face à une instabilité hémodynamique est risqué : l’hématémèse rouge vif et la perte de conscience indiquent une aggravation majeure nécessitant une intervention urgente. Même si le patient semblait initialement se stabiliser, la dégradation rapide impose une re-priorisation immédiate des soins. Dans ce contexte, différer l’endoscopie n’est pas pertinent et met en danger la vie du patient. La sécurité doit primer sur le confort organisationnel."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pas du tout pertinente",
+              "justification": "Reporter l’endoscopie dans ce contexte est risqué car la survenue rapide d’une hématémèse rouge vif et d’une altération de conscience signe une décompensation majeure. Même une stabilisation initiale ne garantit pas l’absence de rechute brutale, particulièrement chez un patient à haut risque. Attendre l’équipe de jour face à une telle aggravation expose à une perte de chance vitale. Une intervention rapide prime sur toute logique organisationnelle ici."
+            }
+          ]
+        },
+        {
+          "title": "Varices gastro-œsophagiennes",
+          "hypothesis": "Des varices gastro-œsophagiennes nécessitant octréotide + ATB",
+          "new_information": "Malgré l’administration d’octréotide, les tensions artérielles et l'hémoglobine continuent de chuter.",
+          "experts": [
+            {
+              "expert_label": "Expert 1 (clinicien)",
+              "likert": "Pertinente",
+              "justification": "La rupture de varices est très grave. Dans de nombreux cas, le traitement médical n'est pas suffisant pour permettre une stabilisation rapide. L'hypothèse ne peut donc pas être remise en cause sur ce seul argument."
+            },
+            {
+              "expert_label": "Expert 2 (IA)",
+              "likert": "Pertinente",
+              "justification": "La persistance de l'instabilité hémodynamique malgré l'administration d'octréotide demeure compatible avec une hémorragie variqueuse active. L'octréotide réduit la pression portale et peut limiter le saignement, mais il ne permet pas à lui seul d'obtenir l'hémostase dans tous les cas. L'endoscopie avec ligature des varices, qui constitue le traitement définitif, n'a pas encore été réalisée, ce qui explique que le saignement puisse persister."
+            },
+            {
+              "expert_label": "Expert 3 (IA)",
+              "likert": "Pertinente",
+              "justification": "Dans une hémorragie variqueuse, la persistance d'une instabilité malgré l'octréotide souligne la gravité de la situation et ne permet pas d'écarter l'étiologie des varices. Le traitement médical initial échoue fréquemment dans les tableaux sévères, nécessitant une anticipation de l'escalade thérapeutique. Maintenir cette hypothèse reste pertinent tant qu'aucune preuve formelle d'une autre source n'a été apportée. Cela guide l'urgence de la prise en charge et la préparation à des interventions plus invasives."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

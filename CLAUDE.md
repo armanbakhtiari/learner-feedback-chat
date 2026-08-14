@@ -14,6 +14,10 @@ while maintaining an evolving profile of the learner's gaps.
 **LbC principle that constrains the whole product: no scores, no pass/fail, no red/green
 semaphores.** Everything user-facing is qualitative and in French. Keep it that way.
 
+Two content sets ship today, each seeded separately and each with its own response scale
+(see *Response scales* below): **migraine** (`trainings_2_experts.py` → `scripts/seed_supabase.py`)
+and **gastroenterology** (`data/gastro_trainings.json` → `scripts/seed_gastro.py`).
+
 ## Architecture
 
 ```
@@ -46,6 +50,8 @@ browser-side writes — route them through a FastAPI endpoint.
 | `backend/gap_updater.py` | LLM that merges an evaluation into the learner's profile |
 | `backend/chat_agent.py` | LangGraph feedback agent (RAG + web search tools) |
 | `backend/rag_tool.py`, `backend/chroma_client.py` | Chroma Cloud retrieval (heavy, lazy-imported) |
+| `backend/likert.py` | The response scales; a training names one via `trainings.likert_scale` |
+| `backend/suggestions.py`, `backend/bank_rag.py` | "Suggest new trainings" — query agent → bank vector store → selection agent |
 | `models.py`, `prompts.py` (repo root) | Pydantic structured-output schemas + agent prompts |
 | `frontend/src/components/AppShell.tsx` | Top bar + left nav (`TABS`) + content switch |
 | `frontend/src/components/AppContext.tsx` | Global client state (`Tab` union, conversations, notifications) |
@@ -53,7 +59,9 @@ browser-side writes — route them through a FastAPI endpoint.
 | `frontend/src/lib/api.ts` | `useApi()` — attaches the Clerk token to every backend call |
 | `supabase/migrations/*.sql` | Schema. The initial file documents every table inline |
 | `scripts/ingest.py` | Offline Chroma indexing (run locally; Cloud Run never indexes) |
-| `scripts/seed_supabase.py` | Seeds the training catalogue from `trainings_2_experts.py` |
+| `scripts/seed_supabase.py` | Seeds the **migraine** catalogue from `trainings_2_experts.py` |
+| `scripts/parse_training_pdf.py` | Offline: SENSAI export PDF → `data/gastro_trainings.json` (committed) |
+| `scripts/seed_gastro.py` | Seeds the **gastro** catalogue from that JSON |
 
 ## The completion pipeline
 
@@ -69,6 +77,11 @@ and best-effort (a failing step never kills the run):
 3. **Gap updater** — merges the evaluation into the learner's profile; writes the current
    version to `learning_gaps` **and** appends a snapshot to `learning_gap_history`.
 4. **Initial feedback** — creates the conversation's first agent message. → notify.
+   Two inputs are specific to this step: the training's `domain` becomes the agent's
+   `training_type` (so a gastro learner is never answered from the migraine PDFs — a
+   domain with no `Docs_*` folder degrades to "not covered, try web search"), and the
+   situations' `educational_synthesis` is passed as expert grounding. The synthesis is
+   deliberately **not** in the interactive chat context.
 
 ⚠️ **The evaluator's `"situation N"` / `"scenario M"` keys are positional**, matching the
 order `build_evaluation_input` walked (situations by `situation_index`, scenarios by
@@ -84,7 +97,14 @@ Schema and inline commentary: `supabase/migrations/`. Shape:
   `user_responses` (per scenario) → `evaluations` (one per completed user_training).
 - Content catalogue: `trainings` → `situations` → `scenarios` → `expert_responses`.
   **Expert responses must never reach a client path** — only the evaluator reads them
-  (`get_training_content(include_experts=True)`).
+  (`get_training_content(include_experts=True)`). The same goes for
+  `situations.educational_synthesis`; both client endpoints run it through
+  `app._strip_expert_material`.
+- `trainings.origin` = `seed_mandatory` | `seed_bank` | `suggested_bank` | `generated`.
+  There are **several** `seed_mandatory` rows (one entry point per theme/domain); every
+  learner is assigned all of them at bootstrap and completing **any one** unlocks the
+  feedback and suggestions. `list_bank_trainings()` (the suggestion bank) covers only
+  `seed_bank`/`suggested_bank`.
 - `learning_gaps` — the learner's *current* profile (one row per user, overwritten).
   `learning_gap_history` — append-only snapshot per pipeline run, powering the
   "versions précédentes" view in *Mon apprentissage*.
@@ -95,10 +115,48 @@ Schema and inline commentary: `supabase/migrations/`. Shape:
 Applying a migration: add a timestamped `.sql` file to `supabase/migrations/`, then
 `supabase db push` (needs `SUPABASE_DB_PASSWORD`) or paste it into the Supabase SQL editor.
 
+⚠️ Each seed script **deletes and re-inserts its own domain's** `seed_mandatory`/`seed_bank`
+rows, which cascades to any `user_trainings` attached to them. Keep the `domain` scoping in
+`_delete_existing_seed` — without it, running one seed wipes the other's content.
+
+## Response scales
+
+Learning by Concordance has more than one valid response scale, and the two content sets
+use different ones, so the scale is a property of the training (`trainings.likert_scale`),
+not a constant. `backend/likert.py` and `frontend/src/lib/types.ts::LIKERT_SCALES` hold the
+two lists and must stay in sync with the `likert_scale` Postgres enum:
+
+| key | values | used by |
+|---|---|---|
+| `concordance` | Fortement affaiblie … Fortement renforcée | migraine (and the default for older rows) |
+| `pertinence` | Pas du tout pertinente … Très pertinente | gastro (which also has *action* scenarios, where "renforcée" would not read) |
+
+Because the permitted values are per-training, `AssistedAnswer.likert` and
+`GeneratedExpert.likert` in `models.py` are plain `str`, not `Literal` — the prompt lists
+the scale and `likert.coerce()` snaps the answer back onto it.
+
+## Suggestions
+
+`GET /suggestions?preference=…` → `backend/suggestions.py`: a **query agent** turns the
+learner's gap profile (plus their optional free-text wish) into a retrieval query, the
+`bank_situations` Chroma collection returns candidates, and a **selection agent** picks
+1–3 and writes a French rationale. Two rules matter:
+
+- **Per-user exclusion**: trainings already on the learner's dashboard *or* completed are
+  filtered out after retrieval. Nothing is removed from the vector store — the bank is
+  shared — hence the deliberately wide `top_k`. When everything relevant is already taken,
+  the endpoint returns `status: "exhausted"` with a message the UI shows verbatim.
+- **Domain fit**: the bank is mixed-domain, so the selection agent is told to keep only
+  candidates consistent with the learner's practice area *unless they explicitly asked for
+  another subject*. This is prompt-level and stays generic — do not hard-code domain names.
+
+`GET /bank-trainings/{id}` backs the "Voir le contenu" preview on a suggestion card
+(objectives + situations + scenarios; never experts or the synthesis).
+
 ## Auth
 
 Clerk issues the session JWT; `backend/auth.py` verifies it against Clerk's JWKS and maps
-`sub` → a `users` row, creating it (plus the mandatory training and an empty profile) on
+`sub` → a `users` row, creating it (plus the mandatory trainings and an empty profile) on
 first sign-in. **Clerk's default session token has no `email` claim**, so `auth.py` falls
 back to the Clerk Backend API (`CLERK_SECRET_KEY`) to resolve it, caching successes and
 backfilling rows whose email is still null. Adding `{"email": "{{user.primary_email_address}}"}`

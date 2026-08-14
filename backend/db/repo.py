@@ -66,14 +66,21 @@ def upsert_user(clerk_user_id: str, email: Optional[str], full_name: Optional[st
     return create_user(clerk_user_id, email, full_name)
 
 
-def get_mandatory_training() -> Optional[Dict[str, Any]]:
+def list_mandatory_trainings() -> List[Dict[str, Any]]:
+    """
+    The entry-point trainings every learner starts with. There are several (one per
+    theme / domain) and completing ANY ONE of them is enough to unlock feedback and
+    suggestions — they are a choice, not a checklist.
+    """
     sb = get_supabase()
-    rows = sb.table("trainings").select("*").eq("origin", "seed_mandatory").limit(1).execute().data
-    return rows[0] if rows else None
+    return (
+        sb.table("trainings").select("*")
+        .eq("origin", "seed_mandatory").order("created_at").execute().data
+    )
 
 
 def ensure_bootstrap(user: Dict[str, Any]) -> None:
-    """On first sign-in: assign the mandatory training + create an empty gap doc."""
+    """On first sign-in: assign the mandatory trainings + create an empty gap doc."""
     sb = get_supabase()
     user_id = user["id"]
 
@@ -82,9 +89,9 @@ def ensure_bootstrap(user: Dict[str, Any]) -> None:
     if not gap:
         sb.table("learning_gaps").insert({"user_id": user_id, "content": "", "structured": {}}).execute()
 
-    # Mandatory training assignment.
-    mandatory = get_mandatory_training()
-    if mandatory:
+    # Mandatory training assignments (assign_training is idempotent, so existing users
+    # pick up newly added entry points on their next request).
+    for mandatory in list_mandatory_trainings():
         assign_training(user_id, mandatory["id"])
 
 
@@ -166,23 +173,27 @@ def bank_hash() -> str:
 
 
 def create_training(title: str, domain: str, origin: str, objectives: List[str],
-                    created_by: Optional[str] = None, source_training_id: Optional[str] = None) -> Dict[str, Any]:
+                    created_by: Optional[str] = None, source_training_id: Optional[str] = None,
+                    likert_scale: str = "concordance") -> Dict[str, Any]:
     sb = get_supabase()
     return (
         sb.table("trainings")
         .insert({
             "title": title, "domain": domain, "origin": origin,
-            "learning_objectives": objectives,
+            "learning_objectives": objectives, "likert_scale": likert_scale,
             "created_by": created_by, "source_training_id": source_training_id,
         })
         .execute()
     ).data[0]
 
 
-def add_situation(training_id: str, situation_index: int, title: str, text: str) -> Dict[str, Any]:
+def add_situation(training_id: str, situation_index: int, title: str, text: str,
+                  educational_synthesis: Optional[str] = None) -> Dict[str, Any]:
+    """``educational_synthesis`` is expert reference material — never send it to a client."""
     sb = get_supabase()
     return sb.table("situations").insert({
         "training_id": training_id, "situation_index": situation_index, "title": title, "text": text,
+        "educational_synthesis": educational_synthesis,
     }).execute().data[0]
 
 

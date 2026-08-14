@@ -8,12 +8,13 @@ other learner's answers.
 """
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
 
 from models import AssistedAnswer
+from backend.likert import DEFAULT_SCALE, coerce, values_for
 from backend.llm_retry import invoke_with_retry
 
 
@@ -28,13 +29,13 @@ You are given a clinical SITUATION and a SCENARIO consisting of:
 - an action/diagnostic hypothesis ("Si vous pensiez ...")
 - a new piece of information ("Et qu'alors ...")
 
-The learner must indicate how this new information changes the relevance of the hypothesis,
-on the 5-level concordance scale:
-"Fortement affaiblie", "Affaiblie", "Inchangée", "Renforcée", "Fortement renforcée".
+The learner must indicate how this new information affects the hypothesis, on this
+5-level scale (ordered from most negative to most positive):
+{scale}
 
 # Task
 Propose ONE plausible response a competent learner could give:
-- `likert`: the chosen concordance level.
+- `likert`: one of the five values above, copied VERBATIM.
 - `justification`: 2 to 4 sentences, in French, explaining the reasoning.
 
 # Constraints
@@ -52,8 +53,10 @@ def _llm() -> ChatAnthropic:
     )
 
 
-def generate_assisted_answer(situation_text: str, hypothesis: str, new_information: str) -> Dict[str, Any]:
+def generate_assisted_answer(situation_text: str, hypothesis: str, new_information: str,
+                             scale: Optional[str] = DEFAULT_SCALE) -> Dict[str, Any]:
     """Return {"likert", "justification"} for a single scenario (no expert data used)."""
+    scale_text = "\n".join(f'- "{v}"' for v in values_for(scale))
     structured = _llm().with_structured_output(AssistedAnswer)
     human = f"""SITUATION:
 {situation_text}
@@ -62,9 +65,12 @@ SCENARIO:
 Si vous pensiez ... {hypothesis}
 Et qu'alors ... {new_information}
 
-Propose a response (concordance level + justification). Write the justification in French."""
+Propose a response (a value from the scale + justification). Write the justification in French."""
     result: AssistedAnswer = invoke_with_retry(
         structured.invoke,
-        [SystemMessage(content=ANSWER_ASSIST_PROMPT), HumanMessage(content=human)],
+        [SystemMessage(content=ANSWER_ASSIST_PROMPT.format(scale=scale_text)),
+         HumanMessage(content=human)],
     )
-    return result.model_dump()
+    answer = result.model_dump()
+    answer["likert"] = coerce(answer.get("likert"), scale)
+    return answer
