@@ -127,11 +127,18 @@ async def get_current_user(authorization: Optional[str] = Header(default=None)) 
 
     user = repo.get_user_by_clerk_id(clerk_user_id)
     if user is None:
-        user = repo.create_user(
-            clerk_user_id,
-            email=_resolve_email(claims, clerk_user_id),
-            full_name=_display_name(claims),
-        )
+        try:
+            user = repo.create_user(
+                clerk_user_id,
+                email=_resolve_email(claims, clerk_user_id),
+                full_name=_display_name(claims),
+            )
+        except Exception:
+            # The browser fires several authenticated requests at once on first load;
+            # a concurrent one may have inserted the row (clerk_user_id is unique).
+            user = repo.get_user_by_clerk_id(clerk_user_id)
+            if user is None:
+                raise
         repo.ensure_bootstrap(user)
     elif not user.get("email"):
         # Rows created before the email fallback existed: fill them in on next sign-in.

@@ -106,6 +106,10 @@ async def me(user: Dict[str, Any] = Depends(get_current_user)):
 
 @app.get("/dashboard")
 async def dashboard(user: Dict[str, Any] = Depends(get_current_user)):
+    # Bootstrap here, not only at sign-up: the mandatory set grows when new content is
+    # seeded, and users who signed up before that would otherwise never receive the new
+    # entry points. Cheap and idempotent — see repo.ensure_bootstrap.
+    repo.ensure_bootstrap(user)
     return {"trainings": repo.list_dashboard(user["id"])}
 
 

@@ -7,17 +7,20 @@ import { IconChat } from "../Icons";
 import type { Conversation, UserTraining } from "@/lib/types";
 
 export default function CompletedView() {
-  const { api, refreshTick, conversations, openConversation } = useApp();
+  const { api, refreshTick, bump, conversations, openConversation } = useApp();
   const [trainings, setTrainings] = useState<UserTraining[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setFailed(false);
     api
       .get<{ trainings: UserTraining[] }>("/completed")
       .then((r) => active && setTrainings(r.trainings))
+      .catch(() => active && setFailed(true))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
@@ -28,6 +31,20 @@ export default function CompletedView() {
     conversations.find((c) => c.user_training_id === utId);
 
   if (loading) return <p className="text-slate-500">Chargement…</p>;
+
+  // A failed load must not be mistaken for "nothing completed yet".
+  if (failed)
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <p className="text-slate-600">Impossible de charger vos formations complétées.</p>
+        <button
+          onClick={bump}
+          className="mt-3 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
 
   return (
     <div>

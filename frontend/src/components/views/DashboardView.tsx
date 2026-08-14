@@ -5,16 +5,21 @@ import { useApp } from "../AppContext";
 import type { UserTraining } from "@/lib/types";
 
 export default function DashboardView() {
-  const { api, refreshTick, openTraining } = useApp();
+  const { api, refreshTick, bump, openTraining } = useApp();
   const [trainings, setTrainings] = useState<UserTraining[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed load must not look like "you have no trainings" — that is
+  // indistinguishable from the real empty state and only a manual refresh fixed it.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setFailed(false);
     api
       .get<{ trainings: UserTraining[] }>("/dashboard")
       .then((r) => active && setTrainings(r.trainings))
+      .catch(() => active && setFailed(true))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
@@ -22,6 +27,19 @@ export default function DashboardView() {
   }, [api, refreshTick]);
 
   if (loading) return <p className="text-slate-500">Chargement…</p>;
+
+  if (failed)
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <p className="text-slate-600">Impossible de charger vos formations.</p>
+        <button
+          onClick={bump}
+          className="mt-3 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
 
   // The entry-point trainings are a choice, not a checklist — completing any one of them
   // is what unlocks the rétroaction and the suggestions.

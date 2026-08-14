@@ -5,13 +5,30 @@ import { useCallback, useMemo } from "react";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Clerk can still be hydrating its session when the first views mount, and `getToken()`
+ * resolves to `null` until it isn't. Sending the request anyway produced an unauthenticated
+ * call, a 401, and a view stuck on its empty state until the user refreshed by hand — so
+ * wait briefly for the token instead of firing without one.
+ */
+async function waitForToken(getToken: () => Promise<string | null>): Promise<string | null> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const token = await getToken();
+    if (token) return token;
+    await sleep(150 * (attempt + 1)); // ~5s total, well past normal hydration
+  }
+  return null;
+}
+
 /** Hook returning fetch helpers that attach the Clerk JWT to every backend call. */
 export function useApi() {
   const { getToken } = useAuth();
 
   const request = useCallback(
     async <T = unknown>(path: string, opts: RequestInit = {}): Promise<T> => {
-      const token = await getToken();
+      const token = await waitForToken(getToken);
       const res = await fetch(BASE + path, {
         ...opts,
         headers: {

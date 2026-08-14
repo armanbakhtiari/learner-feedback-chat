@@ -73,16 +73,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const r = await api.get<{ notifications: NotificationRow[] }>("/notifications");
       setNotifications(r.notifications);
     } catch {
-      /* ignore */
+      /* transient; the 20s poll below retries */
     }
   }, [api]);
 
+  // Unlike notifications there is no poll behind this one, so a failed first load used to
+  // leave "Agent de rétroaction" empty until the user refreshed the page by hand.
   const refreshConversations = useCallback(async () => {
-    try {
-      const r = await api.get<{ conversations: Conversation[] }>("/conversations");
-      setConversations(r.conversations);
-    } catch {
-      /* ignore */
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await api.get<{ conversations: Conversation[] }>("/conversations");
+        setConversations(r.conversations);
+        return;
+      } catch {
+        await new Promise((res) => setTimeout(res, 400 * (attempt + 1)));
+      }
     }
   }, [api]);
 

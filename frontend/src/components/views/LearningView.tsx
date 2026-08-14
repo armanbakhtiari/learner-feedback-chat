@@ -13,10 +13,12 @@ const formatDate = (iso: string) =>
   });
 
 export default function LearningView() {
-  const { api, refreshTick } = useApp();
+  const { api, refreshTick, bump } = useApp();
   const [content, setContent] = useState("");
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Distinguish a failed load from a genuinely empty profile.
+  const [failed, setFailed] = useState(false);
 
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<LearningGapVersion[] | null>(null);
@@ -26,6 +28,7 @@ export default function LearningView() {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setFailed(false);
     api
       .get<{ content: string; updated_at: string | null }>("/learning-gaps")
       .then((r) => {
@@ -33,6 +36,7 @@ export default function LearningView() {
         setContent(r.content);
         setUpdatedAt(r.updated_at);
       })
+      .catch(() => active && setFailed(true))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
@@ -59,6 +63,19 @@ export default function LearningView() {
   }, [showHistory, history, api]);
 
   if (loading) return <p className="text-slate-500">Chargement…</p>;
+
+  if (failed)
+    return (
+      <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-6">
+        <p className="text-slate-600">Impossible de charger votre profil d&apos;apprentissage.</p>
+        <button
+          onClick={bump}
+          className="mt-3 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
 
   // The newest history row mirrors the current profile — show the older ones as "previous".
   const previous = (history ?? []).slice(1);

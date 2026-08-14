@@ -80,19 +80,45 @@ def list_mandatory_trainings() -> List[Dict[str, Any]]:
 
 
 def ensure_bootstrap(user: Dict[str, Any]) -> None:
-    """On first sign-in: assign the mandatory trainings + create an empty gap doc."""
+    """
+    Give the user an empty gap doc and every mandatory training they're missing.
+
+    Must be safe *and cheap* to call on every dashboard load, not just at sign-up: the
+    mandatory set grows when new content is seeded, and users who signed up earlier have
+    to pick those entry points up too. The steady state (nothing missing) costs three
+    SELECTs and no writes.
+    """
     sb = get_supabase()
     user_id = user["id"]
 
     # Empty learning-gap doc.
     gap = sb.table("learning_gaps").select("id").eq("user_id", user_id).limit(1).execute().data
     if not gap:
-        sb.table("learning_gaps").insert({"user_id": user_id, "content": "", "structured": {}}).execute()
+        try:
+            sb.table("learning_gaps").insert({"user_id": user_id, "content": "", "structured": {}}).execute()
+        except Exception:
+            pass  # concurrent first request won the race; the row exists either way
 
-    # Mandatory training assignments (assign_training is idempotent, so existing users
-    # pick up newly added entry points on their next request).
-    for mandatory in list_mandatory_trainings():
-        assign_training(user_id, mandatory["id"])
+    # Assign the mandatory trainings this user does not already have. Bulk, so that
+    # concurrent first requests can't interleave into a half-populated dashboard.
+    mandatory_ids = [m["id"] for m in list_mandatory_trainings()]
+    if not mandatory_ids:
+        return
+    existing = (
+        sb.table("user_trainings").select("training_id")
+        .eq("user_id", user_id).in_("training_id", mandatory_ids).execute().data
+    )
+    have = {row["training_id"] for row in existing}
+    missing = [tid for tid in mandatory_ids if tid not in have]
+    if not missing:
+        return
+    try:
+        sb.table("user_trainings").upsert(
+            [{"user_id": user_id, "training_id": tid, "status": "not_started"} for tid in missing],
+            on_conflict="user_id,training_id",
+        ).execute()
+    except Exception as e:  # never let bootstrap break the request that triggered it
+        print(f"⚠️  bootstrap assignment failed for {user_id}: {e}")
 
 
 # ============================== trainings / content ============================
