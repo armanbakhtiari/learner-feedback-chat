@@ -57,6 +57,9 @@ def _llm() -> ChatAnthropic:
     return ChatAnthropic(
         model="claude-sonnet-4-6",
         temperature=0.3,
+        # Scales with the number of learning objectives the profile is grouped by (14 for
+        # the gastro set), so don't leave the ceiling implicit — see backend/evaluator.py.
+        max_tokens=16000,
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
     )
 

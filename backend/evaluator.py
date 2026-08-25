@@ -22,11 +22,21 @@ else:
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 
+# The evaluator's output grows with the training: it emits a block per scenario, each
+# carrying a skills_assessment entry per learning objective. A measured 5-scenario /
+# 14-objective evaluation is ~6.2k output tokens, so a multi-situation training (11
+# scenarios) lands near 14k. Set the ceiling explicitly rather than inheriting a default
+# — truncation here fails structured-output parsing, and the evaluator is the first step
+# of the completion pipeline, so it would take the whole run down with it.
+EVALUATOR_MAX_TOKENS = 32000
+
+
 def get_llm_model():
     """Initialize Claude model"""
     return ChatAnthropic(
         model="claude-sonnet-4-6",
         temperature=0.3,
+        max_tokens=EVALUATOR_MAX_TOKENS,
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
     )
 

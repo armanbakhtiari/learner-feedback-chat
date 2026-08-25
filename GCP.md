@@ -54,7 +54,7 @@ gcloud run deploy feedback-chatbot \
   --region northamerica-northeast1 \
   --port 8080 --memory 2Gi --cpu 2 \
   --min-instances 1 --max-instances 1 --no-cpu-throttling \
-  --timeout 600 --allow-unauthenticated \
+  --timeout 1800 --allow-unauthenticated \
   --set-env-vars "^@@^ANTHROPIC_API_KEY=...@@OPENAI_API_KEY=...@@TAVILY_API_KEY=...@@LANGCHAIN_API_KEY=...@@CHROMA_API_KEY=...@@CHROMA_TENANT=...@@CHROMA_DATABASE=feedback-chat"
 ```
 
@@ -70,8 +70,12 @@ The `^@@^` prefix sets `@@` as the delimiter (values are comma-free but this is 
 - **`--no-cpu-throttling`** — CPU stays allocated between requests (background work,
   in-memory cache survive).
 - **`--memory 2Gi --cpu 2`** — LangChain + Chroma client + matplotlib footprint.
-- **`--timeout 600`** — `/evaluate` takes ~116 s; the default 300 s is enough but 600 is
-  headroom.
+- **`--timeout 1800`** — `/evaluate` runs the whole completion pipeline synchronously.
+  A 5-scenario migraine training takes ~85 s, but the gastro entry point is 11 scenarios
+  against 14 learning objectives: the evaluator step alone was measured at 165 s (it emits
+  a skills_assessment block per scenario per objective), putting the full run near 280 s.
+  600 s still covered it, but a retry inside any step could exceed that, and raising the
+  ceiling costs nothing — Cloud Run bills wall time, not the timeout.
 - **`--allow-unauthenticated`** — public web app; auth is handled (or not) at the app level.
 
 ## Environment variables (set on the service)

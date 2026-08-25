@@ -61,7 +61,8 @@ browser-side writes — route them through a FastAPI endpoint.
 | `scripts/ingest.py` | Offline Chroma indexing (run locally; Cloud Run never indexes) |
 | `scripts/seed_supabase.py` | Seeds the **migraine** catalogue from `trainings_2_experts.py` |
 | `scripts/parse_training_pdf.py` | Offline: SENSAI export PDF → `data/gastro_trainings.json` (committed) |
-| `scripts/seed_gastro.py` | Seeds the **gastro** catalogue from that JSON |
+| `scripts/seed_gastro.py` | Seeds the **gastro** catalogue from that JSON (groups `ENTRY_POINT_THEME` into one multi-situation training) |
+| `scripts/migrate_gastro_entry_point.py` | One-off: reshape a live catalogue in place, preserving completed work |
 
 ## The completion pipeline
 
@@ -100,11 +101,14 @@ Schema and inline commentary: `supabase/migrations/`. Shape:
   (`get_training_content(include_experts=True)`). The same goes for
   `situations.educational_synthesis`; both client endpoints run it through
   `app._strip_expert_material`.
-- `trainings.origin` = `seed_mandatory` | `seed_bank` | `suggested_bank` | `generated`.
-  There are **several** `seed_mandatory` rows (one entry point per theme/domain); every
-  learner is assigned all of them at bootstrap and completing **any one** unlocks the
-  feedback and suggestions. `list_bank_trainings()` (the suggestion bank) covers only
-  `seed_bank`/`suggested_bank`.
+- `trainings.origin` = `seed_mandatory` | `seed_bank` | `suggested_bank` | `generated`
+  | `archived`. There are **two** `seed_mandatory` entry points — migraine, and the gastro
+  *Douleur abdominale* training (3 situations, 11 scenarios). Every learner is assigned
+  both at bootstrap and completing **either one** unlocks the feedback and suggestions.
+  `list_bank_trainings()` (the suggestion bank) covers only `seed_bank`/`suggested_bank`,
+  so `archived` appears in neither list — it exists for content that was retired but is
+  still referenced by a learner's completed `user_training` (see the migration script
+  below). `origin` is plain text, so adding a value needs no schema migration.
 - `learning_gaps` — the learner's *current* profile (one row per user, overwritten).
   `learning_gap_history` — append-only snapshot per pipeline run, powering the
   "versions précédentes" view in *Mon apprentissage*.
@@ -116,8 +120,13 @@ Applying a migration: add a timestamped `.sql` file to `supabase/migrations/`, t
 `supabase db push` (needs `SUPABASE_DB_PASSWORD`) or paste it into the Supabase SQL editor.
 
 ⚠️ Each seed script **deletes and re-inserts its own domain's** `seed_mandatory`/`seed_bank`
-rows, which cascades to any `user_trainings` attached to them. Keep the `domain` scoping in
-`_delete_existing_seed` — without it, running one seed wipes the other's content.
+rows, which cascades to any `user_trainings` attached to them — **including completed ones,
+with their evaluations and feedback conversations**. Keep the `domain` scoping in
+`_delete_existing_seed` (without it, running one seed wipes the other's content), and once
+a database holds real learner work, reshape it in place rather than re-seeding.
+`scripts/migrate_gastro_entry_point.py` is the worked example: it dry-runs by default,
+refuses to delete anything carrying responses or an evaluation, and retires the superseded
+training to `origin='archived'` so the learners who completed it keep their feedback.
 
 ## Response scales
 

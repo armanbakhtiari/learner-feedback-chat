@@ -66,6 +66,7 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
   );
   // The response scale is a property of the training, not a global constant.
   const scaleValues = useMemo(() => likertValues(training?.likert_scale), [training]);
+  const multiSituation = (training?.situations || []).length > 1;
   const allAnswered = scenarios.every(
     (sc) => answers[sc.id]?.likert && (answers[sc.id]?.justification || "").trim(),
   );
@@ -148,10 +149,16 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
         </ul>
       </div>
 
-      {(training.situations || []).map((sit) => (
+      {(training.situations || []).map((sit, sIdx) => (
         <div key={sit.id} className="mb-6">
           <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            <span className="font-semibold">Situation :</span> {sit.text}
+            {/* A training can carry several situations, and scenario numbering restarts
+                inside each one — so name the situation or they are indistinguishable. */}
+            <p className="mb-1 font-semibold text-slate-800">
+              {multiSituation ? `Situation ${sIdx + 1}` : "Situation"}
+              {sit.title ? ` — ${sit.title}` : ""}
+            </p>
+            {sit.text}
           </div>
           {sit.scenarios.map((sc, idx) => {
             const a = answers[sc.id] || { likert: null, justification: "" };
