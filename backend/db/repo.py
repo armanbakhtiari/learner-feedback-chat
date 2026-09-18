@@ -372,9 +372,20 @@ def get_responses(user_training_id: str) -> List[Dict[str, Any]]:
 
 
 def upsert_responses(user_training_id: str, answers: List[Dict[str, Any]]) -> None:
-    """answers: [{scenario_id, likert, justification}]. Upsert on (ut, scenario)."""
+    """
+    answers: [{scenario_id, likert, justification}]. Upsert on (ut, scenario).
+
+    A client saves the *whole* training every time, blank scenarios included, so an
+    entry carrying nothing must be skipped rather than written: without this, a client
+    holding a stale draft (a second tab, a page reloaded mid-session) silently erased
+    answers another one had already stored. Partial answers (a level with no text yet,
+    or the reverse) are still saved — only fully-empty entries are dropped, which also
+    means an answer cannot be *unset* by blanking its fields.
+    """
     sb = get_supabase()
     for a in answers:
+        if not a.get("likert") and not (a.get("justification") or "").strip():
+            continue
         payload = {
             "user_training_id": user_training_id,
             "scenario_id": a["scenario_id"],
