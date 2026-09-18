@@ -23,11 +23,21 @@ export default function SuggestionsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [picking, setPicking] = useState<string | null>(null);
 
+  // One modal serves both paths. A "generated" preview is a training that exists in the
+  // database but is not on anyone's dashboard yet, so it needs an explicit decision —
+  // hence `previewKind`, which drives the footer and disables casual dismissal.
   const [preview, setPreview] = useState<TrainingPreview | null>(null);
+  const [previewKind, setPreviewKind] = useState<"bank" | "generated">("bank");
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const [genFrom, setGenFrom] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
+
+  const closePreview = () => {
+    setPreview(null);
+    setPreviewKind("bank");
+  };
 
   // On mount: only load the (cheap) completed list — do NOT run the LLM suggestions.
   useEffect(() => {
@@ -62,6 +72,7 @@ export default function SuggestionsView() {
     setPreviewing(training_id);
     try {
       setPreview(await api.get<TrainingPreview>(`/bank-trainings/${training_id}`));
+      setPreviewKind("bank");
     } catch {
       toast("Impossible d'afficher le contenu de cette formation");
     } finally {
@@ -74,7 +85,7 @@ export default function SuggestionsView() {
     try {
       await api.post("/suggestions/pick", { training_id });
       toast("Formation ajoutée à votre tableau de bord");
-      setPreview(null);
+      closePreview();
       bump();
       openTraining(null);
       setTab("dashboard");
@@ -85,19 +96,31 @@ export default function SuggestionsView() {
     }
   };
 
+  // The generated training is already saved, but unassigned — the learner decides next.
   const generate = async () => {
     if (!genFrom) return;
     setGenerating(true);
     try {
-      const r = await api.post<{ title: string }>("/suggestions/generate", { user_training_id: genFrom });
-      toast(`Nouvelle formation créée : ${r.title}`);
-      bump();
-      openTraining(null);
-      setTab("dashboard");
+      const r = await api.post<TrainingPreview>("/suggestions/generate", { user_training_id: genFrom });
+      setPreview(r);
+      setPreviewKind("generated");
     } catch {
       toast("Échec de la génération");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const discardGenerated = async (training_id: string) => {
+    setDiscarding(true);
+    try {
+      await api.del(`/generated-trainings/${training_id}`);
+      toast("Scénarios écartés");
+      closePreview();
+    } catch {
+      toast("Échec du retrait");
+    } finally {
+      setDiscarding(false);
     }
   };
 
@@ -179,7 +202,8 @@ export default function SuggestionsView() {
             <h2 className="font-semibold text-slate-800">Créer de nouveaux scénarios</h2>
             <p className="mb-3 mt-1 text-sm text-slate-500">
               Générez une nouvelle formation avec de nouveaux scénarios pour la situation d&apos;une formation déjà
-              complétée, ciblant vos lacunes.
+              complétée, ciblant vos lacunes. Vous pourrez les parcourir avant de décider de les ajouter à votre
+              tableau de bord.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -210,7 +234,7 @@ export default function SuggestionsView() {
       {/* Content preview — objectives, situations and scenarios, never expert answers. */}
       {preview && (
         <div
-          onClick={() => setPreview(null)}
+          onClick={previewKind === "bank" ? closePreview : undefined}
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 sm:p-8"
         >
           <div
@@ -219,16 +243,26 @@ export default function SuggestionsView() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4">
               <h3 className="font-semibold text-slate-800">{preview.title}</h3>
-              <button
-                onClick={() => setPreview(null)}
-                aria-label="Fermer"
-                className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-              >
-                <IconClose />
-              </button>
+              {previewKind === "bank" && (
+                <button
+                  onClick={closePreview}
+                  aria-label="Fermer"
+                  className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <IconClose />
+                </button>
+              )}
             </div>
 
             <div className="max-h-[70vh] overflow-y-auto p-4">
+              {previewKind === "generated" && (
+                <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-slate-700">
+                  Ces scénarios viennent d&apos;être générés à partir de votre profil
+                  d&apos;apprentissage. Parcourez-les, puis ajoutez-les à votre tableau de bord ou
+                  écartez-les.
+                </div>
+              )}
+
               {preview.learning_objectives.length > 0 && (
                 <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                   <p className="mb-1 font-semibold text-slate-700">Objectifs d&apos;apprentissage</p>
@@ -262,15 +296,25 @@ export default function SuggestionsView() {
             </div>
 
             <div className="flex justify-end gap-2 border-t border-slate-200 p-4">
-              <button
-                onClick={() => setPreview(null)}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Fermer
-              </button>
+              {previewKind === "bank" ? (
+                <button
+                  onClick={closePreview}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Fermer
+                </button>
+              ) : (
+                <button
+                  onClick={() => discardGenerated(preview.id)}
+                  disabled={discarding || picking === preview.id}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {discarding ? "Retrait…" : "Écarter"}
+                </button>
+              )}
               <button
                 onClick={() => pick(preview.id)}
-                disabled={picking === preview.id}
+                disabled={picking === preview.id || discarding}
                 className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
               >
                 {picking === preview.id ? "Ajout…" : "Ajouter au tableau de bord"}

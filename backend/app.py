@@ -283,19 +283,13 @@ async def completed_list(user: Dict[str, Any] = Depends(get_current_user)):
     }
 
 
-@app.get("/bank-trainings/{training_id}")
-async def bank_training_preview(training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+def _training_preview(training_id: str) -> Dict[str, Any]:
     """
-    Read-only preview of a shared training, so a learner can see what a suggestion
-    actually contains before adding it to their dashboard.
+    The read-only shape a learner sees before deciding whether to take a training on:
+    objectives, situations and scenarios — never expert answers, never the synthesis.
 
-    Limited to shared catalogue trainings — a user's own generated trainings are not
-    enumerable through here. Carries no expert responses and no educational synthesis.
+    Shared by the two suggestion paths so the client can render both with one component.
     """
-    training = repo.get_training(training_id)
-    if not training or training.get("origin") not in ("seed_bank", "suggested_bank", "seed_mandatory"):
-        raise HTTPException(status_code=404, detail="Training not found")
-
     content = _strip_expert_material(repo.get_training_content(training_id, include_experts=False))
     return {
         "id": content["id"],
@@ -313,6 +307,21 @@ async def bank_training_preview(training_id: str, user: Dict[str, Any] = Depends
             for sit in content.get("situations", [])
         ],
     }
+
+
+@app.get("/bank-trainings/{training_id}")
+async def bank_training_preview(training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Read-only preview of a shared training, so a learner can see what a suggestion
+    actually contains before adding it to their dashboard.
+
+    Limited to shared catalogue trainings — a user's own generated trainings are not
+    enumerable through here. Carries no expert responses and no educational synthesis.
+    """
+    training = repo.get_training(training_id)
+    if not training or training.get("origin") not in ("seed_bank", "suggested_bank", "seed_mandatory"):
+        raise HTTPException(status_code=404, detail="Training not found")
+    return _training_preview(training_id)
 
 
 @app.get("/suggestions")
@@ -338,16 +347,33 @@ async def pick_suggestion(body: PickSuggestion, user: Dict[str, Any] = Depends(g
     training = repo.get_training(body.training_id)
     if not training:
         raise HTTPException(status_code=404, detail="Training not found")
+    # The bank is shared, but an AI-generated training was made for one learner from
+    # their own gap profile — it must not be pickable by id from another account.
+    if training.get("origin") == "generated" and training.get("created_by") != user["id"]:
+        raise HTTPException(status_code=404, detail="Training not found")
     ut = repo.assign_training(user["id"], body.training_id)
     return {"status": "assigned", "user_training_id": ut["id"]}
 
 
 @app.post("/suggestions/generate")
 async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depends(get_current_user)):
-    """Path 2: generate a NEW training from a completed one's situation(s), gap-focused."""
+    """
+    Path 2: generate a NEW training from a completed one's situation(s), gap-focused.
+
+    The training is persisted but deliberately **not assigned**: the learner previews the
+    generated scenarios and then either accepts them (POST /suggestions/pick, which
+    creates the user_training) or declines them (DELETE /generated-trainings/{id}).
+    An unassigned generated training is invisible everywhere — the dashboard reads
+    user_trainings and the suggestion bank excludes origin='generated' — so a preview
+    the learner simply abandons is swept on their next generation.
+    """
     ut = _own_user_training(user, body.user_training_id)
     if ut["status"] != "completed":
         raise HTTPException(status_code=400, detail="Select a completed training")
+
+    swept = repo.delete_unassigned_generated(user["id"])
+    if swept:
+        print(f"🧹 removed {swept} abandoned generated training(s)")
 
     source = repo.get_training_content(ut["training_id"], include_experts=False)
     objectives = source.get("learning_objectives") or []
@@ -368,6 +394,7 @@ async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depe
         source_training_id=source["id"],
         likert_scale=scale,
     )
+    n_scenarios = 0
     for s_i, sit in enumerate(source.get("situations", []), start=1):
         new_sit = repo.add_situation(new_training["id"], s_i, sit.get("title"), sit["text"],
                                      educational_synthesis=sit.get("educational_synthesis"))
@@ -378,12 +405,38 @@ async def generate_suggestion(body: GenerateRequest, user: Dict[str, Any] = Depe
             generated = []
         for c_i, sc in enumerate(generated, start=1):
             scenario = repo.add_scenario(new_sit["id"], c_i, sc.hypothesis, sc.new_information)
+            n_scenarios += 1
             try:
                 panel = generate_expert_panel(sit["text"], sc.hypothesis, sc.new_information, scale=scale)
                 repo.add_expert_responses(scenario["id"], panel)
             except Exception as e:
                 print(f"⚠️  expert panel failed: {e}")
 
-    assigned = repo.assign_training(user["id"], new_training["id"])
-    return {"status": "created", "training_id": new_training["id"], "user_training_id": assigned["id"],
-            "title": new_training["title"]}
+    # Each situation's generation is best-effort, so a run where every one of them failed
+    # would otherwise hand the learner an empty training to accept.
+    if n_scenarios == 0:
+        repo.delete_training(new_training["id"])
+        raise HTTPException(status_code=502, detail="Scenario generation produced nothing")
+
+    preview = _training_preview(new_training["id"])
+    preview["status"] = "created"
+    preview["training_id"] = new_training["id"]
+    return preview
+
+
+@app.delete("/generated-trainings/{training_id}")
+async def discard_generated_training(training_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    """Decline a just-generated training: delete it and everything under it.
+
+    Deliberately narrow — only the learner's own `generated` trainings, and only while
+    nobody has them assigned, so this can never remove seeded content or a training
+    someone has already worked on.
+    """
+    training = repo.get_training(training_id)
+    if not training or training.get("origin") != "generated" or training.get("created_by") != user["id"]:
+        raise HTTPException(status_code=404, detail="Training not found")
+    if repo.list_user_trainings_for_training(training_id):
+        raise HTTPException(status_code=409, detail="This training is already on a dashboard")
+
+    repo.delete_training(training_id)
+    return {"status": "deleted"}

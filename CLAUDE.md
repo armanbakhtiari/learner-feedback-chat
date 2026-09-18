@@ -14,9 +14,12 @@ while maintaining an evolving profile of the learner's gaps.
 **LbC principle that constrains the whole product: no scores, no pass/fail, no red/green
 semaphores.** Everything user-facing is qualitative and in French. Keep it that way.
 
-Two content sets ship today, each seeded separately and each with its own response scale
-(see *Response scales* below): **migraine** (`trainings_2_experts.py` → `scripts/seed_supabase.py`)
-and **gastroenterology** (`data/gastro_trainings.json` → `scripts/seed_gastro.py`).
+Three content sets ship today, each seeded separately and each with its own response scale
+(see *Response scales* below): **migraine** (`trainings_2_experts.py` → `scripts/seed_supabase.py`),
+**gastroenterology** (`data/gastro_trainings.json` → `scripts/seed_gastro.py`) and
+**human-computer interaction** (`data/hci_trainings.json` → `scripts/seed_hci.py`, domain
+`ihm`, from a course-authored Word document). The product is *not* medical-only — keep new
+code and prompts domain-neutral.
 
 ## Architecture
 
@@ -26,7 +29,7 @@ Browser ──> Vercel (Next.js 15, Clerk auth)
    │ direct fetch + CORS, Clerk session JWT as Bearer token
    │ (NOT proxied through Vercel — /evaluate runs ~2 min, over the gateway timeout)
    ▼
-Cloud Run (FastAPI, single pinned instance) ──> Supabase Postgres (service_role)
+Cloud Run (FastAPI, one warm instance) ──> Supabase Postgres (service_role)
    │                                        └─> Chroma Cloud (RAG) + Anthropic/OpenAI/Tavily
    ▼
 Browser also opens a direct Supabase Realtime channel (Clerk JWT) to read `notifications`.
@@ -62,6 +65,8 @@ browser-side writes — route them through a FastAPI endpoint.
 | `scripts/seed_supabase.py` | Seeds the **migraine** catalogue from `trainings_2_experts.py` |
 | `scripts/parse_training_pdf.py` | Offline: SENSAI export PDF → `data/gastro_trainings.json` (committed) |
 | `scripts/seed_gastro.py` | Seeds the **gastro** catalogue from that JSON (groups `ENTRY_POINT_THEME` into one multi-situation training) |
+| `scripts/parse_hci_docx.py` | Offline: IHM concordance .docx → `data/hci_trainings.json` (committed) |
+| `scripts/seed_hci.py` | Seeds the **ihm** catalogue from that JSON (`ENTRY_POINT_INDICES` = situations 1–2 merged into one training; reuses `seed_gastro`'s insert/delete helpers) |
 | `scripts/migrate_gastro_entry_point.py` | One-off: reshape a live catalogue in place, preserving completed work |
 
 ## The completion pipeline
@@ -102,9 +107,11 @@ Schema and inline commentary: `supabase/migrations/`. Shape:
   `situations.educational_synthesis`; both client endpoints run it through
   `app._strip_expert_material`.
 - `trainings.origin` = `seed_mandatory` | `seed_bank` | `suggested_bank` | `generated`
-  | `archived`. There are **two** `seed_mandatory` entry points — migraine, and the gastro
-  *Douleur abdominale* training (3 situations, 11 scenarios). Every learner is assigned
-  both at bootstrap and completing **either one** unlocks the feedback and suggestions.
+  | `archived`. There are **three** `seed_mandatory` entry points — migraine, the gastro
+  *Douleur abdominale* training (3 situations, 11 scenarios), and the IHM *Cycle de
+  développement et planification centrée utilisateur* training (2 situations, 10 scenarios).
+  Every learner is assigned all three at bootstrap and completing **any one** unlocks the
+  feedback and suggestions.
   `list_bank_trainings()` (the suggestion bank) covers only `seed_bank`/`suggested_bank`,
   so `archived` appears in neither list — it exists for content that was retired but is
   still referenced by a learner's completed `user_training` (see the migration script
@@ -122,7 +129,7 @@ Applying a migration: add a timestamped `.sql` file to `supabase/migrations/`, t
 ⚠️ Each seed script **deletes and re-inserts its own domain's** `seed_mandatory`/`seed_bank`
 rows, which cascades to any `user_trainings` attached to them — **including completed ones,
 with their evaluations and feedback conversations**. Keep the `domain` scoping in
-`_delete_existing_seed` (without it, running one seed wipes the other's content), and once
+`_delete_existing_seed` (without it, running one seed wipes the other domains' content), and once
 a database holds real learner work, reshape it in place rather than re-seeding.
 `scripts/migrate_gastro_entry_point.py` is the worked example: it dry-runs by default,
 refuses to delete anything carrying responses or an evaluation, and retires the superseded
@@ -139,6 +146,7 @@ two lists and must stay in sync with the `likert_scale` Postgres enum:
 |---|---|---|
 | `concordance` | Fortement affaiblie … Fortement renforcée | migraine (and the default for older rows) |
 | `pertinence` | Pas du tout pertinente … Très pertinente | gastro (which also has *action* scenarios, where "renforcée" would not read) |
+| `appropriee` | Totalement inappropriée … Totalement appropriée | ihm (the learner judges a design or process *decision*, not a hypothesis's strength) |
 
 Because the permitted values are per-training, `AssistedAnswer.likert` and
 `GeneratedExpert.likert` in `models.py` are plain `str`, not `Literal` — the prompt lists
@@ -160,7 +168,28 @@ learner's gap profile (plus their optional free-text wish) into a retrieval quer
   another subject*. This is prompt-level and stays generic — do not hard-code domain names.
 
 `GET /bank-trainings/{id}` backs the "Voir le contenu" preview on a suggestion card
-(objectives + situations + scenarios; never experts or the synthesis).
+(objectives + situations + scenarios; never experts or the synthesis). It shares the payload
+builder `app._training_preview` with the generation path below, so one frontend component
+renders both.
+
+### The AI-generation path
+
+`POST /suggestions/generate` builds a new training from a *completed* one's situations, with
+fresh gap-targeted scenarios and an LLM expert panel. It **persists the training but does not
+assign it**: the response is a preview the learner must act on, and the training is invisible
+until they do (the dashboard reads `user_trainings`; `list_bank_trainings()` excludes
+`generated`). From there:
+
+- accept → `POST /suggestions/pick`, the same endpoint the bank path uses. It rejects a
+  `generated` training whose `created_by` is someone else — unlike the shared bank, a
+  generated training belongs to one learner.
+- decline → `DELETE /generated-trainings/{id}`, narrow by design: only the caller's own
+  `generated` trainings, and only while no `user_training` points at them.
+- abandon → the next `/suggestions/generate` sweeps the learner's unassigned generated
+  trainings (`repo.delete_unassigned_generated`), so previews never accumulate.
+
+A run where every situation's generation failed deletes the empty training and returns 502
+rather than offering the learner nothing to answer.
 
 ## Auth
 

@@ -12,7 +12,7 @@ Browser ──> Vercel (Next.js app, Clerk auth)
    │
    │ direct fetch (CORS) to NEXT_PUBLIC_API_BASE_URL, Clerk session JWT as Bearer token
    ▼
-Cloud Run (FastAPI backend, single instance)
+Cloud Run (FastAPI backend, one warm instance)
    │ service_role writes            │ queries
    ▼                                ▼
 Supabase Postgres            Chroma Cloud (knowledge_base_*, bank_situations)
@@ -50,7 +50,8 @@ Push the schema first — a new backend revision expects the new columns/tables.
 ## 1. Ingest documents into Chroma Cloud (run once, locally)
 
 Populate the vector store before the first deploy and re-run whenever the PDFs in
-`Docs_migraine/` / `Docs_nursing/` or `bank_situations.py` change.
+`Docs_migraine/` / `Docs_nursing/` / `Docs_ihm/` or `bank_situations.py` change, or a seed
+script adds bank trainings.
 
 ```bash
 pip install -r requirements.txt
@@ -58,8 +59,15 @@ pip install -r requirements.txt
 python scripts/ingest.py
 ```
 
-It builds `knowledge_base_migraine`, `knowledge_base_nursing`, and `bank_situations`,
-then prints chunk counts. Verify the collections in the Chroma Cloud dashboard.
+It builds `knowledge_base_migraine`, `knowledge_base_nursing`, `knowledge_base_ihm` and
+`bank_situations`, then prints chunk counts. Verify the collections in the Chroma Cloud
+dashboard.
+
+Seeding the content catalogue is a separate, also-local step — `scripts/seed_supabase.py`
+(migraine), `scripts/seed_gastro.py` (gastro), `scripts/seed_hci.py` (ihm). Each wipes and
+re-inserts **only its own domain's** seeded rows, and each re-indexes the bank when it
+finishes. ⚠️ Re-seeding cascades to learner work in that domain — on a live database,
+migrate in place instead (see `scripts/migrate_gastro_entry_point.py`).
 
 ## 2. Deploy the backend to Cloud Run
 
@@ -68,16 +76,21 @@ gcloud run deploy feedback-chatbot \
   --source . \
   --region <REGION> \
   --port 8080 \
-  --memory 2Gi \
+  --memory 1Gi --cpu 1 \
   --min-instances 1 --max-instances 1 \
-  --no-cpu-throttling \
+  --cpu-throttling \
   --allow-unauthenticated \
   --set-env-vars CHROMA_API_KEY=...,CHROMA_TENANT=...,CHROMA_DATABASE=...,ANTHROPIC_API_KEY=...,OPENAI_API_KEY=...,TAVILY_API_KEY=...,LANGCHAIN_API_KEY=...,SUPABASE_URL=...,SUPABASE_SERVICE_ROLE_KEY=...,CLERK_ISSUER=...,CLERK_SECRET_KEY=...
 ```
 
-`--source .` builds the [Dockerfile](Dockerfile). `--min/max-instances 1` +
-`--no-cpu-throttling` pin the app to a single always-on instance, which keeps the
-file-based session store (`.sessions/`) and the in-memory `chat_agents` cache consistent.
+`--source .` builds the [Dockerfile](Dockerfile). `--min/max-instances 1` keeps exactly one
+warm instance: `min` avoids cold starts for learners, `max` caps cost and preserves the
+single-instance globals in `backend/supervisor_tools.py`. State itself lives in Supabase.
+
+> ⚠️ **Never pass `--no-cpu-throttling`.** It bills CPU as allocated 24/7 (instance-based
+> billing, no free tier) — that was ~$5 CAD/day on days with zero traffic. Nothing in the
+> backend needs CPU after a response returns. See [GCP.md](GCP.md#runtime-configuration-why-these-flags).
+
 Prefer Secret Manager over `--set-env-vars` for secrets:
 `--set-secrets ANTHROPIC_API_KEY=anthropic-key:latest,...`.
 

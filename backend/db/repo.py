@@ -213,6 +213,50 @@ def create_training(title: str, domain: str, origin: str, objectives: List[str],
     ).data[0]
 
 
+def delete_training(training_id: str) -> None:
+    """
+    Hard-delete a training. Situations → scenarios → expert_responses go with it via
+    the schema's ON DELETE CASCADE, and so would any user_trainings — callers must
+    therefore make sure nobody has this training assigned (see
+    ``list_user_trainings_for_training``). Used to discard an AI-generated training
+    the learner declined.
+    """
+    sb = get_supabase()
+    sb.table("trainings").delete().eq("id", training_id).execute()
+
+
+def list_user_trainings_for_training(training_id: str) -> List[Dict[str, Any]]:
+    """Every user_training row attached to a training — the guard before deleting one."""
+    sb = get_supabase()
+    return sb.table("user_trainings").select("id").eq("training_id", training_id).execute().data
+
+
+def delete_unassigned_generated(user_id: str) -> int:
+    """
+    Drop this user's AI-generated trainings that nobody ever accepted.
+
+    A generated training is persisted *before* the learner decides, so one that is
+    still unassigned is a preview they walked away from. Sweeping them on the next
+    generation keeps the table from accumulating abandoned drafts.
+    """
+    sb = get_supabase()
+    mine = (
+        sb.table("trainings").select("id")
+        .eq("created_by", user_id).eq("origin", "generated").execute().data
+    )
+    ids = [row["id"] for row in mine]
+    if not ids:
+        return 0
+    assigned = {
+        row["training_id"]
+        for row in sb.table("user_trainings").select("training_id").in_("training_id", ids).execute().data
+    }
+    orphans = [tid for tid in ids if tid not in assigned]
+    if orphans:
+        sb.table("trainings").delete().in_("id", orphans).execute()
+    return len(orphans)
+
+
 def add_situation(training_id: str, situation_index: int, title: str, text: str,
                   educational_synthesis: Optional[str] = None) -> Dict[str, Any]:
     """``educational_synthesis`` is expert reference material — never send it to a client."""

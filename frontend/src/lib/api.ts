@@ -61,6 +61,7 @@ export function useApi() {
         request<T>(p, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
       put: <T = unknown>(p: string, body?: unknown) =>
         request<T>(p, { method: "PUT", body: JSON.stringify(body) }),
+      del: <T = unknown>(p: string) => request<T>(p, { method: "DELETE" }),
     }),
     [request],
   );

@@ -42,8 +42,8 @@ so any frontend origin is accepted.
   `artifactregistry.googleapis.com`.
 - The built image lives in Artifact Registry (auto-created repo `cloud-run-source-deploy`).
 - Upload context respects `.gitignore` (no `.gcloudignore` present), so `.env`, `venv/`,
-  `.sessions/` are not uploaded. The `Docs_migraine/` and `Docs_nursing/` PDFs **are**
-  shipped (see gotcha below).
+  `.sessions/` are not uploaded. The `Docs_migraine/`, `Docs_nursing/` and `Docs_ihm/` PDFs
+  **are** shipped (see gotcha below).
 
 ### Redeploy command
 
@@ -52,8 +52,8 @@ gcloud config set project feedback-chat-agent
 gcloud run deploy feedback-chatbot \
   --source . \
   --region northamerica-northeast1 \
-  --port 8080 --memory 2Gi --cpu 2 \
-  --min-instances 1 --max-instances 1 --no-cpu-throttling \
+  --port 8080 --memory 1Gi --cpu 1 \
+  --min-instances 1 --max-instances 1 --cpu-throttling \
   --timeout 1800 --allow-unauthenticated \
   --set-env-vars "^@@^ANTHROPIC_API_KEY=...@@OPENAI_API_KEY=...@@TAVILY_API_KEY=...@@LANGCHAIN_API_KEY=...@@CHROMA_API_KEY=...@@CHROMA_TENANT=...@@CHROMA_DATABASE=feedback-chat"
 ```
@@ -63,13 +63,23 @@ The `^@@^` prefix sets `@@` as the delimiter (values are comma-free but this is 
 
 ## Runtime configuration (why these flags)
 
-- **`--min-instances 1 --max-instances 1`** — the app keeps sessions as JSON files in
-  `.sessions/` and caches `chat_agents` in memory, both per-instance. Pinning to a single
-  always-on instance keeps them consistent. Scaling out would require moving sessions to
-  GCS/Firestore first.
-- **`--no-cpu-throttling`** — CPU stays allocated between requests (background work,
-  in-memory cache survive).
-- **`--memory 2Gi --cpu 2`** — LangChain + Chroma client + matplotlib footprint.
+- **`--min-instances 1`** — keeps one warm instance so a learner never pays a cold start
+  (the lazy langchain/chromadb/matplotlib imports make the first agent call slow).
+  All real state lives in Supabase now, so this is a latency choice, not a correctness one.
+- **`--max-instances 1`** — a hard ceiling on cost, and it preserves the single-instance
+  semantics of the module-level globals in `backend/supervisor_tools.py`
+  (`_training_data_cache`, `_current_training_type`). Scaling out needs those fixed first.
+- ⚠️ **`--cpu-throttling` (do NOT set `--no-cpu-throttling`)** — `--no-cpu-throttling` keeps
+  CPU *allocated* between requests, which switches the service to **instance-based billing**
+  (billed as active 24/7, and with **no free tier** — the 180k vCPU-s/month allowance only
+  applies to request-based billing). At 2 vCPU that cost **~$5 CAD/day even on days with
+  zero requests**; it was the entire bill for this project until 2026-09-08. Nothing needs
+  CPU after a response returns: the completion pipeline runs *inside* the request
+  (`await asyncio.to_thread(run_completion_pipeline, ...)` in `backend/app.py`), and there
+  are no `BackgroundTasks`, `create_task`, threads, or schedulers in `backend/`.
+- **`--memory 1Gi --cpu 1`** — measured over 30 days on the old 2 vCPU / 2 GiB revision,
+  p99 memory was 14% (~287 MB) and p99 CPU 10.8% (~0.22 vCPU): the work is I/O-bound waiting
+  on LLM APIs, not CPU-bound. Check `container/memory/utilizations` before lowering further.
 - **`--timeout 1800`** — `/evaluate` runs the whole completion pipeline synchronously.
   A 5-scenario migraine training takes ~85 s, but the gastro entry point is 11 scenarios
   against 14 learning objectives: the evaluator step alone was measured at 165 s (it emits
@@ -102,8 +112,10 @@ To move secrets into **Secret Manager** later:
 
 - The deployed backend only **queries** Chroma Cloud (read-only). Embeddings are built
   **offline** by `python scripts/ingest.py`, which must be re-run whenever the PDFs in
-  `Docs_*` or `bank_situations.py` change. Cloud Run never indexes.
-- Collections: `knowledge_base_migraine`, `knowledge_base_nursing`, `bank_situations`.
+  `Docs_*` or `bank_situations.py` change, or a seed script adds bank trainings. Cloud Run
+  never indexes.
+- Collections: `knowledge_base_migraine`, `knowledge_base_nursing`, `knowledge_base_ihm`,
+  `bank_situations`.
 - Free-tier quotas that bit us (handled in code): IDs ≤128 bytes (chunk IDs are hashed),
   ≤300 records per `collection.add` (adds are batched at 250). Don't undo these.
 - `backend/chroma_client.py::get_chroma_client()` picks Chroma Cloud when `CHROMA_API_KEY`
@@ -118,12 +130,30 @@ made every route 404 even though `next build` succeeded — **`frontend/vercel.j
 (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`); update them with `vercel env`.
 
+## Cost & storage hygiene
+
+The only meaningful cost lever on this project is the Cloud Run instance configuration
+above — see the `--cpu-throttling` warning. Supporting guardrails now in place:
+
+- **Budget alert** — `GCP monthly spend guard`, $40 CAD/month on billing account
+  `011C83-AFD210-F7D203`, emailing billing admins at 50% / 90% / 100%.
+  List it with `gcloud billing budgets list --billing-account=011C83-AFD210-F7D203`.
+- **Artifact Registry cleanup policy** on `cloud-run-source-deploy` — keeps the 3 most
+  recent images, deletes anything else older than 30d. Each image is ~350 MB and every
+  `--source` deploy adds one, so without this the repo grows without bound.
+- **GCS lifecycle rule** on `gs://run-sources-feedback-chat-agent-northamerica-northeast1`
+  — deletes the uploaded source zips after 30 days.
+- Old Cloud Run revisions pin their images. Prune them with
+  `gcloud run revisions delete <name> --region northamerica-northeast1`; keep the serving
+  revision plus one rollback target.
+
 ## Gotchas for the next session
 
 - **PDFs ship in the image on purpose.** `.dockerignore` keeps `Docs_*` because
   `backend/rag_tool._has_documents()` checks for local PDF presence at runtime to decide
   whether a training type has a knowledge base. Removing them would make the backend report
-  "no documents" even though Chroma Cloud has the data. They are ~16 MB and never re-indexed.
+  "no documents" even though Chroma Cloud has the data. They are ~22 MB and never re-indexed.
+  A domain with no `Docs_*` folder (today: `gastro`) degrades to "not covered, try web search".
 - **First request after a cold start / new revision is slow** (heavy lazy imports:
   langchain, chromadb, matplotlib). Keep the lazy imports — they help, not hurt.
 - **`chromadb` version:** `requirements.txt` pins `chromadb>=1.5.0`; the old
