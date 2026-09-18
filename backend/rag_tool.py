@@ -64,6 +64,7 @@ TRAINING_DOCS_MAP = {
     "migraine": ROOT_DIR / "Docs_migraine",
     "nursing_1st": ROOT_DIR / "Docs_nursing",
     "nursing_2nd": ROOT_DIR / "Docs_nursing",
+    "ihm": ROOT_DIR / "Docs_ihm",
 }
 
 

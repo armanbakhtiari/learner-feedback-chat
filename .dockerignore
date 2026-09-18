@@ -31,8 +31,8 @@ supabase/.branches
 *.log
 .DS_Store
 
-# NOTE: Docs_migraine / Docs_nursing are intentionally kept in the image. They are
-# small (~16MB) and backend/rag_tool._has_documents() checks for their presence at
+# NOTE: Docs_migraine / Docs_nursing / Docs_ihm are intentionally kept in the image.
+# They are small (~22MB) and backend/rag_tool._has_documents() checks for their presence at
 # runtime to decide whether a training type has a knowledge base to query. They are
 # NOT re-indexed at runtime (indexing only happens in scripts/ingest.py).
 

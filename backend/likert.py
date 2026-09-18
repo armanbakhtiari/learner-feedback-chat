@@ -7,6 +7,8 @@ A training declares which scale its scenarios use via ``trainings.likert_scale``
   (the migraine content, and the default for anything that predates this column).
 - ``pertinence``  — how pertinent the hypothesis/action remains (the gastroenterology
   content, which also contains action scenarios where "renforcée" would not read).
+- ``appropriee``  — how appropriate the proposed decision remains (the human-computer
+  interaction content, where the learner judges a design or process choice).
 
 Both are ordered from most negative to most positive; index 2 is the neutral middle.
 Every value here must exist in the ``likert_scale`` Postgres enum.
@@ -30,6 +32,13 @@ SCALES = {
         "Ni plus ni moins pertinente",
         "Pertinente",
         "Très pertinente",
+    ],
+    "appropriee": [
+        "Totalement inappropriée",
+        "Inappropriée",
+        "Ni plus ni moins appropriée",
+        "Appropriée",
+        "Totalement appropriée",
     ],
 }
 

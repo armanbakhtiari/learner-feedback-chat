@@ -10,7 +10,13 @@ export type Likert =
   | "Peu pertinente"
   | "Ni plus ni moins pertinente"
   | "Pertinente"
-  | "Très pertinente";
+  | "Très pertinente"
+  // "appropriee" scale — how appropriate the proposed decision remains
+  | "Totalement inappropriée"
+  | "Inappropriée"
+  | "Ni plus ni moins appropriée"
+  | "Appropriée"
+  | "Totalement appropriée";
 
 /**
  * Response scales, keyed by `Training.likert_scale`. Must stay in sync with
@@ -30,6 +36,13 @@ export const LIKERT_SCALES: Record<string, Likert[]> = {
     "Ni plus ni moins pertinente",
     "Pertinente",
     "Très pertinente",
+  ],
+  appropriee: [
+    "Totalement inappropriée",
+    "Inappropriée",
+    "Ni plus ni moins appropriée",
+    "Appropriée",
+    "Totalement appropriée",
   ],
 };
 

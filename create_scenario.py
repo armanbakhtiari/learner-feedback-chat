@@ -11,7 +11,7 @@ scenario_refinement_system_prompt = """
             When generating each scenario, follow this internal chain of thought to ensure complexity:
             1.  **Understand the Core Challenge:** Analyze the [Situation] and [objectifs_apprentissages]. What expert-level judgment or skill is being tested? What are the common, simplistic solutions to avoid or complicate?
 
-            2.  **Formulate a Plausible Initial Hypothesis:** Propose an [Hypothèse d'action ou de l'hypothèse diagnostique] an expert might genuinely consider as a *first thought*.
+            2.  **Formulate a Plausible Initial Hypothesis:** Propose an [Hypothèse d'action, de conception ou de diagnostic] an expert might genuinely consider as a *first thought*.
 
             3.  **Introduce the Expert-Level Complication:** Craft a piece of [information supplémentaire qui influence (rendre très ou peu pertinente) l'hypothèse] that shifts the expert's understanding of the initial hypothesis. The goal is to add a new layer of context, not just to present a simple, static contradiction. To do this, select and apply one or more of these "challenge dimensions":
                 * **Recontextualizing Data/Perspectives:** Introduce new, credible information that, without directly contradicting the initial facts, shifts their context and casts doubt on the initial hypothesis.
@@ -34,11 +34,11 @@ scenario_refinement_system_prompt = """
              [
                {{
                  "Chain of Thought": "[Modify scenario 1 following the CoT instructions]",
-                 "Refined Scenario": "🟠 Scénario 1: Si vous pensiez à... [action/diagnostic] \n\n Et qu'alors... [new information]"
+                 "Refined Scenario": "🟠 Scénario 1: Si vous pensiez à... [action/conception/diagnostic] \n\n Et qu'alors... [new information]"
                }},
                {{
                  "Chain of Thought": "[Modify scenario 2 following the CoT instructions]",
-                 "Refined Scenario": "🟠 Scénario 2: Si vous pensiez à... [action/diagnostic] \n\n Et qu'alors... [new information]"
+                 "Refined Scenario": "🟠 Scénario 2: Si vous pensiez à... [action/conception/diagnostic] \n\n Et qu'alors... [new information]"
                }},
                ...
              ]
@@ -74,7 +74,7 @@ scenario_criteria = """
 - **Concise:** While challenging, keep each scenario as succinct as possible without sacrificing necessary detail (aim for 1-2 impactful sentences per part)."""
 
 reasoning_scenario_definition = """A reasoning concordance scenario consists of an action hypothesis and new information.
-- Action/Diagnostic Hypothesis: A plausible thought, action, or diagnostic possibility that learners might consider in response to the situation.
+- Hypothesis: A plausible thought, action, design decision or diagnostic possibility that learners might consider in response to the situation. Match whatever the situation is about — the content sets span clinical practice and interface design.
 - New Information: Additional information that, when combined with the initial situation, complicates the decision-making process by:
     - Introducing ambiguity or uncertainty.
     - Presenting new data or perspectives.
@@ -108,7 +108,7 @@ When generating EACH scenario, follow this internal chain of thought to ensure c
 <CoT_Instructions>
 1.  **Target a Learning Gap:** Pick one (or more) of the learner's LEARNING GAPS that this scenario should exercise. Identify the expert-level judgment or skill the gap concerns within the [Situation] and [objectifs_apprentissages]. Note the common, simplistic solutions to avoid.
 
-2.  **Formulate a Plausible Initial Hypothesis:** Propose an [Hypothèse d'action ou de l'hypothèse diagnostique] an expert might genuinely consider as a *first thought* for this situation.
+2.  **Formulate a Plausible Initial Hypothesis:** Propose an [Hypothèse d'action, de conception ou de diagnostic] an expert might genuinely consider as a *first thought* for this situation.
 
 3.  **Introduce the Expert-Level Complication:** Craft a piece of [information supplémentaire qui influence (rendre très ou peu pertinente) l'hypothèse] that shifts the expert's understanding of the initial hypothesis and that meaningfully exercises the targeted learning gap. Add a new layer of context, not just a simple, static contradiction. Apply one or more of these challenge dimensions:
     * **Recontextualizing Data/Perspectives:** New credible information that, without directly contradicting the initial facts, shifts their context and casts doubt on the initial hypothesis.
@@ -124,7 +124,7 @@ When generating EACH scenario, follow this internal chain of thought to ensure c
 
 For each generated scenario provide:
 - chain_of_thought: your internal reasoning for this scenario (which gap it targets and how).
-- hypothesis: the action/diagnostic hypothesis ("Si vous pensiez à ...").
+- hypothesis: the action/design/diagnostic hypothesis ("Si vous pensiez à ...").
 - new_information: the neutral, objective new information ("Et qu'alors ..."), with NO interpretation.
 - targeted_learning_gaps: the learner gap(s) this scenario is designed to address.
 """

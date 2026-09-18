@@ -1,0 +1,1245 @@
+{
+  "activity_title": "Interaction humain-machine",
+  "domain": "ihm",
+  "likert_scale": "appropriee",
+  "entry_point_title": "Cycle de développement et planification centrée utilisateur",
+  "entry_point_objectives": [
+    "Choisir un cycle de développement adapté au caractère volatil des exigences utilisateur d'une application interactive, et distinguer un processus agile d'un processus réellement centré utilisateur.",
+    "Justifier le recours aux itérations et aux maquettes dès la définition des exigences par le coût croissant des changements d'exigences.",
+    "Structurer une analyse coût-bénéfice de l'utilisabilité et en identifier les variables déterminantes.",
+    "Utiliser cette analyse pour dimensionner l'effort d'utilisabilité et le nombre d'itérations à l'étape de planification du cycle ISO 9241-210.",
+    "Formuler les objectifs et les engagements d'un projet en termes de ce que l'utilisateur accomplit avec l'interface."
+  ],
+  "situations": [
+    {
+      "index": 1,
+      "title": "Choix du cycle de développement d'une console de diffusion numérique",
+      "text": "Vous êtes responsable du développement de la nouvelle console de diffusion numérique d'un câblodistributeur. Les abonnés pourront accéder à des contenus Internet, télécharger des films et utiliser plusieurs fonctionnalités qui ne sont pas encore anticipées, la plateforme étant nouvelle sur ce marché. L'équipe logicielle propose de reconduire le cycle en V employé depuis dix ans pour les décodeurs actuels. La direction, elle, exige une date de lancement ferme dans dix mois.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Choisir un cycle de développement adapté au caractère volatil des exigences utilisateur d'une application interactive.",
+        "Justifier le recours aux itérations et aux maquettes dès la phase de définition des exigences par le coût croissant des changements d'exigences.",
+        "Distinguer un processus agile d'un processus réellement centré utilisateur."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 1.1",
+          "hypothesis": "geler l'ensemble des exigences utilisateur dans un cahier des charges signé avant d'écrire la première ligne de code.",
+          "new_information": "les groupes de discussion menés auprès des abonnés ont produit trois visions différentes de l'organisation des contenus.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Les exigences utilisateur d'une application nouvelle sont volatiles par nature. Les figer avant tout prototypage revient à figer des hypothèses non validées."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement inappropriée",
+              "justification": "Trois visions divergentes signalent que le besoin n'est pas encore compris. Il faut des maquettes pour trancher, pas une signature."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "La discipline sur les exigences reste souhaitable, mais on ne gèle que ce qui a été validé auprès des utilisateurs par une représentation concrète."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 1.2",
+          "hypothesis": "adopter Scrum avec des sprints de deux semaines et un propriétaire de produit issu du marketing.",
+          "new_information": "aucune des cérémonies prévues au calendrier ne comporte d'évaluation avec des abonnés.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Un cycle itératif sans utilisateur réel n'est pas un cycle centré utilisateur : on itère alors sur l'opinion du propriétaire de produit."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Scrum fournit une structure d'itération utilisable ; c'est l'absence d'activités d'évaluation qu'il faut corriger, pas le cadre lui-même."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "Le marketing n'est pas un substitut à l'utilisateur. La cadence rapide risque surtout d'accélérer la production de mauvaises exigences."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 1.3",
+          "hypothesis": "produire trois concepts de console concurrents dès le premier mois et les soumettre à des abonnés.",
+          "new_information": "le budget approuvé ne couvre qu'une seule séance d'évaluation avant le gel du concept retenu.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "Explorer plusieurs concepts en parallèle avant de converger est exactement ce que prescrit l'étape de production des solutions de conception."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Une seule séance d'évaluation sur trois concepts vaut mieux que zéro : la comparaison révèle des besoins que l'entrevue ne fait pas émerger."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Répartir un budget d'évaluation unique sur trois concepts donne trois évaluations superficielles. Deux concepts évalués sérieusement seraient plus informatifs."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 1.4",
+          "hypothesis": "reconduire le cycle en V du décodeur actuel en y greffant deux semaines de tests utilisateur avant la mise en production.",
+          "new_information": "le service juridique impose une certification d'accessibilité qui doit porter sur une version figée de l'interface.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Tester deux semaines avant la production, c'est découvrir les erreurs d'exigences en phase d'opération, là où leur correction coûte le plus cher."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le gel exigé par la certification est compatible avec un cycle centré utilisateur si le gel survient après les itérations sur maquettes, et non avant."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La contrainte de conformité impose une version stable et vérifiable ; le cycle en V est le seul des cycles envisagés qui l'organise explicitement."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 1.5",
+          "hypothesis": "négocier avec la direction un report de la date de lancement afin d'insérer deux itérations de prototypage supplémentaires.",
+          "new_information": "un concurrent annonce le lancement de sa propre plateforme dans quatre mois.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "L'arrivée du concurrent fournit surtout une source d'information : l'analyse des produits concurrents permet de réduire le nombre d'itérations nécessaires plutôt que de les multiplier."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Une erreur d'exigence découverte après le lancement coûte des dizaines de fois sa correction en phase de spécification ; deux itérations restent un investissement rentable."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Plutôt que de reporter la date, je réduirais la portée fonctionnelle de la première version pour préserver les itérations sur les tâches essentielles."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Analyse coût-bénéfice et planification du cycle centré utilisateur",
+      "text": "Une entreprise de soutien technique téléphonique compte 50 agents qui traitent environ 2 500 appels par semaine. Le client croit qu'une refonte de l'interface utilisée par les agents augmenterait le nombre d'appels traités. Il vous demande de justifier l'investissement avant d'approuver le budget du volet utilisabilité. Le coût estimé de la refonte est de 250 000 $ et la direction table sur une durée de vie de trois ans.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Structurer une analyse coût-bénéfice de l'utilisabilité et en identifier les variables déterminantes.",
+        "Utiliser cette analyse pour fixer l'ampleur de l'effort et le nombre d'itérations à l'étape de planification du cycle ISO 9241-210.",
+        "Formuler des objectifs contractuels en termes de ce que l'utilisateur accomplit avec l'interface."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 2.1",
+          "hypothesis": "chiffrer le bénéfice attendu à partir du gain de productivité, du nombre d'agents, du taux horaire, des heures d'utilisation et de la durée de vie de l'interface.",
+          "new_information": "l'entreprise dispose des relevés détaillés du temps de traitement moyen par appel des trois dernières années.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "C'est précisément l'activité prescrite à l'étape de planification : quantifier le retour attendu pour dimensionner l'effort d'utilisabilité."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Les relevés historiques transforment l'estimation en calcul appuyé sur des données réelles plutôt que sur une hypothèse de gain générique."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Le calcul est le bon point de départ, à condition de valider que le temps de traitement est bien imputable à l'interface et non à la complexité des problèmes."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 2.2",
+          "hypothesis": "retenir un gain de productivité de 35 % comme hypothèse de base du calcul.",
+          "new_information": "les agents n'utilisent l'application que la moitié de leur temps de travail.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "Le 35 % est une valeur documentée pour une refonte d'interface ; il s'applique aux heures passées dans l'application, qu'il suffit d'ajuster à 20 h par semaine."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une moyenne tirée de la littérature reste une hypothèse. Je présenterais une fourchette plutôt qu'un chiffre unique à la direction."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "L'hypothèse est prudente si on la borne aux heures d'utilisation effective ; le calcul demeure largement favorable même à 20 %."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 2.3",
+          "hypothesis": "présenter à la direction le seul bénéfice net sur trois ans pour emporter la décision.",
+          "new_information": "la moitié des agents sont des employés temporaires dont le taux de roulement annuel dépasse 60 %.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le chiffre global masque ici une variable décisive : avec un tel roulement, le temps d'apprentissage devient un poste de gain à part entière."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Présenter un seul chiffre sans ses hypothèses expose l'analyse à être rejetée en bloc dès que l'une d'elles est contestée."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le bénéfice net reste l'argument qui parle à la direction, mais il faut y ajouter le coût de formation évité, qui change l'ordre de grandeur."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 2.4",
+          "hypothesis": "réduire le nombre d'itérations prévues au plan pour respecter le budget d'utilisabilité issu de l'analyse coût-bénéfice.",
+          "new_information": "l'application sera également utilisée par les clients eux-mêmes dans un portail libre-service.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "Le calcul a été fait pour des utilisateurs captifs et formés. Des clients occasionnels n'apprennent pas l'interface : les enjeux d'utilisabilité changent de nature."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Il faut refaire l'analyse avant de couper : un abandon dans le portail libre-service se traduit par un appel, donc par un coût que le modèle initial ignore."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Réduire les itérations reste défendable si on les redéploie sur le portail client, où le risque est le plus élevé, plutôt que de les répartir uniformément."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 2.5",
+          "hypothesis": "inscrire au contrat une clause d'utilisabilité garantissant le passage de 2 500 à 3 500 appels traités par semaine.",
+          "new_information": "le fournisseur n'a aucun contrôle sur la formation des agents ni sur la répartition des appels.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "C'est le principe même du contrat centré utilisateur : l'ordinateur ne produit rien seul, on contracte donc sur ce que l'utilisateur accomplit avec le système."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "La clause doit être opérationnalisée sur des tâches précises mesurées en test contrôlé, sinon elle sera invérifiable et contestée."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "Engager un fournisseur sur un résultat dont les déterminants principaux lui échappent conduit à un litige plutôt qu'à une interface utilisable."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Spécification du contexte d'utilisation d'un centre de conduite",
+      "text": "Vous concevez l'interface de supervision d'un nouveau centre de conduite d'un réseau électrique. Les opérateurs y surveillent des centaines d'équipements sur trois quarts de travail, et doivent réagir en quelques minutes à des alarmes en cascade. L'interface actuelle génère fréquemment des salves d'alarmes lors d'un incident. La direction rappelle que l'entreprise est réglementée et que toute défaillance de conduite fait l'objet d'une enquête publique.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Spécifier le contexte d'utilisation sous ses quatre volets : utilisateurs, tâches, environnement physique et environnement organisationnel.",
+        "Reconnaître qu'une interface conçue pour un profil et un contexte donnés peut devenir inappropriée dans un autre.",
+        "Choisir les méthodes d'analyse du contexte d'utilisation adaptées aux informations recherchées."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 3.1",
+          "hypothesis": "observer sur place les opérateurs pendant un quart de nuit complet plutôt que de vous fier uniquement aux entrevues.",
+          "new_information": "les procédures officielles de l'entreprise décrivent un déroulement de traitement des alarmes différent de celui rapporté en entrevue.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "L'observation est la seule méthode qui révèle les pratiques réelles, souvent non documentées et que les opérateurs eux-mêmes ne verbalisent pas."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "L'écart entre procédure et entrevue est un signal clair : il faut aller voir ce qui se fait réellement avant de spécifier quoi que ce soit."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "L'observation s'impose, mais un quart de nuit sans incident peut n'apprendre que peu ; je la compléterais par un journal de bord sur plusieurs semaines."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 3.2",
+          "hypothesis": "concevoir l'interface d'alarme pour l'opérateur expérimenté, qui constitue le profil dominant du centre.",
+          "new_information": "les quarts de nuit sont assurés par des équipes de relève dont l'ancienneté moyenne est de huit mois.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "L'utilisateur moyen n'existe pas. Concevoir pour le profil dominant laisse sans soutien ceux qui opèrent précisément au moment le plus critique."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "C'est la leçon de Tchernobyl : un système pensé pour un profil devient dangereux entre les mains d'un opérateur d'un autre profil."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Optimiser pour l'expert reste légitime en situation courante, à condition de définir des exigences distinctes pour le profil de relève en situation d'urgence."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 3.3",
+          "hypothesis": "documenter en détail l'environnement physique du poste : éclairage, bruit, distance d'écran et posture.",
+          "new_information": "le centre de conduite sera déménagé dans un nouveau bâtiment dont les plans ne sont pas arrêtés.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "C'est le bon moment : documenter maintenant permet d'influencer les plans du bâtiment plutôt que de subir ses contraintes ensuite."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "L'environnement physique fait partie intégrante du contexte d'utilisation ; l'ignorer expose à des problèmes que l'interface ne pourra pas compenser."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Documenter un environnement appelé à disparaître a peu de valeur ; je formulerais plutôt des exigences environnementales à transmettre aux architectes."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 3.4",
+          "hypothesis": "ajouter une exigence organisationnelle interdisant à l'opérateur de désactiver les alarmes de sécurité.",
+          "new_information": "les opérateurs désactivent régulièrement certaines alarmes répétitives pour pouvoir entendre les alarmes critiques.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "On supprimerait une adaptation que les opérateurs ont développée pour rester fonctionnels, sans traiter la cause : la salve d'alarmes elle-même."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'interdiction seule ne vaut rien ; couplée à une exigence de hiérarchisation des alarmes dans l'interface, elle devient défendable."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La désactivation des protections est exactement l'enchaînement qui a mené à Tchernobyl ; une exigence organisationnelle explicite est ici justifiée."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 3.5",
+          "hypothesis": "reprendre telle quelle l'interface de supervision utilisée avec succès depuis six ans dans un autre centre de conduite de l'entreprise.",
+          "new_information": "ce centre fonctionne avec deux opérateurs par quart alors que le nouveau centre en prévoit un seul.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "Le succès de cette interface repose sur une répartition des tâches entre deux personnes. Transposée à un poste unique, elle n'a plus le même contexte d'utilisation."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "La charge de surveillance est doublée pour un seul opérateur ; il faut au minimum refaire l'analyse de tâche avant toute réutilisation."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Partir d'une interface éprouvée reste une base économique et rassurante, à condition de la traiter comme une maquette à réévaluer, non comme une solution acquise."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "title": "Recherche utilisateur pour un système de domotique",
+      "text": "Votre entreprise conçoit l'interface de contrôle à distance d'un système de domotique. Vous devez établir le profil des usagers et leur contexte d'utilisation. Un sondage sera transmis à 500 clients actuels, mais il ne peut comporter que quatre questions pour préserver le taux de réponse. L'entreprise envisage aussi d'élargir le produit au marché des résidences secondaires.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Choisir la méthode de recueil (entretien, questionnaire, observation, journal de bord) selon la nature de l'information recherchée.",
+        "Reconnaître les limites des entretiens et des sondages pour établir les besoins utilisateur.",
+        "Formuler des questions de sondage qui servent réellement la définition du contexte d'utilisation."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 4.1",
+          "hypothesis": "compléter les entretiens par des observations sur le terrain et un journal de bord tenu par un sous-groupe d'usagers.",
+          "new_information": "les usagers interrogés décrivent des habitudes de chauffage qui ne correspondent pas aux relevés de leurs thermostats.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Les entretiens reposent sur le souvenir des participants ; l'écart avec les relevés confirme qu'ils sont insuffisants à eux seuls."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Le journal de bord est précisément conçu pour recueillir des données factuelles étalées sur plusieurs jours, que la mémoire restitue mal."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La triangulation des méthodes s'impose ici ; il faudra toutefois prévoir l'effort d'analyse qu'exigent ces données qualitatives."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 4.2",
+          "hypothesis": "limiter le sondage à quatre questions fermées portant sur l'équipement informatique et la fréquence d'utilisation de l'ordinateur.",
+          "new_information": "l'entreprise vise aussi le marché des résidences secondaires.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Avec quatre questions seulement, en consacrer aucune au mode de fréquentation de la résidence prive l'analyse d'un déterminant majeur des usages."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "L'équipement et la familiarité informatique conditionnent le niveau de complexité fonctionnelle qu'on peut offrir ; ce sont des questions incontournables."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le taux de possession d'un ordinateur s'obtient de sources statistiques existantes ; cette question pourrait céder sa place à une question sur les absences prolongées."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 4.3",
+          "hypothesis": "demander directement aux répondants quelles fonctions ils souhaitent voir dans l'application.",
+          "new_information": "98 % des répondants répondent oui à la question « aimeriez-vous pouvoir programmer vos appareils à distance ? ».",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Un taux d'accord de 98 % à une question désirable ne mesure rien : les utilisateurs ne savent pas ce dont ils ont besoin tant qu'ils n'ont rien de concret devant eux."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "On ne peut dériver une priorité d'exigence d'une adhésion de principe ; il faut confronter les répondants à une maquette pour obtenir un signal exploitable."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "La question reste utile pour générer des pistes à valider ensuite ; c'est d'en faire une exigence directe qui serait fautif."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 4.4",
+          "hypothesis": "mener des entretiens exploratoires non directifs auprès de 20 usagers avant de rédiger le questionnaire.",
+          "new_information": "l'entreprise dispose déjà des journaux d'utilisation détaillés de 4 000 thermostats connectés.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Les journaux disent ce que les usagers font, jamais pourquoi. L'entretien exploratoire demeure la source des besoins non anticipés et de l'innovation."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Les journaux couvrent déjà la fréquence et les tâches ; je réduirais le nombre d'entretiens pour investir dans une carte d'expérience."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "Vingt entretiens non directifs représentent un effort considérable alors que les données d'usage et les produits concurrents renseignent déjà largement le contexte."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 4.5",
+          "hypothesis": "recruter les participants aux entretiens parmi les clients ayant contacté le service à la clientèle au cours du dernier mois.",
+          "new_information": "le taux d'abandon du produit après trois mois d'utilisation est de 30 %.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Cet échantillon exclut ceux qui ont abandonné sans se plaindre, soit exactement le groupe qui détient l'information la plus utile."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Ces clients sont joignables, motivés et décrivent des frictions concrètes ; c'est un point de départ pragmatique, à élargir ensuite."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le recrutement est acceptable s'il est explicitement présenté comme un échantillon biaisé et complété par des usagers ayant cessé d'utiliser le produit."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Personas et carte d'expérience pour une application de menu en restaurant",
+      "text": "Vous êtes responsable de la conception d'une application de prise de commande sur tablette pour une chaîne de restaurants. Les clients pourront commander directement depuis leur table, avec ou sans l'aide d'un serveur. La chaîne exploite des établissements très différents : service rapide le midi dans les quartiers d'affaires, service complet en soirée. L'équipe de conception dispose de deux semaines avant la première revue de concept.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Construire des personas à partir de données qualitatives issues de la phase d'exploration plutôt que d'intuitions d'équipe.",
+        "Utiliser la carte d'expérience utilisateur pour situer les opportunités de conception dans le parcours complet.",
+        "Arbitrer entre personas et données analytiques selon la question de conception posée."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 5.1",
+          "hypothesis": "construire les personas à partir des données qualitatives recueillies auprès des clients et des serveurs.",
+          "new_information": "l'équipe de conception a déjà rédigé trois personas lors d'un atelier interne, sans collecte préalable.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Un persona se construit après la phase d'exploration et sur la base de données réelles ; autrement, il ne fait que figer les stéréotypes de l'équipe."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Des personas non fondés donnent une fausse assurance et orientent toute la conception ultérieure vers de mauvaises priorités."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Les personas de l'atelier peuvent servir d'hypothèses de départ, mais ils doivent être confrontés aux données avant d'être diffusés dans l'équipe."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 5.2",
+          "hypothesis": "créer un persona représentant le client âgé peu familier des écrans tactiles afin qu'il ne soit pas oublié.",
+          "new_information": "ce profil représente 4 % de la clientèle du midi et 22 % de celle du soir.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Près du quart de la clientèle du soir justifie pleinement un persona distinct : c'est la diversité des profils qui fonde des exigences distinctes."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Le persona évitera que l'équipe conçoive implicitement pour l'utilisateur pressé du midi, qui lui ressemble davantage."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le profil est réel, mais il faut d'abord décider s'il est un persona primaire ou secondaire, faute de quoi tous les compromis de conception se feront en sa faveur."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 5.3",
+          "hypothesis": "produire une carte d'expérience couvrant l'ensemble du repas, de l'arrivée du client jusqu'au paiement.",
+          "new_information": "le mandat du projet porte uniquement sur l'écran de prise de commande.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "La carte d'expérience situe l'écran dans le parcours réel et révèle des opportunités que l'analyse isolée d'un écran ne peut pas faire apparaître."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Les moments critiques d'un repas se jouent souvent hors de l'écran de commande : attente, modification, partage de l'addition."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une carte complète consomme une part importante des deux semaines disponibles ; je la limiterais aux étapes adjacentes à la commande."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 5.4",
+          "hypothesis": "remplacer les personas par un tableau de bord analytique des données de commande, jugé plus objectif.",
+          "new_information": "l'équipe doit livrer une première maquette dans deux semaines.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Les études comparatives montrent que les personas permettent d'identifier les utilisateurs plus vite et plus justement qu'un système analytique fondé sur les mêmes données."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Les deux outils sont complémentaires : l'analytique quantifie, le persona crée l'empathie qui guide les arbitrages de conception."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Les données de commande existent déjà alors que des personas valables exigent une collecte qualitative que le délai de deux semaines ne permet pas."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 5.5",
+          "hypothesis": "concevoir l'application pour que le client puisse commander entièrement sans l'aide d'un serveur.",
+          "new_information": "la direction du restaurant évalue ses serveurs sur le montant moyen des additions.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'autonomie du client est un bon objectif d'utilisabilité, mais l'exigence doit préciser comment le serveur s'insère dans le parcours plutôt que d'en être exclu."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Le contexte organisationnel est ici déterminant : une interface qui écarte le serveur entre en conflit direct avec la manière dont son travail est évalué."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Pouvoir commander sans aide reste la mesure d'utilisabilité la plus parlante ; rien n'empêche le serveur d'intervenir, et la suggestion peut être portée par l'interface."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "title": "TriageTicket : de la plainte utilisateur à l'exigence formelle",
+      "text": "Le projet TriageTicket vise à concevoir l'interface d'assistance du centre de services informatiques d'une université de 21 000 personnes, où 25 techniciens traitent de 300 à 500 tickets par jour. Nadia, technicienne de premier niveau, perd une dizaine de minutes par ticket à redemander aux usagers le pavillon et le local concernés, avec une cible de qualification de 15 minutes. Marc, administrateur d'infrastructure, a vu trente tickets individuels traités comme autant de pannes isolées alors qu'une seule passerelle réseau était en cause. Vous rédigez le cahier des exigences utilisateur.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Rédiger une exigence utilisateur centrée sur le besoin dans son contexte, sans imposer de solution d'interface prématurée.",
+        "Identifier les défauts classiques d'une exigence : vocabulaire subjectif, sur-spécification, non-testabilité, contexte absent.",
+        "Préserver l'espace de conception tout en rendant l'exigence vérifiable par une métrique d'utilisabilité."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 6.1",
+          "hypothesis": "rédiger l'exigence sous la forme « le système doit afficher un champ obligatoire pavillon et local dans le formulaire de ticket ».",
+          "new_information": "les usagers qui soumettent un ticket depuis un téléphone ne connaissent pas toujours le numéro du local.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "L'énoncé dicte une solution d'interface au lieu d'exprimer le besoin : disposer de la localisation de l'incident dès la prise en charge."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement inappropriée",
+              "justification": "En imposant un champ obligatoire, on ferme l'espace de conception et on exclut d'emblée la géolocalisation réseau ou le code QR."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "Un champ obligatoire que l'usager ne peut pas remplir produira des données fausses plutôt qu'absentes, ce qui est pire pour le triage."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 6.2",
+          "hypothesis": "formuler l'exigence ainsi : « la technicienne de premier niveau doit disposer de la localisation physique de l'incident dès la prise en charge, sans échange de clarification avec l'usager ».",
+          "new_information": "40 % des demandes proviennent d'usagers connectés par réseau privé virtuel depuis l'extérieur du campus.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "L'énoncé exprime le besoin, précise le profil et laisse ouvertes plusieurs pistes d'interaction ; c'est la bonne forme d'exigence."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "La formulation reste valable hors campus : ce qui est exigé est l'information de contexte, pas un mécanisme particulier de localisation."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'exigence doit préciser les conditions opérationnelles qu'elle couvre, sinon elle sera jugée non satisfaite pour 40 % des cas au moment de la vérification."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 6.3",
+          "hypothesis": "assortir l'exigence de la métrique « moins de 5 % des tickets nécessitent un aller-retour pour obtenir le local ».",
+          "new_information": "le système actuel ne journalise pas les échanges de clarification entre techniciens et usagers.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "La métrique rend l'exigence testable et porte sur l'activité réelle de la technicienne plutôt que sur une caractéristique du logiciel."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Une mesure manuelle sur un échantillon de tickets suffit à établir la valeur de référence ; l'absence de journalisation n'est pas rédhibitoire."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une métrique qu'on ne sait pas mesurer aujourd'hui n'est pas encore vérifiable ; il faut inscrire au plan le moyen d'établir la mesure avant de fixer le seuil."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 6.4",
+          "hypothesis": "remplacer l'exigence de détection des pannes groupées par une exigence de regroupement automatique des tickets similaires par l'algorithme.",
+          "new_information": "deux pannes distinctes survenues le même jour dans le même pavillon ont été fusionnées lors de l'essai pilote.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "L'énoncé prescrit le mécanisme et confie la décision à l'algorithme ; le besoin de Marc est d'identifier et de requalifier collectivement, pas d'être dépossédé du jugement."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "L'incident du pilote montre le coût d'une fusion erronée : une panne réelle disparaît du radar. L'exigence doit préserver la supervision humaine."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le regroupement automatique reste une piste de conception valable ; c'est de l'ériger en exigence, plutôt que de le laisser à l'espace de conception, qui pose problème."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 6.5",
+          "hypothesis": "conserver au cahier des charges l'exigence « l'interface doit être conviviale et intuitive pour tous les profils d'utilisateurs ».",
+          "new_information": "le client refuse de signer un cahier des charges comportant des seuils chiffrés.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "Convivial et intuitif sont invérifiables et ne désignent ni profil ni contexte ; une telle clause ne pourra jamais être ni satisfaite ni réfutée."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Le refus du client rend d'autant plus nécessaire une reformulation par tâche : on peut contracter sur des tâches réussies sans fixer de seuil numérique."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Un tel énoncé peut subsister comme intention générale s'il est clairement séparé des exigences vérifiables, qui elles restent à négocier."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "title": "Exigences d'utilisabilité pour le choix d'un système de gestion de dossiers",
+      "text": "Vous êtes responsable des technologies de l'information d'un cabinet d'avocats de 80 employés, dont la moitié sont avocats. La direction hésite entre deux fournisseurs de systèmes de gestion des dossiers clients, tous deux spécialisés pour les cabinets juridiques et nécessitant peu d'adaptation. Vous soutenez que l'utilisabilité doit entrer dans la grille d'évaluation. Les deux fournisseurs offrent une période d'essai de 30 jours.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Distinguer exigences utilisateur et exigences d'utilisabilité, et rattacher ces dernières à des tâches précises.",
+        "Choisir les critères d'utilisabilité pertinents (temps, taux de succès, erreurs, apprentissage, satisfaction) selon la fréquence et la criticité des tâches.",
+        "Tenir compte de l'apprentissage et du caractère captif des utilisateurs dans la priorisation des problèmes d'utilisabilité."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 7.1",
+          "hypothesis": "organiser un test d'utilisabilité comparatif des deux solutions avec cinq avocats et cinq adjointes sur les tâches les plus fréquentes.",
+          "new_information": "les deux fournisseurs offrent une période d'essai de 30 jours sur des jeux de données réels.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Comparer sur les tâches réelles est la seule façon de traduire l'utilisabilité en critère de sélection défendable devant la direction."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Cinq participants par profil suffisent à révéler l'essentiel des problèmes, et la période d'essai en supprime le coût d'accès."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La démarche est la bonne ; il faudra veiller à ce que les deux groupes effectuent des tâches strictement équivalentes pour que la comparaison tienne."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 7.2",
+          "hypothesis": "retenir comme exigence d'utilisabilité « ouvrir un dossier client en moins de 20 secondes ».",
+          "new_information": "l'ouverture d'un dossier représente moins de 2 % des actions quotidiennes d'un avocat.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'exigence est bien formulée et mesurable, mais elle porte sur une tâche rare : son poids dans l'évaluation globale doit rester marginal."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Fixer des seuils sur des tâches peu fréquentes détourne l'effort d'évaluation des tâches qui déterminent réellement la productivité."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une tâche rare mais incontournable garde de l'importance ; c'est la pondération de l'exigence, non son existence, qu'il faut revoir."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 7.3",
+          "hypothesis": "définir des exigences d'utilisabilité distinctes pour les avocats et pour le personnel de soutien.",
+          "new_information": "la direction souhaite un seul jeu d'exigences pour simplifier l'appel d'offres.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Les deux profils n'ont ni les mêmes tâches ni la même fréquence d'utilisation ; un jeu unique d'exigences en avantagerait forcément un au détriment de l'autre."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Les exigences d'utilisabilité se définissent toujours par rapport à un profil donné ; les fusionner rendrait les seuils arbitraires."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Un tronc commun d'exigences assorti d'annexes par profil concilie la demande de la direction et la réalité des deux populations."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 7.4",
+          "hypothesis": "écarter le fournisseur dont l'interface a produit le plus grand nombre d'erreurs lors des tests.",
+          "new_information": "les erreurs observées portaient sur des fonctions que les participants utilisaient pour la première fois.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une bonne part des problèmes d'utilisabilité s'estompe avec l'apprentissage ; chez des employés captifs et formés, leur gravité est moindre."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Écarter un fournisseur sur des erreurs de première utilisation revient à mesurer la facilité d'apprentissage alors que le critère décisif ici est l'efficience à long terme."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Dans un cabinet, une erreur de classement au mauvais dossier a des conséquences disproportionnées ; le taux d'erreur reste un critère dominant."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 7.5",
+          "hypothesis": "ajouter une exigence de satisfaction mesurée par un questionnaire standardisé après trois mois d'utilisation.",
+          "new_information": "l'adoption du système est obligatoire pour l'ensemble du cabinet.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "Même chez des utilisateurs captifs, l'insatisfaction se traduit par des contournements et des pratiques parallèles qui dégradent les données du cabinet."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "La satisfaction est un critère faible comparé au temps d'exécution et au taux d'erreur ; je ne lui accorderais qu'un poids secondaire."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "Une exigence vérifiable trois mois après l'achat n'aide en rien la décision à prendre ; elle doit être mesurable durant la période d'essai."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "title": "Analyse de tâche et automatisation dans une application de réservation",
+      "text": "Vous concevez l'application de réservation en ligne d'une chaîne hôtelière. L'analyse de tâche a produit un flux décisionnel décrivant comment un client choisit ses dates, compare les chambres, applique un code promotionnel et confirme sa réservation. La même chaîne exploite un comptoir où des agents effectuent les mêmes réservations pour les clients. La direction veut réduire le nombre d'abandons en cours de réservation.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Mener une analyse de tâche préalable à la spécification des exigences utilisateur.",
+        "Décider quelles sous-tâches doivent être soutenues ou automatisées par une fonctionnalité, notamment celles à fort effort cognitif.",
+        "Distinguer la logique d'utilisation de l'utilisateur de la logique de fonctionnement du système."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 8.1",
+          "hypothesis": "réaliser l'analyse de tâche avant de rédiger les exigences fonctionnelles de l'interface de réservation.",
+          "new_information": "l'équipe dispose déjà des cas d'utilisation rédigés par l'analyste d'affaires.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "L'analyse de tâche est préalable aux exigences ; une grande partie des exigences utilisateur en découlent directement."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "Les cas d'utilisation arrivent plus tard, lorsqu'on a déjà une idée de l'interaction avec le système ; ils ne remplacent pas l'observation des tâches réelles."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Les cas d'utilisation existants constituent un point de départ utile, à condition de les confronter à la manière dont les clients procèdent réellement."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 8.2",
+          "hypothesis": "automatiser la saisie du code de confirmation à double authentification en le lisant directement dans le message texte reçu.",
+          "new_information": "une partie des clients effectuent la réservation sur un ordinateur et reçoivent le code sur leur téléphone.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "La saisie d'un code est une sous-tâche à effort cognitif élevé et sans valeur pour le client ; c'est un bon candidat à l'automatisation."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'automatisation ne couvrira pas le cas le plus fréquent, la réservation sur ordinateur ; il faut concevoir d'abord pour le transfert entre appareils."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Automatiser là où c'est possible reste un gain net, pourvu que le chemin manuel demeure aussi simple pour les autres cas."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 8.3",
+          "hypothesis": "décomposer la tâche « choisir une chambre » jusqu'au niveau des sous-tâches élémentaires.",
+          "new_information": "le calendrier du projet prévoit trois jours pour l'ensemble de l'analyse de tâche.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "C'est la tâche centrale du parcours ; c'est là que la décomposition fine révèle les sous-tâches à soutenir par une fonctionnalité."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Trois jours imposent de hiérarchiser : je décomposerais finement les tâches critiques et fréquentes, et resterais grossier ailleurs."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La comparaison entre chambres est précisément l'étape où le client abandonne ; l'effort d'analyse y est mieux placé qu'ailleurs."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 8.4",
+          "hypothesis": "supprimer l'écran de confirmation récapitulative afin de réduire le nombre d'actions de la tâche de réservation.",
+          "new_information": "les annulations dans les 24 heures suivant la réservation représentent 12 % des réservations.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "La réservation est une action à conséquence financière difficilement réversible ; le coût de récupération d'une erreur dépasse largement le gain de deux secondes."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Rien n'établit que ces annulations proviennent d'erreurs de saisie ; il faut en connaître la cause avant de trancher sur l'écran."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Un écran de confirmation est vite traversé sans être lu ; une possibilité de modification immédiate après coup protège mieux le client tout en allégeant la tâche."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 8.5",
+          "hypothesis": "structurer l'interface du client en ligne selon le flux décisionnel observé chez les agents au comptoir.",
+          "new_information": "les agents consultent un écran de tarification interne auquel le client n'a pas accès.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Le flux des agents repose sur une information et une expertise que le client n'a pas ; le transposer impose au client la logique de fonctionnement du système."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le flux des agents reste une source précieuse sur l'enchaînement des décisions, à condition d'être réécrit du point de vue du client."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Ce flux est le seul modèle éprouvé d'une réservation menée à terme ; il indique surtout quelle information manque au client pour décider."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "title": "Élicitation et validation des exigences avant un déploiement à grande échelle",
+      "text": "Le service à la clientèle d'un grand distributeur d'électricité refait son système de gestion des dossiers clients, utilisé par 300 agents qui répondent aux appels sur la facturation, les changements d'adresse et les pannes. Les spécifications ont été signées par les représentants des agents il y a deux mois. Le déploiement est prévu dans huit mois et toute interruption du service à la clientèle a un coût opérationnel élevé.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Recourir au prototypage et aux scénarios pour faire émerger les besoins que les utilisateurs n'expriment pas spontanément.",
+        "Choisir les activités de validation des exigences adaptées au risque du projet, jusqu'au prototypage organisationnel.",
+        "Gérer l'implication des utilisateurs et les demandes tardives sans renoncer à la maîtrise du projet."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 9.1",
+          "hypothesis": "valider les exigences en présentant aux agents une maquette papier des principaux écrans plutôt que le document de spécifications.",
+          "new_information": "les agents ont signé le document de spécifications sans commentaire il y a deux mois.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "Les utilisateurs réagissent très bien à une représentation concrète et très mal à des spécifications techniques ; une signature sans commentaire n'est pas une validation."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "C'est devant une maquette que les besoins réels se révèlent, y compris ceux que les agents n'avaient pas su formuler."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "La maquette est le bon instrument ; je m'assurerais qu'elle soit présentée à des agents en poste et non seulement à leurs représentants."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 9.2",
+          "hypothesis": "conduire un test du type magicien d'Oz sur la maquette avec cinq agents.",
+          "new_information": "la maquette ne comporte aucune des fonctions de recherche avancée prévues au projet.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Appropriée",
+              "justification": "Le magicien d'Oz permet justement de tester des fonctions non implantées en les simulant, sans investir dans le prototypage fonctionnel."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "C'est le moment idéal : valider tôt des pistes de solution coûte infiniment moins cher que de corriger après développement."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Le test renseignera sur les tâches courantes, mais l'absence de recherche avancée laisse sans réponse la question la plus débattue du projet."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 9.3",
+          "hypothesis": "intégrer deux agents expérimentés à temps plein dans l'équipe de conception.",
+          "new_information": "ces deux agents ont été désignés par le syndicat parmi les employés les plus anciens.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Deux agents très anciens ne représentent pas la diversité des profils, et leur expertise masque les difficultés que vivent les nouveaux."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Une présence continue d'utilisateurs améliore l'acceptabilité du système et fait émerger des exigences que les rencontres ponctuelles laissent passer."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Des utilisateurs intégrés à l'équipe cessent progressivement d'être des utilisateurs ; il faut maintenir en parallèle des évaluations avec des agents en poste."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 9.4",
+          "hypothesis": "déployer un prototype organisationnel dans une seule région avant le déploiement complet.",
+          "new_information": "la région retenue est celle dont les volumes d'appels sont les plus faibles.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Un pilote doit être représentatif ; une région à faible volume ne révélera ni les problèmes de charge ni ceux liés à la cadence d'appel."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Le prototypage organisationnel vise d'abord à limiter le risque de perturber les opérations critiques ; commencer par la région la moins exposée est cohérent."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inappropriée",
+              "justification": "On obtiendra un pilote rassurant et peu informatif, puis les vrais problèmes apparaîtront au déploiement général, au pire moment."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 9.5",
+          "hypothesis": "refuser les nouvelles demandes fonctionnelles formulées par les agents après la validation des maquettes, en invoquant le gel des exigences.",
+          "new_information": "ces demandes portent sur une tâche que l'équipe n'avait pas observée lors de l'analyse du contexte d'utilisation.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "Une tâche non observée signale une lacune dans l'analyse du contexte d'utilisation, pas un caprice d'utilisateur ; l'ignorer garantit un rejet au déploiement."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Le cycle centré utilisateur admet que les exigences évoluent ; opposer le cahier des charges revient à préférer le respect du plan à l'utilité du système."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "La demande doit être reconnue, mais son intégration se négocie : on l'accepte en contrepartie d'un arbitrage sur la portée ou sur l'échéancier."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "title": "TriageTicket : spécifier une exigence d'assistance par l'intelligence artificielle",
+      "text": "Dans TriageTicket, un module d'intelligence artificielle analyse le texte du ticket dès sa réception : il suggère une catégorie d'incident, estime un niveau de priorité de P1 à P4 et recommande une fiche de résolution. Le modèle se trompe parfois, en particulier sur les tickets atypiques. Nadia traite en moyenne un ticket toutes les trois minutes, avec une cible de qualification de 15 minutes par incident. Vous rédigez l'exigence utilisateur d'assistance par l'IA.",
+      "educational_synthesis": null,
+      "objectives": [
+        "Spécifier une exigence d'assistance par l'IA fondée sur l'explicabilité, le contrôle de l'utilisateur et la tolérance aux erreurs de prédiction.",
+        "Éviter aussi bien l'automatisation aveugle que la sur-spécification de micro-solutions d'interface.",
+        "Évaluer la gravité d'un problème d'utilisabilité en tenant compte de son évolution dans le temps, de sa fréquence et de sa criticité."
+      ],
+      "scenarios": [
+        {
+          "title": "Scénario 10.1",
+          "hypothesis": "exiger que la technicienne puisse appréhender immédiatement les éléments qui ont motivé la suggestion de catégorie.",
+          "new_information": "le modèle retenu fournit un score de confiance et les segments de texte les plus influents dans sa prédiction.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement appropriée",
+              "justification": "L'explicabilité est la condition d'un arbitrage rapide : sans elle, la technicienne ne peut qu'accepter aveuglément ou tout refaire."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Totalement appropriée",
+              "justification": "L'exigence est centrée sur le besoin cognitif et n'impose aucune solution d'interface ; les données du modèle la rendent réalisable."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "L'exigence est juste ; il faudra veiller à ce que l'explication reste interprétable sans inspection de données techniques."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 10.2",
+          "hypothesis": "exiger une fenêtre de confirmation obligatoire avant l'application de toute suggestion de l'IA.",
+          "new_information": "la technicienne traite en moyenne un ticket toutes les trois minutes.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "L'exigence prescrit un composant d'interface et impose une étape punitive à chaque ticket, ce qui annule le gain d'efficience recherché."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "Une confirmation systématique à cette cadence devient un réflexe machinal : elle donne l'illusion du contrôle sans le produire."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'intention de garder l'humain dans la boucle est bonne ; c'est la forme imposée qu'il faut remplacer par une exigence de réversibilité sans friction."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 10.3",
+          "hypothesis": "fixer comme métrique une réduction de 35 % du temps de qualification lorsque les suggestions de l'IA sont pertinentes.",
+          "new_information": "le taux d'exactitude du modèle sur les tickets liés à la sécurité informatique est de 60 %.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Une métrique qui ne mesure que le cas favorable ignore le coût de la reprise en main ; il faut lui adjoindre une mesure du cas d'erreur."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Appropriée",
+              "justification": "Le gain d'efficience nominal reste l'indicateur qui justifie l'assistance ; il doit simplement être accompagné d'une exigence de justesse du routage final."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Avec une exactitude de 60 % sur une catégorie critique, la métrique globale masquera une dégradation là où les conséquences sont les plus lourdes."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 10.4",
+          "hypothesis": "laisser l'IA résoudre automatiquement les demandes de réinitialisation de mot de passe, sans intervention humaine.",
+          "new_information": "ces demandes représentent 40 % du volume et leur traitement suit un script entièrement défini.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inappropriée",
+              "justification": "Une réinitialisation touche l'identité : sans vérification ni recours humain, l'exigence ignore le risque d'usurpation et le principe de tolérance aux erreurs."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "L'automatisation d'une tâche scriptée est légitime si l'exigence prévoit explicitement un chemin d'escalade et la réversibilité de l'opération."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Appropriée",
+              "justification": "Libérer 40 % du volume redonne aux techniciens le temps nécessaire pour les incidents complexes ; le contrôle humain se place alors sur les exceptions."
+            }
+          ]
+        },
+        {
+          "title": "Scénario 10.5",
+          "hypothesis": "classer comme problème mineur le fait que les techniciennes acceptent la priorité suggérée par l'IA sans la vérifier.",
+          "new_information": "ce comportement s'accentue chez les techniciennes ayant plus de six mois d'expérience avec l'outil.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Totalement inappropriée",
+              "justification": "Contrairement aux problèmes d'utilisabilité ordinaires, celui-ci s'aggrave avec l'apprentissage au lieu de s'estomper ; sa gravité doit être réévaluée à la hausse."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inappropriée",
+              "justification": "La priorité conditionne le délai d'intervention sur des pannes bloquantes : la fréquence et la criticité de la tâche interdisent de le traiter comme mineur."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins appropriée",
+              "justification": "Si la justesse du routage final demeure au niveau exigé, l'acceptation rapide est un gain d'efficience ; la gravité doit se juger par rapport à l'exigence d'utilisabilité, pas au comportement observé."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
