@@ -63,7 +63,8 @@ def run_completion_pipeline(user: Dict[str, Any], user_training_id: str) -> None
         conv_id = conversation["id"]
 
         # 1) Evaluate ---------------------------------------------------------
-        content = build_evaluation_input(training["title"], objectives, situations, responses)
+        content = build_evaluation_input(training["title"], objectives, situations, responses,
+                                         default_scale=training.get("likert_scale"))
         evaluation_json = evaluate_training(content, training["title"])
         repo.save_evaluation(user_training_id, evaluation_json)
         mlog.log_message(conv_id, mlog.ROLE_EVALUATOR, "Évaluation structurée générée.",

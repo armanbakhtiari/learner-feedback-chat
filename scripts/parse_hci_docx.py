@@ -19,6 +19,11 @@ the suggestion query agent embeds each training's objectives:
     scenario  → {title, hypothesis, new_information, experts[]}
     expert    → {expert_label, likert, justification}
 
+The document still words its answers on the former absolute scale ("Totalement
+inappropriée" .. "Totalement appropriée"); they are mapped ordinally onto the current
+relative ``appropriee`` scale ("Beaucoup moins appropriée" .. "Beaucoup plus appropriée")
+through ``backend.likert.APPROPRIEE_LEGACY_MAP``.
+
 Two source features are deliberately dropped:
 
 - the per-scenario difficulty level ("Niveau 2 — MOYEN"). The schema has no slot for it,
@@ -40,7 +45,7 @@ from typing import Any, Dict, List, Optional
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from backend.likert import SCALES, values_for  # noqa: E402
+from backend.likert import APPROPRIEE_LEGACY_MAP, SCALES, values_for  # noqa: E402
 
 DEFAULT_DOCX = (
     ROOT_DIR.parent / "Docs" / "HCI-trainings" / "Formations_concordance_IHM_LOG2420.docx"
@@ -149,6 +154,7 @@ def _experts_from(rows: List[List[str]]) -> List[Dict[str, str]]:
         label, likert, justification = (_clean(c) for c in row[:3])
         if not label.lower().startswith("expert") or likert.lower() == "réponse":
             continue
+        likert = APPROPRIEE_LEGACY_MAP.get(likert, likert)
         experts.append(
             {"expert_label": label, "likert": likert, "justification": justification}
         )

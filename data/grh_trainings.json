@@ -1,0 +1,188 @@
+{
+  "activity_title": "Gestion des ressources humaines",
+  "domain": "grh",
+  "likert_scale": "pertinence_relative",
+  "objectives": [
+    "Adopter un comportement exemplaire et conforme aux lois, aux normes formelles et informelles ainsi qu’aux codes sociaux en vigueur.",
+    "Contribuer à développer, soutenir et modifier des comportements dans le respect des politiques et des règlements conformément à l’éthique du travail."
+  ],
+  "situations": [
+    {
+      "index": 1,
+      "title": "Employée positive dans l’équipe, mais peu efficace",
+      "text": "Julie est une employée très positive dans l’équipe. Elle est impliquée dans les réunions et exerce une influence positive sur ses collègues. Toutefois, elle bavarde souvent avec ses collègues, ce qui l’amène à avoir de la difficulté à respecter les échéanciers des projets qui lui sont confiés.",
+      "educational_synthesis": "1. Éléments clés des réponses des experts :\nCommunication : Il est important de rencontrer Julie afin de lui donner des commentaires positifs sur sa performance ainsi que des rétroactions positives. La sensibilité de Julie ne doit pas empêcher une rencontre pour discuter de sa performance.\nRenforcement positif : Il faut faire preuve de bienveillance et souligner les bons coups de l’employé dans l’entreprise.\nRétroactions constructives : Compte tenu des enjeux liés au respect des échéances, il est important d’offrir des rétroactions constructives à Julie et trouver des solutions avec elle pour améliorer sa performance au travail.\n2. Points de convergence et de divergence entre les réponses :\nConvergence :\nLes panélistes s’entendent sur le fait qu’il faut mentionner à Julie les points positifs de sa prestation au travail tout en offrant une rétroaction constructive afin d’identifier des solutions pour améliorer sa performance.\nDivergence :\nDeux panélistes s’entendent sur la nécessité de tenir une rencontre d’encadrement sur la performance. Un panéliste mentionne qu’il est préférable de la laisser parler pour une prise de conscience et suivre son évolution avec des rencontres serrées plutôt que de tenir une rencontre d’encadrement.\nGlisser un commentaire constructif avec humour et bienveillance divise les panélistes. Bien qu’un panéliste mentionne que cela puisse servir pour faire passer les messages intelligemment, un autre panéliste mentionne que le message pourrait être mal perçu par Julie, surtout si la situation actuelle est stressante pour l’employée.\n3. Bilan\nDans l’ensemble, il est essentiel de souligner les points positifs de la performance de Julie au travail. Il faut aussi offrir des commentaires constructifs à Julie en lien avec le respect des échéances. Bien que Julie soit de nature sensible, il est important de communiquer tout de même vos attentes en lien avec sa prestation de travail.",
+      "scenarios": [
+        {
+          "kind": "reasoning",
+          "likert_scale": null,
+          "hypothesis": "Féliciter Julie pour ses forces tout en lui parlant de vos préoccupations concernant sa prestation de travail.",
+          "new_information": "Elle n’a pas réussi à livrer deux de ses projets le mois dernier.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Moins pertinente",
+              "justification": "Je vais la rencontrer afin d'adresser la situation et clarifier mes attentes en lien avec ses tâches et responsabilités. Je vais possiblement faire de la reconnaissance dans un autre contexte afin de séparer mes deux messages."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Plus pertinente",
+              "justification": "Il est important de rencontrer Julie. Il est possible de la féliciter en effet, mais elle doit comprendre que ses projets à livrer demeurent sa priorité."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Féliciter pour compétences comportementales et influence positive. Clarifier les attentes pour les échéances et faire un suivi serré."
+            }
+          ]
+        },
+        {
+          "kind": "reasoning",
+          "likert_scale": null,
+          "hypothesis": "Faire une rencontre d’encadrement en lien avec la performance au travail et réitérer vos attentes face au projet.",
+          "new_information": "Julie est sensible et qu’elle prend les choses personnellement.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Je me concentre sur ce que je vais adresser comme observation et comment je vais le communiquer à Julie. Je tiens compte de sa sensibilité, mais j'adresse tout de même la situation."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Beaucoup plus pertinente",
+              "justification": "Il est mieux d'adresser la situation bien qu'elle soit sensible. Il est mieux qu'elle apprenne l'insatisfaction de la part de son gestionnaire que de lire le non-verbal et de se créer des perceptions."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Beaucoup moins pertinente",
+              "justification": "Selon moi il ne faut pas recadrer, mais la laisser parler pour prise de conscience et suivre son évolution avec des rencontres serrées."
+            }
+          ]
+        },
+        {
+          "kind": "reasoning",
+          "likert_scale": null,
+          "hypothesis": "Lors d’un échange informel, vous glissez un commentaire constructif avec humour et bienveillance",
+          "new_information": "Julie est sensible et qu’elle prend les choses personnellement.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Beaucoup moins pertinente",
+              "justification": "Je fais attention à comment j'adresse un message informel à Julie, cela risque d'être soit mal perçu ou que mon message ne soit pas bien compris."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Ni plus ni moins pertinente",
+              "justification": "Le feedback devrait être donné de manière régulière et informelle (il faut éviter d'attendre uniquement à l'évaluation annuelle de la performance pour donner de la rétroaction). Un humour bienveillant peut contribuer à créer une relation amicale et authentique, ce qui facilite généralement la réception du feedback."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Plus pertinente",
+              "justification": "L'informel est tout autant important que le formel. Il faut garder la communication ouverte assurément."
+            }
+          ]
+        },
+        {
+          "kind": "reasoning",
+          "likert_scale": null,
+          "hypothesis": "Lors d’un échange informel, vous glissez un commentaire constructif avec humour et bienveillance.",
+          "new_information": "Un projet important sous sa responsabilité est à remettre dans deux semaines.",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Moins pertinente",
+              "justification": "Je prends une note pour faire un debriefing avec elle à la suite du projet. N'étant pas une employée désengagée ou démotivée, je ne souhaite pas que cet échange informel ait un impact sur la fin du projet."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Plus pertinente",
+              "justification": "Dans le commentaire constructif, il faut du renforcement positif en lien avec les deux projets à livrer. Assurément il faut faire passer des messages intelligemment."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Beaucoup moins pertinente",
+              "justification": "Il est préférable de la rencontrer et d'adresser les enjeux afin qu'elle puisse y travailler pour son projet à remettre dans deux semaines. Cela lui donnerait la chance de bien rendre le projet selon les attentes plutôt qu'elle reproduise les mêmes erreurs."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Conflit d’intérêts",
+      "text": "Jérôme apprend que deux employés, Justine et Pierre-Luc, ont développé une relation amoureuse. Depuis qu’ils travaillent sur le projet ensemble, ils ont commencé à se fréquenter à l’extérieur du travail. Pierre-Luc confie à Jérôme qu’il a développé des sentiments amoureux pour Justine depuis 1 mois. Justine est la gestionnaire d’une équipe dans laquelle travaille Pierre-Luc.",
+      "educational_synthesis": "1. Éléments clés des réponses des panélistes :\nIntervention rapide : Jérôme doit intervenir et clarifier ses attentes rapidement avec les deux employés.\nRéorganisation des équipes : Si les amoureux ont effectivement une relation amoureuse en dehors du travail, il faut réorganiser les équipes afin d’éviter un conflit d’intérêts.\n2. Points de convergence et de divergence entre les réponses :\nConvergence :\nLes panélistes s’entendent sur le fait qu’il faut rencontrer Justine et Jérôme pour clarifier ses attentes en lien avec les comportements attendus entre Justine et Pierre-Luc au travail et sensibiliser Justine à ses potentiels enjeux de crédibilités en tant que gestionnaire.\nLes panélistes soulignent l’importance d’intervenir rapidement considérant les possibles conflits d’intérêts et les enjeux de crédibilité considérant le rôle de gestionnaire de Justine.\nLes panélistes s’entendent sur l’idée selon laquelle les deux amoureux ne peuvent pas continuer de travailler ensemble. Ils s’entendent aussi sur l’idée qu’il faut tenter de réorganiser les équipes pour éviter que ces derniers ne travaillent ensemble.\nDivergence :\nCertains panélistes envisagent annoncer aux amoureux qu’un des deux doit quitter l’organisation s’il souhaite poursuivre leur relation, car ils sont en conflit d’intérêts.\n3.Bilan\nDans l’ensemble, les panélistes soutiennent qu’il faut intervenir rapidement auprès de Justine et Pierre-Luc. Compte tenu du poste de gestionnaire de Justine, il faut réorganiser les équipes dans le but d’éviter un conflit d’intérêts.",
+      "scenarios": [
+        {
+          "kind": "judgment",
+          "likert_scale": "acceptabilite",
+          "hypothesis": "Jérôme rencontre Justine pour clarifier ses attentes en lien avec les comportements attendus entre Justine et Pierre-Luc au travail et sensibiliser Justine à ses potentiels enjeux de crédibilités en tant que gestionnaire.",
+          "new_information": "",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Tout à fait acceptable",
+              "justification": "Je crois qu'il est pertinent d'adresser la situation et le possible conflit d'intérêts. Aussi très acceptable de sensibiliser la gestionnaire quant à sa posture et sa crédibilité."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Inacceptable",
+              "justification": "Il n'est pas possible d'empêcher des gens de tomber amoureux, mais considérant que Justine est la gestionnaire de Pierre-Luc, il est important de s'assurer de changer d'équipe l'une des deux personnes afin d'éviter des enjeux de crédibilité ou bien des perceptions de favoritisme."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Acceptable",
+              "justification": "D’après l’énoncé, rien ne confirme qu’il y a effectivement une relation entre les deux employés, seulement qu’un des employés a exprimé des sentiments envers l’autre. Il serait acceptable d'avoir une discussion avec Justine pour comprendre s'il y a réellement une relation et comment elle envisage de gérer la situation. Cependant, il ne faudrait pas présumer qu’elle n’a pas elle-même pris conscience de la délicatesse de la situation ou du potentiel conflit d’intérêts et clarifier les attentes seraient peut-être prématuré, tout dépendamment de la version de Justine."
+            }
+          ]
+        },
+        {
+          "kind": "judgment",
+          "likert_scale": "acceptabilite",
+          "hypothesis": "Jérôme rencontre conjointement Justine et Pierre-Luc pour leur annoncer qu’un des deux doit quitter l’organisation s’il souhaite poursuivre leur relation, car ils sont en conflit d’intérêts.",
+          "new_information": "",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inacceptable",
+              "justification": "Si rien n'est mentionné dans leurs contrats de travail, je ne crois pas que cela est une bonne première étape."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Acceptable",
+              "justification": "La relation ne peut pas perdurer dans le contexte actuel (Justine est la gestionnaire de Pierre-Luc). S'il n'est pas possible de changer l'une ou l'autre des personnes d'équipe, en effet, il est préférable que l'un d'eux quitte pour des raisons de crédibilité et de justice."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inacceptable",
+              "justification": "Il serait prématuré d'emprunter cette voie sans d'abord discuter avec Justine pour comprendre son point de vue et ses intentions. Si une relation existe effectivement, il serait pertinent d'explorer d'autres options, comme la réorganisation des lignes hiérarchiques ou le transfert de l'un des employés vers un autre département."
+            }
+          ]
+        },
+        {
+          "kind": "judgment",
+          "likert_scale": "acceptabilite",
+          "hypothesis": "Jérôme est vigilant en ce qui concerne la situation, mais n’intervient pas pour l’instant.",
+          "new_information": "",
+          "experts": [
+            {
+              "expert_label": "Expert 1",
+              "likert": "Inacceptable",
+              "justification": "Je crois que Jérôme devrait rencontrer Justine et Pierre-Luc individuellement, pour les sensibiliser à un enjeu éthique et un possible conflit d'intérêt dans leurs responsabilités respectives."
+            },
+            {
+              "expert_label": "Expert 2",
+              "likert": "Tout à fait inacceptable",
+              "justification": "Le comportement est tout à fait inacceptable, il doit y avoir une intervention, car cela peut nuire à la crédibilité, favoriser un sentiment d'injustice au sein de l'équipe. Il doit aussi y avoir une politique claire de mise en place à cet effet dans l'organisation."
+            },
+            {
+              "expert_label": "Expert 3",
+              "likert": "Inacceptable",
+              "justification": "Il serait tout à fait pertinent d’avoir une discussion avec Justine. Si la relation n’existe pas, il est important qu’elle sache que Jérôme a exprimé des sentiments pour elle, et si la relation est réelle, la question du conflit d’intérêt pourra être abordée. Dans tous les cas, la conversation devra se dérouler avec tact et objectivité."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

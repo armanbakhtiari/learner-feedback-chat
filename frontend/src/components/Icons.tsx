@@ -98,3 +98,34 @@ export const IconHistory = (p: SVGProps<SVGSVGElement>) => (
     <path d="M12 7v5l3 2" />
   </svg>
 );
+
+export const IconEye = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const IconLock = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+);
+
+export const IconChevronDown = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+export const IconGrip = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="9" cy="6" r="1" />
+    <circle cx="15" cy="6" r="1" />
+    <circle cx="9" cy="12" r="1" />
+    <circle cx="15" cy="12" r="1" />
+    <circle cx="9" cy="18" r="1" />
+    <circle cx="15" cy="18" r="1" />
+  </svg>
+);

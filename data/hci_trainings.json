@@ -29,17 +29,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Les exigences utilisateur d'une application nouvelle sont volatiles par nature. Les figer avant tout prototypage revient à figer des hypothèses non validées."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Trois visions divergentes signalent que le besoin n'est pas encore compris. Il faut des maquettes pour trancher, pas une signature."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "La discipline sur les exigences reste souhaitable, mais on ne gèle que ce qui a été validé auprès des utilisateurs par une représentation concrète."
             }
           ]
@@ -51,7 +51,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Un cycle itératif sans utilisateur réel n'est pas un cycle centré utilisateur : on itère alors sur l'opinion du propriétaire de produit."
             },
             {
@@ -61,7 +61,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Le marketing n'est pas un substitut à l'utilisateur. La cadence rapide risque surtout d'accélérer la production de mauvaises exigences."
             }
           ]
@@ -73,12 +73,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Explorer plusieurs concepts en parallèle avant de converger est exactement ce que prescrit l'étape de production des solutions de conception."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Une seule séance d'évaluation sur trois concepts vaut mieux que zéro : la comparaison révèle des besoins que l'entrevue ne fait pas émerger."
             },
             {
@@ -95,7 +95,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Tester deux semaines avant la production, c'est découvrir les erreurs d'exigences en phase d'opération, là où leur correction coûte le plus cher."
             },
             {
@@ -105,7 +105,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La contrainte de conformité impose une version stable et vérifiable ; le cycle en V est le seul des cycles envisagés qui l'organise explicitement."
             }
           ]
@@ -117,12 +117,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "L'arrivée du concurrent fournit surtout une source d'information : l'analyse des produits concurrents permet de réduire le nombre d'itérations nécessaires plutôt que de les multiplier."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Une erreur d'exigence découverte après le lancement coûte des dizaines de fois sa correction en phase de spécification ; deux itérations restent un investissement rentable."
             },
             {
@@ -152,17 +152,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "C'est précisément l'activité prescrite à l'étape de planification : quantifier le retour attendu pour dimensionner l'effort d'utilisabilité."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les relevés historiques transforment l'estimation en calcul appuyé sur des données réelles plutôt que sur une hypothèse de gain générique."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le calcul est le bon point de départ, à condition de valider que le temps de traitement est bien imputable à l'interface et non à la complexité des problèmes."
             }
           ]
@@ -174,7 +174,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le 35 % est une valeur documentée pour une refonte d'interface ; il s'applique aux heures passées dans l'application, qu'il suffit d'ajuster à 20 h par semaine."
             },
             {
@@ -184,7 +184,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'hypothèse est prudente si on la borne aux heures d'utilisation effective ; le calcul demeure largement favorable même à 20 %."
             }
           ]
@@ -201,7 +201,7 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Présenter un seul chiffre sans ses hypothèses expose l'analyse à être rejetée en bloc dès que l'une d'elles est contestée."
             },
             {
@@ -218,12 +218,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Le calcul a été fait pour des utilisateurs captifs et formés. Des clients occasionnels n'apprennent pas l'interface : les enjeux d'utilisabilité changent de nature."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Il faut refaire l'analyse avant de couper : un abandon dans le portail libre-service se traduit par un appel, donc par un coût que le modèle initial ignore."
             },
             {
@@ -240,7 +240,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "C'est le principe même du contrat centré utilisateur : l'ordinateur ne produit rien seul, on contracte donc sur ce que l'utilisateur accomplit avec le système."
             },
             {
@@ -250,7 +250,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Engager un fournisseur sur un résultat dont les déterminants principaux lui échappent conduit à un litige plutôt qu'à une interface utilisable."
             }
           ]
@@ -275,17 +275,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "L'observation est la seule méthode qui révèle les pratiques réelles, souvent non documentées et que les opérateurs eux-mêmes ne verbalisent pas."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "L'écart entre procédure et entrevue est un signal clair : il faut aller voir ce qui se fait réellement avant de spécifier quoi que ce soit."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'observation s'impose, mais un quart de nuit sans incident peut n'apprendre que peu ; je la compléterais par un journal de bord sur plusieurs semaines."
             }
           ]
@@ -297,12 +297,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "L'utilisateur moyen n'existe pas. Concevoir pour le profil dominant laisse sans soutien ceux qui opèrent précisément au moment le plus critique."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "C'est la leçon de Tchernobyl : un système pensé pour un profil devient dangereux entre les mains d'un opérateur d'un autre profil."
             },
             {
@@ -319,12 +319,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "C'est le bon moment : documenter maintenant permet d'influencer les plans du bâtiment plutôt que de subir ses contraintes ensuite."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'environnement physique fait partie intégrante du contexte d'utilisation ; l'ignorer expose à des problèmes que l'interface ne pourra pas compenser."
             },
             {
@@ -341,7 +341,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "On supprimerait une adaptation que les opérateurs ont développée pour rester fonctionnels, sans traiter la cause : la salve d'alarmes elle-même."
             },
             {
@@ -351,7 +351,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La désactivation des protections est exactement l'enchaînement qui a mené à Tchernobyl ; une exigence organisationnelle explicite est ici justifiée."
             }
           ]
@@ -363,12 +363,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Le succès de cette interface repose sur une répartition des tâches entre deux personnes. Transposée à un poste unique, elle n'a plus le même contexte d'utilisation."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "La charge de surveillance est doublée pour un seul opérateur ; il faut au minimum refaire l'analyse de tâche avant toute réutilisation."
             },
             {
@@ -398,17 +398,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les entretiens reposent sur le souvenir des participants ; l'écart avec les relevés confirme qu'ils sont insuffisants à eux seuls."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Le journal de bord est précisément conçu pour recueillir des données factuelles étalées sur plusieurs jours, que la mémoire restitue mal."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La triangulation des méthodes s'impose ici ; il faudra toutefois prévoir l'effort d'analyse qu'exigent ces données qualitatives."
             }
           ]
@@ -425,7 +425,7 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'équipement et la familiarité informatique conditionnent le niveau de complexité fonctionnelle qu'on peut offrir ; ce sont des questions incontournables."
             },
             {
@@ -442,12 +442,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Un taux d'accord de 98 % à une question désirable ne mesure rien : les utilisateurs ne savent pas ce dont ils ont besoin tant qu'ils n'ont rien de concret devant eux."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "On ne peut dériver une priorité d'exigence d'une adhésion de principe ; il faut confronter les répondants à une maquette pour obtenir un signal exploitable."
             },
             {
@@ -464,7 +464,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les journaux disent ce que les usagers font, jamais pourquoi. L'entretien exploratoire demeure la source des besoins non anticipés et de l'innovation."
             },
             {
@@ -474,7 +474,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Vingt entretiens non directifs représentent un effort considérable alors que les données d'usage et les produits concurrents renseignent déjà largement le contexte."
             }
           ]
@@ -486,12 +486,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Cet échantillon exclut ceux qui ont abandonné sans se plaindre, soit exactement le groupe qui détient l'information la plus utile."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Ces clients sont joignables, motivés et décrivent des frictions concrètes ; c'est un point de départ pragmatique, à élargir ensuite."
             },
             {
@@ -521,17 +521,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Un persona se construit après la phase d'exploration et sur la base de données réelles ; autrement, il ne fait que figer les stéréotypes de l'équipe."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Des personas non fondés donnent une fausse assurance et orientent toute la conception ultérieure vers de mauvaises priorités."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Les personas de l'atelier peuvent servir d'hypothèses de départ, mais ils doivent être confrontés aux données avant d'être diffusés dans l'équipe."
             }
           ]
@@ -543,12 +543,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Près du quart de la clientèle du soir justifie pleinement un persona distinct : c'est la diversité des profils qui fonde des exigences distinctes."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le persona évitera que l'équipe conçoive implicitement pour l'utilisateur pressé du midi, qui lui ressemble davantage."
             },
             {
@@ -565,12 +565,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La carte d'expérience situe l'écran dans le parcours réel et révèle des opportunités que l'analyse isolée d'un écran ne peut pas faire apparaître."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les moments critiques d'un repas se jouent souvent hors de l'écran de commande : attente, modification, partage de l'addition."
             },
             {
@@ -587,7 +587,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Les études comparatives montrent que les personas permettent d'identifier les utilisateurs plus vite et plus justement qu'un système analytique fondé sur les mêmes données."
             },
             {
@@ -597,7 +597,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Les données de commande existent déjà alors que des personas valables exigent une collecte qualitative que le délai de deux semaines ne permet pas."
             }
           ]
@@ -614,12 +614,12 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Le contexte organisationnel est ici déterminant : une interface qui écarte le serveur entre en conflit direct avec la manière dont son travail est évalué."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Pouvoir commander sans aide reste la mesure d'utilisabilité la plus parlante ; rien n'empêche le serveur d'intervenir, et la suggestion peut être portée par l'interface."
             }
           ]
@@ -644,17 +644,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "L'énoncé dicte une solution d'interface au lieu d'exprimer le besoin : disposer de la localisation de l'incident dès la prise en charge."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "En imposant un champ obligatoire, on ferme l'espace de conception et on exclut d'emblée la géolocalisation réseau ou le code QR."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Un champ obligatoire que l'usager ne peut pas remplir produira des données fausses plutôt qu'absentes, ce qui est pire pour le triage."
             }
           ]
@@ -666,12 +666,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'énoncé exprime le besoin, précise le profil et laisse ouvertes plusieurs pistes d'interaction ; c'est la bonne forme d'exigence."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "La formulation reste valable hors campus : ce qui est exigé est l'information de contexte, pas un mécanisme particulier de localisation."
             },
             {
@@ -688,12 +688,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La métrique rend l'exigence testable et porte sur l'activité réelle de la technicienne plutôt que sur une caractéristique du logiciel."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Une mesure manuelle sur un échantillon de tickets suffit à établir la valeur de référence ; l'absence de journalisation n'est pas rédhibitoire."
             },
             {
@@ -710,12 +710,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "L'énoncé prescrit le mécanisme et confie la décision à l'algorithme ; le besoin de Marc est d'identifier et de requalifier collectivement, pas d'être dépossédé du jugement."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "L'incident du pilote montre le coût d'une fusion erronée : une panne réelle disparaît du radar. L'exigence doit préserver la supervision humaine."
             },
             {
@@ -732,12 +732,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Convivial et intuitif sont invérifiables et ne désignent ni profil ni contexte ; une telle clause ne pourra jamais être ni satisfaite ni réfutée."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Le refus du client rend d'autant plus nécessaire une reformulation par tâche : on peut contracter sur des tâches réussies sans fixer de seuil numérique."
             },
             {
@@ -767,17 +767,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Comparer sur les tâches réelles est la seule façon de traduire l'utilisabilité en critère de sélection défendable devant la direction."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Cinq participants par profil suffisent à révéler l'essentiel des problèmes, et la période d'essai en supprime le coût d'accès."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La démarche est la bonne ; il faudra veiller à ce que les deux groupes effectuent des tâches strictement équivalentes pour que la comparaison tienne."
             }
           ]
@@ -794,7 +794,7 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Fixer des seuils sur des tâches peu fréquentes détourne l'effort d'évaluation des tâches qui déterminent réellement la productivité."
             },
             {
@@ -811,12 +811,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les deux profils n'ont ni les mêmes tâches ni la même fréquence d'utilisation ; un jeu unique d'exigences en avantagerait forcément un au détriment de l'autre."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Les exigences d'utilisabilité se définissent toujours par rapport à un profil donné ; les fusionner rendrait les seuils arbitraires."
             },
             {
@@ -838,12 +838,12 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Écarter un fournisseur sur des erreurs de première utilisation revient à mesurer la facilité d'apprentissage alors que le critère décisif ici est l'efficience à long terme."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Dans un cabinet, une erreur de classement au mauvais dossier a des conséquences disproportionnées ; le taux d'erreur reste un critère dominant."
             }
           ]
@@ -855,7 +855,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Même chez des utilisateurs captifs, l'insatisfaction se traduit par des contournements et des pratiques parallèles qui dégradent les données du cabinet."
             },
             {
@@ -865,7 +865,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Une exigence vérifiable trois mois après l'achat n'aide en rien la décision à prendre ; elle doit être mesurable durant la période d'essai."
             }
           ]
@@ -890,17 +890,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "L'analyse de tâche est préalable aux exigences ; une grande partie des exigences utilisateur en découlent directement."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les cas d'utilisation arrivent plus tard, lorsqu'on a déjà une idée de l'interaction avec le système ; ils ne remplacent pas l'observation des tâches réelles."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Les cas d'utilisation existants constituent un point de départ utile, à condition de les confronter à la manière dont les clients procèdent réellement."
             }
           ]
@@ -912,7 +912,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La saisie d'un code est une sous-tâche à effort cognitif élevé et sans valeur pour le client ; c'est un bon candidat à l'automatisation."
             },
             {
@@ -922,7 +922,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Automatiser là où c'est possible reste un gain net, pourvu que le chemin manuel demeure aussi simple pour les autres cas."
             }
           ]
@@ -934,7 +934,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "C'est la tâche centrale du parcours ; c'est là que la décomposition fine révèle les sous-tâches à soutenir par une fonctionnalité."
             },
             {
@@ -944,7 +944,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La comparaison entre chambres est précisément l'étape où le client abandonne ; l'effort d'analyse y est mieux placé qu'ailleurs."
             }
           ]
@@ -956,7 +956,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "La réservation est une action à conséquence financière difficilement réversible ; le coût de récupération d'une erreur dépasse largement le gain de deux secondes."
             },
             {
@@ -966,7 +966,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Un écran de confirmation est vite traversé sans être lu ; une possibilité de modification immédiate après coup protège mieux le client tout en allégeant la tâche."
             }
           ]
@@ -978,7 +978,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Le flux des agents repose sur une information et une expertise que le client n'a pas ; le transposer impose au client la logique de fonctionnement du système."
             },
             {
@@ -988,7 +988,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Ce flux est le seul modèle éprouvé d'une réservation menée à terme ; il indique surtout quelle information manque au client pour décider."
             }
           ]
@@ -1013,17 +1013,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "Les utilisateurs réagissent très bien à une représentation concrète et très mal à des spécifications techniques ; une signature sans commentaire n'est pas une validation."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "C'est devant une maquette que les besoins réels se révèlent, y compris ceux que les agents n'avaient pas su formuler."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "La maquette est le bon instrument ; je m'assurerais qu'elle soit présentée à des agents en poste et non seulement à leurs représentants."
             }
           ]
@@ -1035,12 +1035,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le magicien d'Oz permet justement de tester des fonctions non implantées en les simulant, sans investir dans le prototypage fonctionnel."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "C'est le moment idéal : valider tôt des pistes de solution coûte infiniment moins cher que de corriger après développement."
             },
             {
@@ -1062,7 +1062,7 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Une présence continue d'utilisateurs améliore l'acceptabilité du système et fait émerger des exigences que les rencontres ponctuelles laissent passer."
             },
             {
@@ -1084,12 +1084,12 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le prototypage organisationnel vise d'abord à limiter le risque de perturber les opérations critiques ; commencer par la région la moins exposée est cohérent."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "On obtiendra un pilote rassurant et peu informatif, puis les vrais problèmes apparaîtront au déploiement général, au pire moment."
             }
           ]
@@ -1101,12 +1101,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Une tâche non observée signale une lacune dans l'analyse du contexte d'utilisation, pas un caprice d'utilisateur ; l'ignorer garantit un rejet au déploiement."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Le cycle centré utilisateur admet que les exigences évoluent ; opposer le cahier des charges revient à préférer le respect du plan à l'utilité du système."
             },
             {
@@ -1136,17 +1136,17 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "L'explicabilité est la condition d'un arbitrage rapide : sans elle, la technicienne ne peut qu'accepter aveuglément ou tout refaire."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Totalement appropriée",
+              "likert": "Beaucoup plus appropriée",
               "justification": "L'exigence est centrée sur le besoin cognitif et n'impose aucune solution d'interface ; les données du modèle la rendent réalisable."
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "L'exigence est juste ; il faudra veiller à ce que l'explication reste interprétable sans inspection de données techniques."
             }
           ]
@@ -1158,12 +1158,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "L'exigence prescrit un composant d'interface et impose une étape punitive à chaque ticket, ce qui annule le gain d'efficience recherché."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Une confirmation systématique à cette cadence devient un réflexe machinal : elle donne l'illusion du contrôle sans le produire."
             },
             {
@@ -1185,7 +1185,7 @@
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Le gain d'efficience nominal reste l'indicateur qui justifie l'assistance ; il doit simplement être accompagné d'une exigence de justesse du routage final."
             },
             {
@@ -1202,7 +1202,7 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "Une réinitialisation touche l'identité : sans vérification ni recours humain, l'exigence ignore le risque d'usurpation et le principe de tolérance aux erreurs."
             },
             {
@@ -1212,7 +1212,7 @@
             },
             {
               "expert_label": "Expert 3",
-              "likert": "Appropriée",
+              "likert": "Plus appropriée",
               "justification": "Libérer 40 % du volume redonne aux techniciens le temps nécessaire pour les incidents complexes ; le contrôle humain se place alors sur les exceptions."
             }
           ]
@@ -1224,12 +1224,12 @@
           "experts": [
             {
               "expert_label": "Expert 1",
-              "likert": "Totalement inappropriée",
+              "likert": "Beaucoup moins appropriée",
               "justification": "Contrairement aux problèmes d'utilisabilité ordinaires, celui-ci s'aggrave avec l'apprentissage au lieu de s'estomper ; sa gravité doit être réévaluée à la hausse."
             },
             {
               "expert_label": "Expert 2",
-              "likert": "Inappropriée",
+              "likert": "Moins appropriée",
               "justification": "La priorité conditionne le délai d'intervention sur des pannes bloquantes : la fréquence et la criticité de la tâche interdisent de le traiter comme mineur."
             },
             {

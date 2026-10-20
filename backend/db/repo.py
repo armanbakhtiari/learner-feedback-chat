@@ -267,11 +267,14 @@ def add_situation(training_id: str, situation_index: int, title: str, text: str,
     }).execute().data[0]
 
 
-def add_scenario(situation_id: str, scenario_index: int, hypothesis: str, new_information: str) -> Dict[str, Any]:
+def add_scenario(situation_id: str, scenario_index: int, hypothesis: str, new_information: str,
+                 kind: str = "reasoning", likert_scale: Optional[str] = None) -> Dict[str, Any]:
+    """``likert_scale`` = None means the scenario uses its training's scale."""
     sb = get_supabase()
     return sb.table("scenarios").insert({
         "situation_id": situation_id, "scenario_index": scenario_index,
         "hypothesis": hypothesis, "new_information": new_information,
+        "kind": kind, "likert_scale": likert_scale,
     }).execute().data[0]
 
 
@@ -422,6 +425,12 @@ def list_evaluations_missing_table() -> List[Dict[str, Any]]:
         sb.table("evaluations").select("user_training_id,evaluation_json")
         .is_("eval_table_json", "null").execute().data
     )
+
+
+def list_evaluations() -> List[Dict[str, Any]]:
+    """Every evaluation's JSON — for rebuilding all tables (scripts/backfill_eval_tables.py --all)."""
+    sb = get_supabase()
+    return sb.table("evaluations").select("user_training_id,evaluation_json").execute().data
 
 
 def update_eval_table(user_training_id: str, eval_table_json: Dict[str, Any]) -> None:

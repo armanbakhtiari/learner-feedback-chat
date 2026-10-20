@@ -146,6 +146,10 @@ def insert_training(sb, *, title: str, domain: str, origin: str, scale: str,
                     "scenario_index": sc_i,
                     "hypothesis": scenario["hypothesis"],
                     "new_information": scenario["new_information"],
+                    # Only the GRH content sets these; the defaults are a plain
+                    # reasoning scenario on the training's own scale.
+                    "kind": scenario.get("kind") or "reasoning",
+                    "likert_scale": scenario.get("likert_scale"),
                 })
                 .execute()
             ).data[0]

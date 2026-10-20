@@ -11,18 +11,21 @@ from pydantic import BaseModel, Field
 class CoverageAssessment(BaseModel):
     """Coverage assessment of learner's response"""
     score_assessment: Literal["High", "Medium", "Low"]
-    justification: str = Field(description="Two-line justification")
+    justification: str = Field(
+        description="Two lines: (1) the expert(s) the learner aligns with and the shared themes; "
+                    "(2) other angles some experts raised, phrased as optional avenues, never as failures"
+    )
 
 
 class LogicalReasoningAssessment(BaseModel):
     """Logical reasoning assessment"""
-    assessment: str = Field(description="One line justification")
+    assessment: str = Field(description="One encouraging line on what makes the reasoning coherent")
     rating: Literal["Satisfactory", "Unsatisfactory"]
 
 
 class CommunicationAssessment(BaseModel):
     """Communication assessment"""
-    assessment: str = Field(description="Assessment of clarity, completeness, and professional language")
+    assessment: str = Field(description="One encouraging line on clarity and professional tone (no judgmental wording)")
     rating: Literal["Excellent", "Good", "Needs Improvement"]
 
 

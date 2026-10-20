@@ -14,12 +14,18 @@ while maintaining an evolving profile of the learner's gaps.
 **LbC principle that constrains the whole product: no scores, no pass/fail, no red/green
 semaphores.** Everything user-facing is qualitative and in French. Keep it that way.
 
-Three content sets ship today, each seeded separately and each with its own response scale
+Four content sets ship today, each seeded separately and each with its own response scale
 (see *Response scales* below): **migraine** (`trainings_2_experts.py` → `scripts/seed_supabase.py`),
-**gastroenterology** (`data/gastro_trainings.json` → `scripts/seed_gastro.py`) and
+**gastroenterology** (`data/gastro_trainings.json` → `scripts/seed_gastro.py`),
 **human-computer interaction** (`data/hci_trainings.json` → `scripts/seed_hci.py`, domain
-`ihm`, from a course-authored Word document). The product is *not* medical-only — keep new
-code and prompts domain-neutral.
+`ihm`, from a course-authored Word document) and **human resources management**
+(`data/grh_trainings.json` → `scripts/seed_grh.py`, domain `grh`, from a SENSAI export Word
+document). The product is *not* medical-only — keep new code and prompts domain-neutral.
+
+Two scoring rules apply to every evaluation and feedback prompt: **joining one expert is
+enough** (the panel holds several legitimate angles; the others are offered as optional
+avenues, never as misses), and **the tone is always encouraging** (no deficit wording such as
+"superficiel" — `prompts.py` carries the banned list). Feedback is deliberately short.
 
 ## Architecture
 
@@ -67,6 +73,10 @@ browser-side writes — route them through a FastAPI endpoint.
 | `scripts/seed_gastro.py` | Seeds the **gastro** catalogue from that JSON (groups `ENTRY_POINT_THEME` into one multi-situation training) |
 | `scripts/parse_hci_docx.py` | Offline: IHM concordance .docx → `data/hci_trainings.json` (committed) |
 | `scripts/seed_hci.py` | Seeds the **ihm** catalogue from that JSON (`ENTRY_POINT_INDICES` = situations 1–2 merged into one training; reuses `seed_gastro`'s insert/delete helpers) |
+| `scripts/parse_grh_docx.py` | Offline: GRH SENSAI export .docx → `data/grh_trainings.json` (committed); mixes *raisonnement* and *jugement* scenarios |
+| `scripts/seed_grh.py` | Seeds the **grh** entry point (one training, both situations; no bank content) |
+| `scripts/migrate_ihm_relative_scale.py` | One-off: remap stored IHM answers onto the relative `appropriee` wording, in place |
+| `frontend/src/components/ScenarioPrompt.tsx` | The scenario's hypothesis / new-information cards (click-to-reveal on the training page) |
 | `scripts/migrate_gastro_entry_point.py` | One-off: reshape a live catalogue in place, preserving completed work |
 
 ## The completion pipeline
@@ -102,16 +112,23 @@ Schema and inline commentary: `supabase/migrations/`. Shape:
 - `users` (one per Clerk user) → `user_trainings` (a user's instance of a training) →
   `user_responses` (per scenario) → `evaluations` (one per completed user_training).
 - Content catalogue: `trainings` → `situations` → `scenarios` → `expert_responses`.
-  **Expert responses must never reach a client path** — only the evaluator reads them
-  (`get_training_content(include_experts=True)`). The same goes for
-  `situations.educational_synthesis`; both client endpoints run it through
-  `app._strip_expert_material`.
+  **Expert responses reach a client only inside a completed training's eval table**
+  (`build_eval_table` copies the panel into each row, revealed on demand in the "Voir" panel —
+  comparing with the experts after answering is the point of LbC). Every other client path
+  stays expert-free (`get_training_content(include_experts=False)`). The
+  `situations.educational_synthesis` never reaches a client; both client endpoints run
+  content through `app._strip_expert_material`. After changing the table's shape, rebuild
+  existing tables with `scripts/backfill_eval_tables.py --all` (deterministic, no LLM).
+- `scenarios.kind` = `reasoning` (hypothesis + new information) | `judgment` (one observed
+  behaviour, `new_information = ''`), and `scenarios.likert_scale` optionally overrides the
+  training's scale (`backend/likert.py::scenario_scale`). Only GRH uses either today.
 - `trainings.origin` = `seed_mandatory` | `seed_bank` | `suggested_bank` | `generated`
-  | `archived`. There are **three** `seed_mandatory` entry points — migraine, the gastro
-  *Douleur abdominale* training (3 situations, 11 scenarios), and the IHM *Cycle de
-  développement et planification centrée utilisateur* training (2 situations, 10 scenarios).
-  Every learner is assigned all three at bootstrap and completing **any one** unlocks the
-  feedback and suggestions.
+  | `archived`. There are **four** `seed_mandatory` entry points — migraine, the gastro
+  *Douleur abdominale* training (3 situations, 11 scenarios), the IHM *Cycle de
+  développement et planification centrée utilisateur* training (2 situations, 10 scenarios),
+  and *Gestion des ressources humaines* (2 situations, 7 scenarios). Every learner is
+  assigned all four (`ensure_bootstrap`, on every dashboard load) and completing **any one**
+  unlocks the feedback and suggestions.
   `list_bank_trainings()` (the suggestion bank) covers only `seed_bank`/`suggested_bank`,
   so `archived` appears in neither list — it exists for content that was retired but is
   still referenced by a learner's completed `user_training` (see the migration script
@@ -137,16 +154,19 @@ training to `origin='archived'` so the learners who completed it keep their feed
 
 ## Response scales
 
-Learning by Concordance has more than one valid response scale, and the two content sets
-use different ones, so the scale is a property of the training (`trainings.likert_scale`),
-not a constant. `backend/likert.py` and `frontend/src/lib/types.ts::LIKERT_SCALES` hold the
-two lists and must stay in sync with the `likert_scale` Postgres enum:
+Learning by Concordance has more than one valid response scale, and the content sets use
+different ones, so the scale is a property of the training (`trainings.likert_scale`, which
+a scenario may override with `scenarios.likert_scale`), not a constant. `backend/likert.py`
+and `frontend/src/lib/types.ts::LIKERT_SCALES` hold the lists and must stay in sync with the
+`likert_scale` Postgres enum:
 
 | key | values | used by |
 |---|---|---|
 | `concordance` | Fortement affaiblie … Fortement renforcée | migraine (and the default for older rows) |
 | `pertinence` | Pas du tout pertinente … Très pertinente | gastro (which also has *action* scenarios, where "renforcée" would not read) |
-| `appropriee` | Totalement inappropriée … Totalement appropriée | ihm (the learner judges a design or process *decision*, not a hypothesis's strength) |
+| `appropriee` | Beaucoup moins appropriée … Beaucoup plus appropriée | ihm (does the new information make the design/process *decision* more or less appropriate). Was absolute ("Totalement inappropriée …") until 2026-10; `APPROPRIEE_LEGACY_MAP` maps the old values |
+| `pertinence_relative` | Beaucoup moins pertinente … Beaucoup plus pertinente | grh *raisonnement* scenarios (the training default) |
+| `acceptabilite` | Tout à fait inacceptable … Tout à fait acceptable (4 values, no middle) | grh *jugement* scenarios (per-scenario override) |
 
 Because the permitted values are per-training, `AssistedAnswer.likert` and
 `GeneratedExpert.likert` in `models.py` are plain `str`, not `Literal` — the prompt lists

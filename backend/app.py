@@ -168,8 +168,10 @@ async def assist(user_training_id: str, body: AssistRequest,
     from backend.answer_assist import generate_assisted_answer
     situation_text = (scenario.get("situation") or {}).get("text", "")
     training = repo.get_training(ut["training_id"]) or {}
+    from backend.likert import scenario_scale
     return generate_assisted_answer(situation_text, scenario["hypothesis"], scenario["new_information"],
-                                    scale=training.get("likert_scale"))
+                                    scale=scenario_scale(scenario, training),
+                                    kind=scenario.get("kind") or "reasoning")
 
 
 @app.post("/trainings/{user_training_id}/evaluate")
@@ -295,12 +297,14 @@ def _training_preview(training_id: str) -> Dict[str, Any]:
         "id": content["id"],
         "title": content["title"],
         "learning_objectives": content.get("learning_objectives") or [],
+        "likert_scale": content.get("likert_scale"),
         "situations": [
             {
                 "title": sit.get("title"),
                 "text": sit.get("text", ""),
                 "scenarios": [
-                    {"hypothesis": sc.get("hypothesis", ""), "new_information": sc.get("new_information", "")}
+                    {"hypothesis": sc.get("hypothesis", ""), "new_information": sc.get("new_information", ""),
+                     "kind": sc.get("kind") or "reasoning"}
                     for sc in sit.get("scenarios", [])
                 ],
             }

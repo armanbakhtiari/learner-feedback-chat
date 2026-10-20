@@ -11,16 +11,26 @@ export type Likert =
   | "Ni plus ni moins pertinente"
   | "Pertinente"
   | "Très pertinente"
-  // "appropriee" scale — how appropriate the proposed decision remains
-  | "Totalement inappropriée"
-  | "Inappropriée"
+  // "appropriee" scale — whether the new information makes the decision more or less appropriate
+  | "Beaucoup moins appropriée"
+  | "Moins appropriée"
   | "Ni plus ni moins appropriée"
-  | "Appropriée"
-  | "Totalement appropriée";
+  | "Plus appropriée"
+  | "Beaucoup plus appropriée"
+  // "pertinence_relative" scale — whether the new information makes the action more or less pertinent
+  | "Beaucoup moins pertinente"
+  | "Moins pertinente"
+  | "Plus pertinente"
+  | "Beaucoup plus pertinente"
+  // "acceptabilite" scale — how acceptable an observed behaviour is (4 values, no middle)
+  | "Tout à fait inacceptable"
+  | "Inacceptable"
+  | "Acceptable"
+  | "Tout à fait acceptable";
 
 /**
- * Response scales, keyed by `Training.likert_scale`. Must stay in sync with
- * `backend/likert.py` and the `likert_scale` Postgres enum.
+ * Response scales, keyed by `Training.likert_scale` (or a scenario's own override). Must
+ * stay in sync with `backend/likert.py` and the `likert_scale` Postgres enum.
  */
 export const LIKERT_SCALES: Record<string, Likert[]> = {
   concordance: [
@@ -38,12 +48,20 @@ export const LIKERT_SCALES: Record<string, Likert[]> = {
     "Très pertinente",
   ],
   appropriee: [
-    "Totalement inappropriée",
-    "Inappropriée",
+    "Beaucoup moins appropriée",
+    "Moins appropriée",
     "Ni plus ni moins appropriée",
-    "Appropriée",
-    "Totalement appropriée",
+    "Plus appropriée",
+    "Beaucoup plus appropriée",
   ],
+  pertinence_relative: [
+    "Beaucoup moins pertinente",
+    "Moins pertinente",
+    "Ni plus ni moins pertinente",
+    "Plus pertinente",
+    "Beaucoup plus pertinente",
+  ],
+  acceptabilite: ["Tout à fait inacceptable", "Inacceptable", "Acceptable", "Tout à fait acceptable"],
 };
 
 export const DEFAULT_LIKERT_SCALE = "concordance";
@@ -52,9 +70,24 @@ export const DEFAULT_LIKERT_SCALE = "concordance";
 export const likertValues = (scale?: string | null): Likert[] =>
   LIKERT_SCALES[scale || DEFAULT_LIKERT_SCALE] ?? LIKERT_SCALES[DEFAULT_LIKERT_SCALE];
 
+/**
+ * How a scenario is posed: "reasoning" = a hypothesis then a new piece of information;
+ * "judgment" = a single observed behaviour to judge (`new_information` is empty).
+ */
+export type ScenarioKind = "reasoning" | "judgment";
+
+export interface ExpertAnswer {
+  expert_label: string;
+  likert: Likert | null;
+  justification: string;
+}
+
 export interface Scenario {
   id: string;
   scenario_index: number;
+  kind?: ScenarioKind;
+  /** Overrides the training's scale when set (the GRH training mixes two). */
+  likert_scale?: string | null;
   hypothesis: string;
   new_information: string;
   response?: { likert: Likert | null; justification: string | null } | null;
@@ -83,16 +116,19 @@ export interface Training {
 export interface TrainingPreview {
   id: string;
   title: string;
+  likert_scale?: string;
   learning_objectives: string[];
   situations: {
     title: string | null;
     text: string;
-    scenarios: { hypothesis: string; new_information: string }[];
+    scenarios: { hypothesis: string; new_information: string; kind?: ScenarioKind }[];
   }[];
 }
 
 export interface EvalTableRow {
   scenario_id: string;
+  kind?: ScenarioKind;
+  likert_scale?: string | null;
   hypothesis: string;
   new_information: string;
   response: { likert: Likert | null; justification: string | null } | null;
@@ -101,6 +137,8 @@ export interface EvalTableRow {
   themes_missed: string;
   reasoning: string;
   communication: string;
+  /** The expert panel — present on tables built (or rebuilt) since it was added. */
+  experts?: ExpertAnswer[];
 }
 
 export interface EvalTableSituation {

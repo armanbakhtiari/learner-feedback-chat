@@ -38,7 +38,7 @@ import re
 import unicodedata
 from typing import Dict, List, Optional
 
-from backend.likert import DEFAULT_SCALE, values_for
+from backend.likert import DEFAULT_SCALE, scenario_scale, values_for
 
 # The scale this parser's source format uses (must match the DB enum).
 LIKERT_VALUES = values_for(DEFAULT_SCALE)
@@ -171,6 +171,7 @@ def build_evaluation_input(
     objectives: List[str],
     situations: List[Dict[str, object]],
     responses_by_scenario: Dict[str, Dict[str, str]],
+    default_scale: Optional[str] = DEFAULT_SCALE,
 ) -> str:
     """
     Rebuild the marker-delimited training text the evaluator expects, from DB
@@ -180,6 +181,11 @@ def build_evaluation_input(
     include_experts=True)`` — each situation has ``scenarios``, each scenario has
     ``experts`` [{expert_label, likert, justification}] and an ``id``.
     ``responses_by_scenario`` maps scenario id -> {"likert", "justification"}.
+    ``default_scale`` is the training's scale; a scenario may override it.
+
+    Each scenario states its format and response scale, because one training can mix
+    them: a *judgment* scenario has a single observed behaviour instead of the
+    hypothesis / new-information pair.
     """
     lines: List[str] = []
     lines.append("Now analyze the learner's responses to the following training.\n")
@@ -196,10 +202,18 @@ def build_evaluation_input(
         for c_i, sc in enumerate(sit.get("scenarios", []), start=1):
             lines.append(f"<Scenario {c_i}>")
             lines.append(f"Scenario {c_i}:")
-            lines.append("Si vous pensiez ...")
-            lines.append(str(sc.get("hypothesis", "")).strip())
-            lines.append("Et qu'alors ...")
-            lines.append(str(sc.get("new_information", "")).strip() + "\n")
+            scale = values_for(scenario_scale(sc, {"likert_scale": default_scale}))
+            if sc.get("kind") == "judgment":
+                lines.append("Format: jugement (un comportement observé à juger, sans nouvelle information)")
+                lines.append("Comportement observé ...")
+                lines.append(str(sc.get("hypothesis", "")).strip())
+            else:
+                lines.append("Format: raisonnement (hypothèse puis nouvelle information)")
+                lines.append("Si vous pensiez ...")
+                lines.append(str(sc.get("hypothesis", "")).strip())
+                lines.append("Et qu'alors ...")
+                lines.append(str(sc.get("new_information", "")).strip())
+            lines.append(f"Échelle de réponse: {' / '.join(scale)}\n")
             lines.append("Experts' Responses:\n")
             for e in sc.get("experts", []):
                 lines.append(f"{e['expert_label']}:")

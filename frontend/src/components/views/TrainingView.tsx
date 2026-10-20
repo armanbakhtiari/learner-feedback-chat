@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../AppContext";
 import { IconArrowLeft, IconSparkle } from "../Icons";
+import ScenarioPrompt, { cardCount, scaleQuestion } from "../ScenarioPrompt";
 import { likertValues, type Likert, type Scenario, type Training, type UserTraining } from "@/lib/types";
 
 type Answer = { likert: Likert | null; justification: string };
@@ -26,6 +27,9 @@ const SAVE_LABELS: Record<SaveState, string> = {
 /** The single rule for "this scenario is answered" — the backend applies the same one. */
 const isAnswered = (a?: Answer) => Boolean(a?.likert && (a.justification || "").trim());
 
+/** A scenario with anything already written has been read before: open all its cards. */
+const hasDraft = (a?: Answer) => Boolean(a?.likert || (a?.justification || "").trim());
+
 /** Answers are saved on their own a moment after the learner stops typing. */
 const AUTOSAVE_DELAY_MS = 1500;
 
@@ -34,6 +38,9 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
   const [training, setTraining] = useState<Training | null>(null);
   const [status, setStatus] = useState<UserTraining["status"]>("not_started");
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  // How many of each scenario's cards are open (see ScenarioPrompt); the answer controls
+  // appear once all of them are.
+  const [revealed, setRevealed] = useState<Record<string, number>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [assisting, setAssisting] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -69,14 +76,19 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
         setTraining(r.training);
         setStatus(r.user_training.status);
         const init: Record<string, Answer> = {};
+        const open: Record<string, number> = {};
+        const done = r.user_training.status === "completed";
         for (const sit of r.training.situations || [])
-          for (const sc of sit.scenarios)
+          for (const sc of sit.scenarios) {
             init[sc.id] = {
               likert: sc.response?.likert ?? null,
               justification: sc.response?.justification ?? "",
             };
+            open[sc.id] = done || hasDraft(init[sc.id]) ? cardCount(sc.kind) : 0;
+          }
         skipAutosave.current = true;
         setAnswers(init);
+        setRevealed(open);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -102,13 +114,14 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
     return out;
   }, [training, multiSituation]);
   const scenarios = useMemo(() => flat.map((f) => f.sc), [flat]);
-  // The response scale is a property of the training, not a global constant.
-  const scaleValues = useMemo(() => likertValues(training?.likert_scale), [training]);
   const missing = useMemo(() => flat.filter((f) => !isAnswered(answers[f.sc.id])), [flat, answers]);
   const allAnswered = missing.length === 0;
 
   const setAnswer = (id: string, patch: Partial<Answer>) =>
     setAnswers((a) => ({ ...a, [id]: { ...a[id], ...patch } }));
+
+  const reveal = (sc: Scenario) =>
+    setRevealed((r) => ({ ...r, [sc.id]: Math.min((r[sc.id] ?? 0) + 1, cardCount(sc.kind)) }));
 
   const payload = useCallback(
     () =>
@@ -191,6 +204,14 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
           if (JSON.stringify(merged) === JSON.stringify(prev)) return prev;
           skipAutosave.current = true;
           return merged;
+        });
+        // An answer written in another tab means that scenario has been read.
+        const kinds: Record<string, Scenario["kind"]> = {};
+        for (const sit of r.training.situations || []) for (const sc of sit.scenarios) kinds[sc.id] = sc.kind;
+        setRevealed((prev) => {
+          const next = { ...prev };
+          for (const [id, a] of Object.entries(server)) if (hasDraft(a)) next[id] = cardCount(kinds[id]);
+          return next;
         });
       } catch {
         /* transient; the next focus retries */
@@ -283,6 +304,10 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
           {sit.scenarios.map((sc, idx) => {
             const a = answers[sc.id] || { likert: null, justification: "" };
             const incomplete = !isAnswered(a);
+            // A scenario may override the training's scale (the GRH training mixes two).
+            const scale = sc.likert_scale || training.likert_scale;
+            const step = revealed[sc.id] ?? 0;
+            const ready = step >= cardCount(sc.kind);
             return (
               <div
                 key={sc.id}
@@ -299,50 +324,57 @@ export default function TrainingView({ userTrainingId }: { userTrainingId: strin
                     </span>
                   )}
                 </p>
-                <p className="mb-1 text-sm text-slate-700">
-                  <span className="font-medium text-slate-500">Si vous pensiez …</span> {sc.hypothesis}
-                </p>
-                <p className="mb-3 text-sm text-slate-700">
-                  <span className="font-medium text-slate-500">Et qu&apos;alors …</span> {sc.new_information}
-                </p>
+                <ScenarioPrompt
+                  hypothesis={sc.hypothesis}
+                  newInformation={sc.new_information}
+                  kind={sc.kind}
+                  scale={scale}
+                  step={step}
+                  onReveal={() => reveal(sc)}
+                />
 
-                <div className="mb-3 flex flex-wrap gap-1.5">
-                  {scaleValues.map((lv) => (
-                    <button
-                      key={lv}
-                      onClick={() => setAnswer(sc.id, { likert: lv })}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                        a.likert === lv
-                          ? "border-brand bg-brand text-white"
-                          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {lv}
-                    </button>
-                  ))}
-                </div>
+                {ready && (
+                  <>
+                    <p className="mb-2 mt-4 text-xs font-medium text-slate-500">{scaleQuestion(sc.kind, scale)}</p>
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {likertValues(scale).map((lv) => (
+                        <button
+                          key={lv}
+                          onClick={() => setAnswer(sc.id, { likert: lv })}
+                          className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                            a.likert === lv
+                              ? "border-brand bg-brand text-white"
+                              : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {lv}
+                        </button>
+                      ))}
+                    </div>
 
-                <div className="relative">
-                  <textarea
-                    value={a.justification}
-                    onChange={(e) => setAnswer(sc.id, { justification: e.target.value })}
-                    onBlur={() => {
-                      if (status !== "completed" && !evaluating) void persist(true);
-                    }}
-                    placeholder="Votre justification…"
-                    rows={3}
-                    className="w-full resize-y rounded-lg border border-slate-300 p-2.5 pr-10 text-sm outline-none focus:border-brand"
-                  />
-                  <button
-                    onClick={() => runAssist(sc.id)}
-                    disabled={assisting === sc.id}
-                    title="Générer une réponse avec l'assistant IA"
-                    className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-brand disabled:opacity-50"
-                  >
-                    <IconSparkle />
-                    {assisting === sc.id ? "…" : "Assistant"}
-                  </button>
-                </div>
+                    <div className="relative">
+                      <textarea
+                        value={a.justification}
+                        onChange={(e) => setAnswer(sc.id, { justification: e.target.value })}
+                        onBlur={() => {
+                          if (status !== "completed" && !evaluating) void persist(true);
+                        }}
+                        placeholder="Votre justification…"
+                        rows={3}
+                        className="w-full resize-y rounded-lg border border-slate-300 p-2.5 pr-10 text-sm outline-none focus:border-brand"
+                      />
+                      <button
+                        onClick={() => runAssist(sc.id)}
+                        disabled={assisting === sc.id}
+                        title="Générer une réponse avec l'assistant IA"
+                        className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-brand disabled:opacity-50"
+                      >
+                        <IconSparkle />
+                        {assisting === sc.id ? "…" : "Assistant"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../AppContext";
 import { IconClose, IconRefresh, IconSparkle } from "../Icons";
+import ScenarioPrompt from "../ScenarioPrompt";
 import type { Suggestion, TrainingPreview } from "@/lib/types";
 
 interface Completed {
@@ -282,13 +283,12 @@ export default function SuggestionsView() {
                   {sit.scenarios.map((sc, ci) => (
                     <div key={ci} className="mb-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                       <p className="mb-2 text-sm font-semibold text-slate-800">Scénario {ci + 1}</p>
-                      <p className="mb-1 text-sm text-slate-700">
-                        <span className="font-medium text-slate-500">Si vous pensiez …</span> {sc.hypothesis}
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        <span className="font-medium text-slate-500">Et qu&apos;alors …</span>{" "}
-                        {sc.new_information}
-                      </p>
+                      <ScenarioPrompt
+                        hypothesis={sc.hypothesis}
+                        newInformation={sc.new_information}
+                        kind={sc.kind}
+                        scale={preview.likert_scale}
+                      />
                     </div>
                   ))}
                 </div>

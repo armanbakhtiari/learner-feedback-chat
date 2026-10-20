@@ -25,17 +25,14 @@ You are an educational assistant helping a learner formulate a response to a
 **LANGUAGE: your output (the justification) MUST be in FRENCH.**
 
 # Context
-You are given a clinical SITUATION and a SCENARIO consisting of:
-- an action/diagnostic hypothesis ("Si vous pensiez ...")
-- a new piece of information ("Et qu'alors ...")
+You are given a professional SITUATION and a SCENARIO. {format}
 
-The learner must indicate how this new information affects the hypothesis, on this
-5-level scale (ordered from most negative to most positive):
+The learner answers on this {n}-level scale (ordered from most negative to most positive):
 {scale}
 
 # Task
 Propose ONE plausible response a competent learner could give:
-- `likert`: one of the five values above, copied VERBATIM.
+- `likert`: one of the {n} values above, copied VERBATIM.
 - `justification`: 2 to 4 sentences, in French, explaining the reasoning.
 
 # Constraints
@@ -53,23 +50,40 @@ def _llm() -> ChatAnthropic:
     )
 
 
+REASONING_FORMAT = """It consists of:
+- an action/diagnostic hypothesis ("Si vous pensiez ...")
+- a new piece of information ("Et qu'alors ...")
+The learner indicates how this new information affects the hypothesis."""
+
+JUDGMENT_FORMAT = """It is a single observed behaviour ("Comportement observé"), with no new
+information. The learner judges how acceptable that behaviour is."""
+
+
 def generate_assisted_answer(situation_text: str, hypothesis: str, new_information: str,
-                             scale: Optional[str] = DEFAULT_SCALE) -> Dict[str, Any]:
+                             scale: Optional[str] = DEFAULT_SCALE,
+                             kind: str = "reasoning") -> Dict[str, Any]:
     """Return {"likert", "justification"} for a single scenario (no expert data used)."""
-    scale_text = "\n".join(f'- "{v}"' for v in values_for(scale))
+    values = values_for(scale)
+    scale_text = "\n".join(f'- "{v}"' for v in values)
     structured = _llm().with_structured_output(AssistedAnswer)
+    if kind == "judgment":
+        scenario_text = f"Comportement observé ... {hypothesis}"
+    else:
+        scenario_text = f"Si vous pensiez ... {hypothesis}\nEt qu'alors ... {new_information}"
     human = f"""SITUATION:
 {situation_text}
 
 SCENARIO:
-Si vous pensiez ... {hypothesis}
-Et qu'alors ... {new_information}
+{scenario_text}
 
 Propose a response (a value from the scale + justification). Write the justification in French."""
+    system = ANSWER_ASSIST_PROMPT.format(
+        format=JUDGMENT_FORMAT if kind == "judgment" else REASONING_FORMAT,
+        n=len(values), scale=scale_text,
+    )
     result: AssistedAnswer = invoke_with_retry(
         structured.invoke,
-        [SystemMessage(content=ANSWER_ASSIST_PROMPT.format(scale=scale_text)),
-         HumanMessage(content=human)],
+        [SystemMessage(content=system), HumanMessage(content=human)],
     )
     answer = result.model_dump()
     answer["likert"] = coerce(answer.get("likert"), scale)

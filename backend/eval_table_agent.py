@@ -12,11 +12,36 @@ exact order `training_parser.build_evaluation_input` fed it: situations by
 `situation_index`, scenarios by `scenario_index` — which is also the order
 `repo.get_training_content()` returns. So the zip below is a faithful mapping, not a guess.
 
+Each row also carries the expert panel's answers, which the "Voir" modal reveals on
+demand. This table is only ever served for a *completed* training — after answering,
+comparing one's reasoning with the experts' is the point of Learning by Concordance — so
+it is the one client path expert responses are allowed to reach. The educational
+synthesis stays out of it.
+
 Learning-by-Concordance stays non-judgmental: qualitative summaries only, no numeric
 scores, no pass/fail labels.
 """
 
+import re
 from typing import Any, Dict, List, Optional
+
+
+def _expert_order(expert: Dict[str, Any]) -> tuple:
+    """'Expert 2' before 'Expert 10' — the rows come back from the DB unordered."""
+    label = expert.get("expert_label") or ""
+    m = re.search(r"\d+", label)
+    return (int(m.group()) if m else 0, label)
+
+
+def _experts(scenario: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "expert_label": e.get("expert_label", ""),
+            "likert": e.get("likert"),
+            "justification": e.get("justification", ""),
+        }
+        for e in sorted(scenario.get("experts") or [], key=_expert_order)
+    ]
 
 
 def _split_coverage(justification: str) -> tuple[str, str]:
@@ -42,8 +67,9 @@ def build_eval_table(
     """
     Build the structured evaluation table.
 
-    ``training_content`` is ``repo.get_training_content(training_id)`` (situations ->
-    scenarios, ordered); ``responses`` maps scenario id -> {likert, justification}.
+    ``training_content`` is ``repo.get_training_content(training_id, include_experts=True)``
+    (situations -> scenarios, ordered); ``responses`` maps scenario id -> {likert,
+    justification}. Without experts loaded, rows simply carry an empty panel.
     """
     ev_situations = (evaluation_json or {}).get("situations", {}) or {}
     out: List[Dict[str, Any]] = []
@@ -61,6 +87,8 @@ def build_eval_table(
             resp = responses.get(sc["id"]) or {}
             rows.append({
                 "scenario_id": sc["id"],
+                "kind": sc.get("kind") or "reasoning",
+                "likert_scale": sc.get("likert_scale") or training_content.get("likert_scale"),
                 "hypothesis": sc.get("hypothesis", ""),
                 "new_information": sc.get("new_information", ""),
                 "response": {
@@ -72,6 +100,7 @@ def build_eval_table(
                 "themes_missed": missed,
                 "reasoning": (ev_sc.get("logical_reasoning") or {}).get("assessment", ""),
                 "communication": (ev_sc.get("communication") or {}).get("assessment", ""),
+                "experts": _experts(sc),
             })
 
         if rows:
